@@ -1,7 +1,9 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
@@ -171,13 +173,28 @@ func queue() *tview.List {
 		AddItem("Lorem", "ipsum", '5', nil).
 		ShowSecondaryText(false)
 
+	next := func () {
+
+		currIndex := list.GetCurrentItem()
+		idx := currIndex + 1
+		if currIndex == list.GetItemCount() - 1 {
+			idx = 0
+		}
+		list.SetCurrentItem(idx)
+	}
+
+	prev := func () {
+		currIndex := list.GetCurrentItem()
+		list.SetCurrentItem(currIndex - 1)
+	}
+
 	list.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 			switch e.Rune() {
 			case 'j':
-				next(list)
+				next()
 			case 'k':
-				prev(list)
+				prev()
 			}
 
 			return nil
@@ -213,24 +230,25 @@ func confirmationPopup(
 
 }
 
-func next(l *tview.List) {
-	currIndex := l.GetCurrentItem()
-	idx := currIndex + 1
-	if currIndex == l.GetItemCount() - 1 {
-		idx = 0
-	}
-	l.SetCurrentItem(idx)
-}
-
-func prev(l *tview.List) {
-	currIndex := l.GetCurrentItem()
-	l.SetCurrentItem(currIndex - 1)
+type AudioFile struct {
+	Name string
+	Path string
+	IsAudioFile bool
+	Parent *tview.TreeNode
 }
 
 func playlist() *tview.TreeView {
 
-	rootDir := "~/Music"
-	root := tview.NewTreeNode(rootDir)
+	musicDir := "./music"
+
+	rootDir, err := filepath.Abs(musicDir)
+
+	if err != nil {
+		panic(err)
+	}
+
+	root := tview.NewTreeNode(musicDir)
+
 	tree := tview.NewTreeView().SetRoot(root)
 	tree.SetTitle("Playlist").SetBorder(true)
 	tree.SetGraphicsColor(tcell.ColorWhite)
@@ -238,40 +256,15 @@ func playlist() *tview.TreeView {
 	textColor := tcell.ColorAntiqueWhite
 	backGroundColor := tcell.ColorDarkCyan
 
-	sample := [][]string{
-		{"pop", "1", "2", "3"},
-		{"rock", "1", "2", "3"},
-		{"rap", "1", "2", "3"},
-		{"country", "1", "2", "3"},
-		{"edm", "1", "2", "3"},
-	}
 
-	var childrens []*tview.TreeNode
+	populate(root, rootDir)
 
-	// populate tree with sample
-	for _, s := range sample {
+	firstChild := root.GetChildren()[0]
 
-		node := tview.NewTreeNode(s[0])
-
-		node.SetExpanded(false)
-
-		for _, sy := range s[1:] {
-
-			child := tview.NewTreeNode(sy)
-			child.SetIndent(5)
-			child.SetReference(node)
-			node.AddChild(child)
-
-		}
-		childrens = append(childrens, node)
-		root.AddChild(node)
-	}
-
-	childrens[0].SetColor(backGroundColor)
-
-	tree.SetCurrentNode(childrens[0])
+	firstChild.SetColor(textColor)
+	tree.SetCurrentNode(firstChild)
 	// keep track of prev node so we can remove the color of highlight
-	prevNode := childrens[0].SetColor(backGroundColor)
+	prevNode := firstChild.SetColor(backGroundColor)
 
 	tree.SetChangedFunc(func (node *tview.TreeNode) {
 
@@ -285,6 +278,11 @@ func playlist() *tview.TreeView {
 
 		currNode := tree.GetCurrentNode()
 
+		if currNode == root {
+			return e
+		}
+		audioFile := currNode.GetReference().(*AudioFile)
+
 		switch e.Rune() {
 		case 'l':
 			currNode.SetExpanded(true)
@@ -292,16 +290,20 @@ func playlist() *tview.TreeView {
 
 			// if closing node with no children
 			// close the node's parent 
-			if parent := currNode.GetReference(); parent != nil {
-				// remove the color of the node
+			// remove the color of the node
+
+			if audioFile.IsAudioFile {
+				parent := audioFile.Parent
+
 				currNode.SetColor(textColor)
-				parent.(*tview.TreeNode).SetExpanded(false)
-				parent.(*tview.TreeNode).SetColor(backGroundColor)
-				prevNode = parent.(*tview.TreeNode)
-				tree.SetCurrentNode(parent.(*tview.TreeNode))
+				parent.SetExpanded(false)
+				parent.SetColor(backGroundColor)
+				prevNode = parent
+				tree.SetCurrentNode(parent)
 			} else {
-				currNode.SetExpanded(false)
+				currNode.Collapse()
 			}
+
 		}
 
 		return e
@@ -312,6 +314,38 @@ func playlist() *tview.TreeView {
 	})
 
 	return tree
+
+}
+
+func populate(root *tview.TreeNode, rootPath string) {
+
+	files, err := ioutil.ReadDir(rootPath)
+
+	if err != nil {
+		panic(err)
+	}
+
+	for _, file := range files {
+
+		path := filepath.Join(rootPath, file.Name())
+		child := tview.NewTreeNode(file.Name())
+		root.AddChild(child)
+
+		audioFile := &AudioFile{
+			Name: file.Name(),
+			Path: path,
+			IsAudioFile: true,
+			Parent: root,	
+		}
+
+		child.SetReference(audioFile)
+
+		if file.IsDir() {
+			audioFile.IsAudioFile = false
+			populate(child, path)
+		}
+
+	}
 
 }
 
