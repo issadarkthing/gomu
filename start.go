@@ -38,9 +38,9 @@ func start(app *tview.Application) {
 
 		switch event.Rune() {
 		case 'q':
-			
-			confirmationPopup(app, pages, "Are you sure to exit?", func (_ int, label string) {
-				
+
+			confirmationPopup(app, pages, "Are you sure to exit?", func(_ int, label string) {
+
 				if label == "yes" {
 					app.Stop()
 				} else {
@@ -54,7 +54,6 @@ func start(app *tview.Application) {
 		return event
 	})
 
-
 	// fix transparent background issue
 	app.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
 		screen.Clear()
@@ -66,8 +65,6 @@ func start(app *tview.Application) {
 		panic(err)
 	}
 }
-
-
 
 // created so we can keep track of childrens in slices
 type Children interface {
@@ -93,14 +90,13 @@ func cycleChildren(app *tview.Application, childrens []Children) {
 			var nextChild Children
 
 			// if its the last element set the child back to one
-			if i == len(childrens) - 1 {
+			if i == len(childrens)-1 {
 				nextChild = childrens[0]
 			} else {
-				nextChild = childrens[i + 1]
+				nextChild = childrens[i+1]
 			}
 
-
-			child.SetBorderColor(unfocusedColor)	
+			child.SetBorderColor(unfocusedColor)
 			child.SetTitleColor(unfocusedColor)
 
 			app.SetFocus(nextChild.(tview.Primitive))
@@ -112,7 +108,7 @@ func cycleChildren(app *tview.Application, childrens []Children) {
 	}
 
 	if anyChildHasFocus == false {
-		
+
 		app.SetFocus(childrens[0].(tview.Primitive))
 		childrens[0].SetBorderColor(focusedColor)
 		childrens[0].SetTitleColor(focusedColor)

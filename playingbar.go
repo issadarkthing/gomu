@@ -6,5 +6,3 @@ func NowPlayingBar() *tview.Box {
 	return tview.NewBox().SetBorder(true).
 		SetTitle("Currently Playing")
 }
-
-
