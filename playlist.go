@@ -8,12 +8,11 @@ import (
 	"github.com/rivo/tview"
 )
 
-
 type AudioFile struct {
-	Name string
-	Path string
+	Name        string
+	Path        string
 	IsAudioFile bool
-	Parent *tview.TreeNode
+	Parent      *tview.TreeNode
 }
 
 func playlist(list *tview.List) *tview.TreeView {
@@ -47,7 +46,7 @@ func playlist(list *tview.List) *tview.TreeView {
 		// keep track of prev node so we can remove the color of highlight
 		prevNode = firstChild.SetColor(backGroundColor)
 
-		tree.SetChangedFunc(func (node *tview.TreeNode) {
+		tree.SetChangedFunc(func(node *tview.TreeNode) {
 
 			prevNode.SetColor(textColor)
 			root.SetColor(textColor)
@@ -55,8 +54,7 @@ func playlist(list *tview.List) *tview.TreeView {
 			prevNode = node
 		})
 
-	} ()
-
+	}()
 
 	tree.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
@@ -73,13 +71,13 @@ func playlist(list *tview.List) *tview.TreeView {
 			if audioFile.IsAudioFile {
 
 				list.AddItem(audioFile.Name, audioFile.Path, 0, nil)
-				
+
 			}
 			currNode.SetExpanded(true)
 		case 'h':
 
 			// if closing node with no children
-			// close the node's parent 
+			// close the node's parent
 			// remove the color of the node
 
 			if audioFile.IsAudioFile {
@@ -122,10 +120,10 @@ func populate(root *tview.TreeNode, rootPath string) {
 		root.AddChild(child)
 
 		audioFile := &AudioFile{
-			Name: file.Name(),
-			Path: path,
+			Name:        file.Name(),
+			Path:        path,
 			IsAudioFile: true,
-			Parent: root,	
+			Parent:      root,
 		}
 
 		child.SetReference(audioFile)
@@ -138,4 +136,3 @@ func populate(root *tview.TreeNode, rootPath string) {
 	}
 
 }
-
