@@ -47,7 +47,17 @@ func start(app *tview.Application) {
 
 		switch event.Rune() {
 		case 'q':
-			confirmationPopup(app, pages, "Are you sure to exit?")
+			
+			confirmationPopup(app, pages, "Are you sure to exit?", func (_ int, label string) {
+				
+				if label == "yes" {
+					app.Stop()
+				} else {
+					pages.RemovePage("confirmation-popup")
+				}
+
+			})
+
 		}
 
 		return event
@@ -182,31 +192,24 @@ func queue() *tview.List {
 
 }
 
-func confirmationPopup(app *tview.Application, pages *tview.Pages, text string) bool {
+func confirmationPopup(
+	app *tview.Application,
+	pages *tview.Pages,
+	text string,
+	handler func (buttonIndex int, buttonLabel string),
+) {
 
-	result := false
 
 	modal := tview.NewModal().
 				SetText(text).
 				SetBackgroundColor(tcell.ColorDefault).
 				AddButtons([]string{"yes", "no"}).
 				SetButtonBackgroundColor(tcell.ColorBlack).
-				SetDoneFunc(func(_ int, buttonLabel string) {
-
-					if buttonLabel == "yes" {
-						result = true
-						app.Stop()
-					} else {
-						pages.RemovePage("exit-popup")
-					}
-
-				});
+				SetDoneFunc(handler);
 
 
-	pages.AddPage("exit-popup", center(modal, 40, 10), true, true)
+	pages.AddPage("confirmation-popup", center(modal, 40, 10), true, true)
 	app.SetFocus(modal)
-
-	return result
 
 }
 
