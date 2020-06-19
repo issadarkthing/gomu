@@ -32,6 +32,8 @@ func start(app *tview.Application) {
 
 	flex := layout(app, child1, child2, child3)
 
+	pages := tview.NewPages().AddPage("main", flex, true, true)
+
 	childrens := []Children{child1, child2, child3}
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -45,7 +47,7 @@ func start(app *tview.Application) {
 
 		switch event.Rune() {
 		case 'q':
-			confirmationPopup(app, flex, "Are you sure to exit?")
+			confirmationPopup(app, pages, "Are you sure to exit?")
 		}
 
 		return event
@@ -59,9 +61,19 @@ func start(app *tview.Application) {
 	})
 
 	// main loop
-	if err := app.SetRoot(flex, true).SetFocus(flex).Run(); err != nil {
+	if err := app.SetRoot(pages, true).SetFocus(flex).Run(); err != nil {
 		panic(err)
 	}
+}
+
+func center(p tview.Primitive, width, height int) tview.Primitive {
+	return tview.NewFlex().
+			AddItem(nil, 0, 1, false).
+			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
+				AddItem(nil, 0, 1, false).
+				AddItem(p, height, 1, false).
+				AddItem(nil, 0, 1, false), width, 1, false).
+			AddItem(nil, 0, 1, false)
 }
 
 
@@ -170,7 +182,7 @@ func queue() *tview.List {
 
 }
 
-func confirmationPopup(app *tview.Application, flex *tview.Flex, text string) bool {
+func confirmationPopup(app *tview.Application, pages *tview.Pages, text string) bool {
 
 	result := false
 
@@ -180,16 +192,19 @@ func confirmationPopup(app *tview.Application, flex *tview.Flex, text string) bo
 				AddButtons([]string{"yes", "no"}).
 				SetButtonBackgroundColor(tcell.ColorBlack).
 				SetDoneFunc(func(_ int, buttonLabel string) {
+
 					if buttonLabel == "yes" {
 						result = true
 						app.Stop()
+					} else {
+						pages.RemovePage("exit-popup")
 					}
 
-					app.SetRoot(flex, true)
 				});
 
 
-	app.SetRoot(modal, false).SetFocus(modal)
+	pages.AddPage("exit-popup", center(modal, 40, 10), true, true)
+	app.SetFocus(modal)
 
 	return result
 
