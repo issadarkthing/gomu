@@ -30,7 +30,9 @@ func start(app *tview.Application) {
 	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
 	tview.Styles.BorderColor = tcell.ColorAntiqueWhite
 
-	child1, child2, child3 := playlist(), queue(), nowPlayingBar()
+	child3 := nowPlayingBar()
+	child2 := queue(child3)
+	child1 := playlist(child2)
 
 	flex := layout(app, child1, child2, child3)
 
@@ -163,14 +165,9 @@ func nowPlayingBar() *tview.Box {
 		SetTitle("Currently Playing")
 }
 
-func queue() *tview.List {
+func queue(playlist *tview.Box) *tview.List {
 
 	list := tview.NewList().
-		AddItem("Lorem", "ipsum", '1', nil).
-		AddItem("Lorem", "ipsum", '2', nil).
-		AddItem("Lorem", "ipsum", '3', nil).
-		AddItem("Lorem", "ipsum", '4', nil).
-		AddItem("Lorem", "ipsum", '5', nil).
 		ShowSecondaryText(false)
 
 	next := func () {
@@ -237,7 +234,7 @@ type AudioFile struct {
 	Parent *tview.TreeNode
 }
 
-func playlist() *tview.TreeView {
+func playlist(list *tview.List) *tview.TreeView {
 
 	musicDir := "./music"
 
@@ -255,24 +252,29 @@ func playlist() *tview.TreeView {
 
 	textColor := tcell.ColorAntiqueWhite
 	backGroundColor := tcell.ColorDarkCyan
+	var prevNode *tview.TreeNode
 
+	go func() {
 
-	populate(root, rootDir)
+		populate(root, rootDir)
 
-	firstChild := root.GetChildren()[0]
+		firstChild := root.GetChildren()[0]
 
-	firstChild.SetColor(textColor)
-	tree.SetCurrentNode(firstChild)
-	// keep track of prev node so we can remove the color of highlight
-	prevNode := firstChild.SetColor(backGroundColor)
+		firstChild.SetColor(textColor)
+		tree.SetCurrentNode(firstChild)
+		// keep track of prev node so we can remove the color of highlight
+		prevNode = firstChild.SetColor(backGroundColor)
 
-	tree.SetChangedFunc(func (node *tview.TreeNode) {
+		tree.SetChangedFunc(func (node *tview.TreeNode) {
 
-		prevNode.SetColor(textColor)
-		root.SetColor(textColor)
-		node.SetColor(backGroundColor)
-		prevNode = node
-	})
+			prevNode.SetColor(textColor)
+			root.SetColor(textColor)
+			node.SetColor(backGroundColor)
+			prevNode = node
+		})
+
+	} ()
+
 
 	tree.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
@@ -285,6 +287,12 @@ func playlist() *tview.TreeView {
 
 		switch e.Rune() {
 		case 'l':
+
+			if audioFile.IsAudioFile {
+
+				list.AddItem(audioFile.Name, audioFile.Path, 0, nil)
+				
+			}
 			currNode.SetExpanded(true)
 		case 'h':
 
