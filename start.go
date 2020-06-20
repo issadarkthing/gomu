@@ -17,9 +17,11 @@ func start(app *tview.Application) {
 	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
 	tview.Styles.BorderColor = tcell.ColorAntiqueWhite
 
+	player := &Player{}
+
 	child3 := NowPlayingBar()
 	child2 := Queue(child3)
-	child1 := playlist(child2)
+	child1 := Playlist(child2, player)
 
 	flex := Layout(app, child1, child2, child3)
 
@@ -48,6 +50,14 @@ func start(app *tview.Application) {
 				}
 
 			})
+
+		case ' ':
+			
+			if player.ctrl.Paused {
+				player.Play()
+			} else {
+				player.Pause()
+			}
 
 		}
 

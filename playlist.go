@@ -15,7 +15,7 @@ type AudioFile struct {
 	Parent      *tview.TreeNode
 }
 
-func playlist(list *tview.List) *tview.TreeView {
+func Playlist(list *tview.List, player *Player) *tview.TreeView {
 
 	musicDir := "./music"
 
@@ -69,10 +69,14 @@ func playlist(list *tview.List) *tview.TreeView {
 		case 'l':
 
 			if audioFile.IsAudioFile {
-
 				list.AddItem(audioFile.Name, audioFile.Path, 0, nil)
+				player.Push(audioFile.Path)
 
+				if !player.IsRunning {
+					go player.Run()
+				}
 			}
+
 			currNode.SetExpanded(true)
 		case 'h':
 
