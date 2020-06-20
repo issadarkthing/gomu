@@ -37,6 +37,8 @@ func Queue(playlist *tview.Box) *tview.List {
 		return nil
 	})
 
+
+
 	list.SetHighlightFullLine(true)
 	list.SetBorder(true).SetTitle("Queue")
 	list.SetSelectedBackgroundColor(tcell.ColorDarkCyan)
