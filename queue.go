@@ -5,7 +5,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-func Queue(playlist *tview.Box) *tview.List {
+func Queue() *tview.List {
 
 	list := tview.NewList().
 		ShowSecondaryText(false)

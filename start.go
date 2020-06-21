@@ -19,15 +19,20 @@ func start(app *tview.Application) {
 
 	player := &Player{}
 
-	child3 := NowPlayingBar()
-	child2 := Queue(child3)
-	child1 := Playlist(child2, player)
+	child3 := PlayingBar(app)
+	child2 := Queue()
+	child1 := Playlist(child2, child3, player)
 
-	flex := Layout(app, child1, child2, child3)
+	player.tree = child1
+	player.list = child2
+	player.playingBar = child3
+	player.app = app
+
+	flex := Layout(app, player)
 
 	pages := tview.NewPages().AddPage("main", flex, true, true)
 
-	childrens := []Children{child1, child2, child3}
+	childrens := []Children{child1, child2, child3.frame}
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 
@@ -52,12 +57,15 @@ func start(app *tview.Application) {
 			})
 
 		case ' ':
-			
-			if player.ctrl.Paused {
-				player.Play()
-			} else {
-				player.Pause()
-			}
+			player.TogglePause()			
+
+		case '+':
+
+			player.Volume(0.5)
+
+		case '-':
+
+			player.Volume(-0.5)
 
 		}
 
@@ -72,7 +80,7 @@ func start(app *tview.Application) {
 
 	// main loop
 	if err := app.SetRoot(pages, true).SetFocus(flex).Run(); err != nil {
-		panic(err)
+		log(err.Error())
 	}
 }
 
