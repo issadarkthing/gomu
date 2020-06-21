@@ -1,3 +1,5 @@
+// Copyright (C) 2020  Raziman
+
 package main
 
 import "os"
