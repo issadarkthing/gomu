@@ -15,14 +15,14 @@ type AudioFile struct {
 	Parent      *tview.TreeNode
 }
 
-func Playlist(list *tview.List, player *Player) *tview.TreeView {
+func Playlist(list *tview.List, playBar *Progress, player *Player) *tview.TreeView {
 
 	musicDir := "./music"
 
 	rootDir, err := filepath.Abs(musicDir)
 
 	if err != nil {
-		panic(err)
+		log(err.Error())
 	}
 
 	root := tview.NewTreeNode(musicDir)
@@ -69,6 +69,7 @@ func Playlist(list *tview.List, player *Player) *tview.TreeView {
 		case 'l':
 
 			if audioFile.IsAudioFile {
+
 				list.AddItem(audioFile.Name, audioFile.Path, 0, nil)
 				player.Push(audioFile.Path)
 
@@ -114,7 +115,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 	files, err := ioutil.ReadDir(rootPath)
 
 	if err != nil {
-		panic(err)
+		log(err.Error())
 	}
 
 	for _, file := range files {

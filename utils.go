@@ -10,7 +10,7 @@ func log(text string) {
 		panic(err)
 	}
 
-	if _, err := f.Write([]byte(text)); err != nil {
+	if _, err := f.Write([]byte(text + "\n")); err != nil {
 		panic(err)
 	}
 
