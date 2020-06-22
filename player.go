@@ -44,10 +44,12 @@ type Player struct {
 	app        *tview.Application
 }
 
+// add new song to the queue
 func (p *Player) Push(song string) {
 	p.queue = append(p.queue, song)
 }
 
+// remove first song from the queue
 func (p *Player) Pop() (string, error) {
 
 	if len(p.queue) == 0 {
@@ -58,6 +60,29 @@ func (p *Player) Pop() (string, error) {
 	p.current = a
 
 	return a, nil
+}
+
+// remove song from the queue
+func (p *Player) Remove(index int) (string, error) {
+
+	if index > len(p.queue) - 1 {
+		return "", errors.New("Index out of range")
+	}
+
+	removed := p.queue[index]
+
+	var rest []string
+
+	// check if given index is the last element
+	if index == len(p.queue)-1 {
+		rest = []string{}
+	} else {
+		rest = p.queue[index+1:]
+	}
+
+	p.queue = append(p.queue[:index], rest...)
+
+	return removed, nil
 }
 
 func (p *Player) Run() {
