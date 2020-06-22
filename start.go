@@ -21,7 +21,7 @@ func start(app *tview.Application) {
 
 	player := &Player{}
 
-	child3 := PlayingBar(app)
+	child3 := PlayingBar(app, player)
 	child2 := Queue(player)
 	child1 := Playlist(child2, child3, player)
 

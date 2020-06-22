@@ -36,8 +36,11 @@ func Queue(player *Player) *tview.List {
 			prev()
 		case 'd':
 			index := list.GetCurrentItem()
-			player.Remove(index)
-			list.RemoveItem(index)
+
+			if index != -1 {
+				player.Remove(index)
+				list.RemoveItem(index)
+			}
 
 		}
 
