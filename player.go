@@ -30,6 +30,7 @@ type Player struct {
 	hasInit   bool
 	current   string
 	format    *beep.Format
+
 	// to control the _volume internally
 	_volume     *effects.Volume
 	volume      float64
@@ -103,7 +104,8 @@ func (p *Player) Run() {
 	defer f.Close()
 
 	streamer, format, err := mp3.Decode(f)
-	
+
+
 	// song duration
 	p.length = format.SampleRate.D(streamer.Len())
 
@@ -188,12 +190,13 @@ func (p *Player) Run() {
 			p.playingBar._progress = 0
 			p.position = 0
 			p.current = ""
+			p.IsRunning = false
+			p.format = nil
+
 			if len(p.queue) != 0 {
 				go p.Run()
-			} else {
-				p.IsRunning = false
-				p.format = nil
-			}
+			} 
+
 			goto next
 		case <-time.After(time.Second):
 			speaker.Lock()
