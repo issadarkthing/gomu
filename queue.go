@@ -7,7 +7,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-func Queue() *tview.List {
+func Queue(player *Player) *tview.List {
 
 	list := tview.NewList().
 		ShowSecondaryText(false)
@@ -34,6 +34,11 @@ func Queue() *tview.List {
 			next()
 		case 'k':
 			prev()
+		case 'd':
+			index := list.GetCurrentItem()
+			player.Remove(index)
+			list.RemoveItem(index)
+
 		}
 
 		return nil
@@ -49,3 +54,4 @@ func Queue() *tview.List {
 	return list
 
 }
+

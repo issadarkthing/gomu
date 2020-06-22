@@ -22,7 +22,7 @@ func start(app *tview.Application) {
 	player := &Player{}
 
 	child3 := PlayingBar(app)
-	child2 := Queue()
+	child2 := Queue(player)
 	child1 := Playlist(child2, child3, player)
 
 	player.tree = child1
