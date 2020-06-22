@@ -12,30 +12,36 @@ import (
 	"github.com/rivo/tview"
 )
 
-func PlayingBar(app *tview.Application) *Progress {
+func PlayingBar(app *tview.Application, player *Player) *Progress {
 
-	textView := tview.NewTextView().
-	SetChangedFunc(func () {
-		app.Draw()
-	})
+	textView := tview.NewTextView()
 
 	progress := InitProgressBar(textView)
 
+	progress.frame.SetInputCapture(func (e *tcell.EventKey) *tcell.EventKey {
+
+		return e
+	})
+
+	textView.SetChangedFunc(func() {
+		app.Draw()
+
+		if !player.IsRunning {
+			progress.SetDefault()
+		}
+	})
 
 	return progress
 }
 
-
 type Progress struct {
-	textView *tview.TextView
-	full     int
-	limit    int
-	progress chan int
-	frame    *tview.Frame
+	textView  *tview.TextView
+	full      int
+	limit     int
+	progress  chan int
+	frame     *tview.Frame
 	_progress int
 }
-
-
 
 // full is the maximum amount of value can be sent to channel
 // limit is the progress bar size
@@ -46,13 +52,11 @@ func InitProgressBar(txt *tview.TextView) *Progress {
 
 	p.frame = tview.NewFrame(p.textView).SetBorders(1, 1, 1, 1, 1, 1)
 	p.frame.SetBorder(true).SetTitle("Now Playing")
-	p.SetSongTitle("-")
 
-	p.textView.SetText(fmt.Sprintf("%s %s %s", "0s", strings.Repeat("□", 100), "0s"))	
+	p.SetDefault()
 
 	return p
 }
-
 
 func (p *Progress) Run() {
 
@@ -105,4 +109,8 @@ func (p *Progress) NewProgress(songTitle string, full, limit int) {
 	p.SetSongTitle(songTitle)
 }
 
-
+// sets default title and progress bar
+func (p *Progress) SetDefault() {
+	p.SetSongTitle("-")
+	p.textView.SetText(fmt.Sprintf("%s %s %s", "0s", strings.Repeat("□", 100), "0s"))
+}
