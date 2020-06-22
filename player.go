@@ -23,7 +23,6 @@ type Song struct {
 	position string
 }
 
-type handler func(list *tview.List, tree *tview.TreeView, playingBar *tview.Box) 
 
 type Player struct {
 	queue     []string
@@ -43,9 +42,6 @@ type Player struct {
 	tree       *tview.TreeView
 	playingBar *Progress
 	app        *tview.Application
-
-	afterPlayHandler	handler
-	beforePlayHandler   handler
 }
 
 func (p *Player) Push(song string) {
@@ -143,6 +139,11 @@ func (p *Player) Run() {
 		i := 0
 
 		for {
+
+			if !p.IsRunning {
+				continue
+			}
+
 			i++
 			p.playingBar.progress <- 1
 
@@ -234,18 +235,3 @@ func (p *Player) TogglePause() {
 	}
 }
 
-func (p *Player) BeforePlayHook(handler func(
-	list *tview.List,
-	tree *tview.TreeView,
-	playingBar *tview.Box),
-) {
-	p.beforePlayHandler = handler
-}
-
-func (p *Player) AfterPlayHook(handler func(
-	list *tview.List,
-	tree *tview.TreeView,
-	playingBar *tview.Box),
-) {
-	p.afterPlayHandler = handler
-}
