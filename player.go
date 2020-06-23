@@ -137,13 +137,14 @@ func (p *Player) Run() {
 	p.done = done
 
 	sstreamer := beep.Seq(streamer, beep.Callback(func() {
-		// prevents from sending done channel is the song is skipped
+		// prevents from sending done channel if the song is skipped
 		if !p.isSkipped {
 			done <- true
 		} else {
 			p.isSkipped = false
 		}
 	}))
+
 
 	ctrl := &beep.Ctrl{Streamer: sstreamer, Paused: false}
 
@@ -203,10 +204,10 @@ next:
 		select {
 		case <-done:
 			close(done)
-			p.position = 0
-			p.current = ""
+			p.position  = 0
+			p.current   = ""
 			p.IsRunning = false
-			p.format = nil
+			p.format    = nil
 
 			if len(p.queue) != 0 {
 				go p.Run()
