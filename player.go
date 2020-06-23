@@ -91,18 +91,16 @@ func (p *Player) Remove(index int) (string, error) {
 
 func (p *Player) Run() {
 
-
 	first, err := p.Pop()
 
 	// removes playing song from the queue
 	p.list.RemoveItem(0)
 	p.app.Draw()
 
-
 	if err != nil {
 		p.IsRunning = false
 		log(err.Error())
-	} 
+	}
 	f, err := os.Open(first)
 
 	defer f.Close()
@@ -144,7 +142,6 @@ func (p *Player) Run() {
 			p.isSkipped = false
 		}
 	}))
-
 
 	ctrl := &beep.Ctrl{Streamer: sstreamer, Paused: false}
 
@@ -204,10 +201,10 @@ next:
 		select {
 		case <-done:
 			close(done)
-			p.position  = 0
-			p.current   = ""
+			p.position = 0
+			p.current = ""
 			p.IsRunning = false
-			p.format    = nil
+			p.format = nil
 
 			if len(p.queue) != 0 {
 				go p.Run()

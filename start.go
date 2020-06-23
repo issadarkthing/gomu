@@ -59,7 +59,7 @@ func start(app *tview.Application) {
 			})
 
 		case ' ':
-			player.TogglePause()			
+			player.TogglePause()
 
 		case '+':
 			player.Volume(0.5)

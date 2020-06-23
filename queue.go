@@ -47,8 +47,6 @@ func Queue(player *Player) *tview.List {
 		return nil
 	})
 
-
-
 	list.SetHighlightFullLine(true)
 	list.SetBorder(true).SetTitle(" Queue ")
 	list.SetSelectedBackgroundColor(tcell.ColorDarkCyan)
@@ -57,4 +55,3 @@ func Queue(player *Player) *tview.List {
 	return list
 
 }
-
