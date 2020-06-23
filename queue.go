@@ -50,9 +50,9 @@ func Queue(player *Player) *tview.List {
 
 
 	list.SetHighlightFullLine(true)
-	list.SetBorder(true).SetTitle("Queue")
+	list.SetBorder(true).SetTitle(" Queue ")
 	list.SetSelectedBackgroundColor(tcell.ColorDarkCyan)
-	list.SetSelectedTextColor(tcell.ColorAntiqueWhite)
+	list.SetSelectedTextColor(tcell.ColorWhite)
 
 	return list
 

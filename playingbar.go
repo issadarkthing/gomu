@@ -16,12 +16,8 @@ func PlayingBar(app *tview.Application, player *Player) *Progress {
 
 	textView := tview.NewTextView()
 
-	progress := InitProgressBar(textView)
+	progress := InitProgressBar(textView, player)
 
-	progress.frame.SetInputCapture(func (e *tcell.EventKey) *tcell.EventKey {
-
-		return e
-	})
 
 	textView.SetChangedFunc(func() {
 		app.Draw()
@@ -41,17 +37,18 @@ type Progress struct {
 	progress  chan int
 	frame     *tview.Frame
 	_progress int
+	player    *Player
 }
 
 // full is the maximum amount of value can be sent to channel
 // limit is the progress bar size
-func InitProgressBar(txt *tview.TextView) *Progress {
-	p := &Progress{textView: txt}
+func InitProgressBar(txt *tview.TextView, player *Player) *Progress {
+	p := &Progress{textView: txt, player: player}
 	p.progress = make(chan int)
 	p.textView.SetTextAlign(tview.AlignCenter)
 
 	p.frame = tview.NewFrame(p.textView).SetBorders(1, 1, 1, 1, 1, 1)
-	p.frame.SetBorder(true).SetTitle("Now Playing")
+	p.frame.SetBorder(true).SetTitle(" Now Playing ")
 
 	p.SetDefault()
 
@@ -60,16 +57,19 @@ func InitProgressBar(txt *tview.TextView) *Progress {
 
 func (p *Progress) Run() {
 
-	go func() { // Simple channel status gauge (progress bar)
+	go func() { 
 		for {
+
+			if p._progress > p.full {
+
+				p._progress = 0
+				break
+			}
+
 			p._progress += <-p.progress
 
 			p.textView.Clear()
 
-			if p._progress > p.full {
-				p._progress = 0
-				break
-			}
 
 			start, err := time.ParseDuration(strconv.Itoa(p._progress) + "s")
 
@@ -96,10 +96,8 @@ func (p *Progress) Run() {
 }
 
 func (p *Progress) SetSongTitle(title string) {
-
 	p.frame.Clear()
 	p.frame.AddText(title, true, tview.AlignCenter, tcell.ColorGreen)
-
 }
 
 func (p *Progress) NewProgress(songTitle string, full, limit int) {
