@@ -104,7 +104,7 @@ func Playlist(list *tview.List, playBar *Progress, player *Player) *tview.TreeVi
 				parent.SetColor(backGroundColor)
 				prevNode = parent
 				tree.SetCurrentNode(parent)
-			} 				
+			}
 
 			currNode.Collapse()
 
@@ -154,8 +154,6 @@ func populate(root *tview.TreeNode, rootPath string) {
 			}
 
 		}
-
-
 
 		child := tview.NewTreeNode(file.Name())
 		root.AddChild(child)

@@ -18,7 +18,6 @@ func PlayingBar(app *tview.Application, player *Player) *Progress {
 
 	progress := InitProgressBar(textView, player)
 
-
 	textView.SetChangedFunc(func() {
 		app.Draw()
 
@@ -57,7 +56,7 @@ func InitProgressBar(txt *tview.TextView, player *Player) *Progress {
 
 func (p *Progress) Run() {
 
-	go func() { 
+	go func() {
 		for {
 
 			if p._progress > p.full {
@@ -69,7 +68,6 @@ func (p *Progress) Run() {
 			p._progress += <-p.progress
 
 			p.textView.Clear()
-
 
 			start, err := time.ParseDuration(strconv.Itoa(p._progress) + "s")
 
