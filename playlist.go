@@ -4,10 +4,17 @@ package main
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+)
+
+const (
+	musicDir        = "./music"
+	textColor       = tcell.ColorWhite
+	backGroundColor = tcell.ColorDarkCyan
 )
 
 type AudioFile struct {
@@ -19,8 +26,6 @@ type AudioFile struct {
 
 func Playlist(list *tview.List, playBar *Progress, player *Player) *tview.TreeView {
 
-	musicDir := "./music"
-
 	rootDir, err := filepath.Abs(musicDir)
 
 	if err != nil {
@@ -30,18 +35,22 @@ func Playlist(list *tview.List, playBar *Progress, player *Player) *tview.TreeVi
 	root := tview.NewTreeNode(musicDir)
 
 	tree := tview.NewTreeView().SetRoot(root)
-	tree.SetTitle("Playlist").SetBorder(true)
+	tree.SetTitle(" Playlist ").SetBorder(true)
 	tree.SetGraphicsColor(tcell.ColorWhite)
 
-	textColor := tcell.ColorAntiqueWhite
-	backGroundColor := tcell.ColorDarkCyan
 	var prevNode *tview.TreeNode
 
 	go func() {
 
 		populate(root, rootDir)
 
-		firstChild := root.GetChildren()[0]
+		var firstChild *tview.TreeNode
+
+		if len(root.GetChildren()) == 0 {
+			firstChild = root
+		} else {
+			firstChild = root.GetChildren()[0]
+		}
 
 		firstChild.SetColor(textColor)
 		tree.SetCurrentNode(firstChild)
@@ -95,9 +104,9 @@ func Playlist(list *tview.List, playBar *Progress, player *Player) *tview.TreeVi
 				parent.SetColor(backGroundColor)
 				prevNode = parent
 				tree.SetCurrentNode(parent)
-			} else {
-				currNode.Collapse()
-			}
+			} 				
+
+			currNode.Collapse()
 
 		}
 
@@ -123,6 +132,31 @@ func populate(root *tview.TreeNode, rootPath string) {
 	for _, file := range files {
 
 		path := filepath.Join(rootPath, file.Name())
+		f, err := os.Open(path)
+
+		if err != nil {
+			log(err.Error())
+		}
+
+		defer f.Close()
+
+		if !file.IsDir() {
+
+			filetype, err := GetFileContentType(f)
+
+			if err != nil {
+				log(err.Error())
+			}
+
+			// skip if not mp3 file
+			if filetype != "mpeg" {
+				continue
+			}
+
+		}
+
+
+
 		child := tview.NewTreeNode(file.Name())
 		root.AddChild(child)
 
