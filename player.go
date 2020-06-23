@@ -23,7 +23,6 @@ type Song struct {
 	position string
 }
 
-
 type Player struct {
 	queue     []string
 	IsRunning bool
@@ -31,9 +30,13 @@ type Player struct {
 	current   string
 	format    *beep.Format
 
+	isSkipped bool
+	done      chan bool
+
 	// to control the _volume internally
 	_volume     *effects.Volume
 	volume      float64
+	resampler   *beep.Resampler
 	position    time.Duration
 	length      time.Duration
 	currentSong Song
@@ -66,7 +69,7 @@ func (p *Player) Pop() (string, error) {
 // remove song from the queue
 func (p *Player) Remove(index int) (string, error) {
 
-	if index > len(p.queue) - 1 {
+	if index > len(p.queue)-1 {
 		return "", errors.New("Index out of range")
 	}
 
@@ -88,23 +91,23 @@ func (p *Player) Remove(index int) (string, error) {
 
 func (p *Player) Run() {
 
+
 	first, err := p.Pop()
 
 	// removes playing song from the queue
 	p.list.RemoveItem(0)
 	p.app.Draw()
 
+
 	if err != nil {
 		p.IsRunning = false
 		log(err.Error())
-	}
-
+	} 
 	f, err := os.Open(first)
 
 	defer f.Close()
 
 	streamer, format, err := mp3.Decode(f)
-
 
 	// song duration
 	p.length = format.SampleRate.D(streamer.Len())
@@ -131,14 +134,24 @@ func (p *Player) Run() {
 
 	done := make(chan bool)
 
+	p.done = done
+
 	sstreamer := beep.Seq(streamer, beep.Callback(func() {
-		done <- true
+		// prevents from sending done channel is the song is skipped
+		if !p.isSkipped {
+			done <- true
+		} else {
+			p.isSkipped = false
+		}
 	}))
 
 	ctrl := &beep.Ctrl{Streamer: sstreamer, Paused: false}
 
+	resampler := beep.ResampleRatio(4, 1, ctrl)
+	p.resampler = resampler
+
 	volume := &effects.Volume{
-		Streamer: ctrl,
+		Streamer: resampler,
 		Base:     2,
 		Volume:   0,
 		Silent:   false,
@@ -161,12 +174,13 @@ func (p *Player) Run() {
 	p.playingBar.NewProgress(song.name, int(p.length.Seconds()), 100)
 	p.playingBar.Run()
 
-	go func () {
+	go func() {
 
 		i := 0
 
 		for {
 
+			// stop progress bar from progressing when paused
 			if !p.IsRunning {
 				continue
 			}
@@ -174,20 +188,21 @@ func (p *Player) Run() {
 			i++
 			p.playingBar.progress <- 1
 
-			if i > p.playingBar.full {
+			if i > p.playingBar.full || p.isSkipped {
 				break
 			}
-			
+
 			time.Sleep(time.Second)
 		}
 
 	}()
 
+next:
+
 	for {
 		select {
 		case <-done:
 			close(done)
-			p.playingBar._progress = 0
 			p.position = 0
 			p.current = ""
 			p.IsRunning = false
@@ -195,18 +210,15 @@ func (p *Player) Run() {
 
 			if len(p.queue) != 0 {
 				go p.Run()
-			} 
+			}
 
-			goto next
+			break next
 		case <-time.After(time.Second):
 			speaker.Lock()
 			p.position = position()
 			speaker.Unlock()
 		}
 	}
-
-next:
-
 
 }
 
@@ -263,3 +275,10 @@ func (p *Player) TogglePause() {
 	}
 }
 
+// skips current song
+func (p *Player) Skip() {
+	if len(p.queue) > 0 {
+		p.isSkipped = true
+		p.done <- true
+	}
+}

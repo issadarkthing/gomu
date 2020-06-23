@@ -62,12 +62,13 @@ func start(app *tview.Application) {
 			player.TogglePause()			
 
 		case '+':
-
 			player.Volume(0.5)
 
 		case '-':
-
 			player.Volume(-0.5)
+
+		case 'n':
+			player.Skip()
 
 		}
 
