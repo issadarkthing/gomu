@@ -3,9 +3,11 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
@@ -81,11 +83,27 @@ func Playlist(list *tview.List, playBar *Progress, player *Player) *tview.TreeVi
 
 			if audioFile.IsAudioFile {
 
-				list.AddItem(audioFile.Name, audioFile.Path, 0, nil)
 				player.Push(audioFile.Path)
 
 				if !player.IsRunning {
-					go player.Run()
+
+					go func () {
+						player.Run()
+						list.AddItem(
+							fmt.Sprintf("%s | %s", player.length.String(), audioFile.Name),
+							"", 0, nil)
+					} ()
+
+				} else {
+
+					songLength, err := player.GetLength(len(player.queue) - 1)
+
+					if err != nil {
+						log(err.Error())
+					}
+					list.AddItem(
+						fmt.Sprintf("[ %s ] %s", songLength.Round(time.Second).String(), audioFile.Name), 
+						"", 0, nil)
 				}
 			}
 
