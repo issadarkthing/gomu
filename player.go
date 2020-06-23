@@ -35,6 +35,7 @@ type Player struct {
 
 	// to control the _volume internally
 	_volume     *effects.Volume
+	ctrl        *beep.Ctrl
 	volume      float64
 	resampler   *beep.Resampler
 	position    time.Duration
@@ -144,6 +145,7 @@ func (p *Player) Run() {
 	}))
 
 	ctrl := &beep.Ctrl{Streamer: sstreamer, Paused: false}
+	p.ctrl = ctrl
 
 	resampler := beep.ResampleRatio(4, 1, ctrl)
 	p.resampler = resampler
@@ -222,14 +224,14 @@ next:
 
 func (p *Player) Pause() {
 	speaker.Lock()
-	p._volume.Streamer.(*beep.Ctrl).Paused = true
+	p.ctrl.Paused = true
 	p.IsRunning = false
 	speaker.Unlock()
 }
 
 func (p *Player) Play() {
 	speaker.Lock()
-	p._volume.Streamer.(*beep.Ctrl).Paused = false
+	p.ctrl.Paused = false
 	p.IsRunning = true
 	speaker.Unlock()
 }
@@ -266,7 +268,7 @@ func (p *Player) Volume(v float64) {
 
 func (p *Player) TogglePause() {
 
-	if p._volume.Streamer.(*beep.Ctrl).Paused {
+	if p.ctrl.Paused {
 		p.Play()
 	} else {
 		p.Pause()
@@ -279,4 +281,31 @@ func (p *Player) Skip() {
 		p.isSkipped = true
 		p.done <- true
 	}
+}
+
+
+func (p *Player) GetLength(index int) (time.Duration, error) {
+	
+	if index > len(p.queue)-1 {
+		return 0, errors.New("Index out of range")
+	}
+
+	f, err := os.Open(p.queue[index])
+
+	defer f.Close()
+
+	if err != nil {
+		return 0, err
+	}
+
+	streamer, format, err := mp3.Decode(f)
+
+	defer streamer.Close()
+
+	if err != nil {
+		return 0, err
+	}
+
+
+	return format.SampleRate.D(streamer.Len()), nil
 }
