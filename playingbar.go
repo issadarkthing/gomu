@@ -37,6 +37,7 @@ type Progress struct {
 	frame     *tview.Frame
 	_progress int
 	player    *Player
+	skip      bool
 }
 
 // full is the maximum amount of value can be sent to channel
@@ -59,8 +60,8 @@ func (p *Progress) Run() {
 	go func() {
 		for {
 
-			if p._progress > p.full || p.player.isSkipped {
-
+			if p._progress > p.full || p.skip {
+				p.skip = false
 				p._progress = 0
 				break
 			}
@@ -109,4 +110,8 @@ func (p *Progress) NewProgress(songTitle string, full, limit int) {
 func (p *Progress) SetDefault() {
 	p.SetSongTitle("-")
 	p.textView.SetText(fmt.Sprintf("%s %s %s", "00:00", strings.Repeat("□", 100), "00:00"))
+}
+
+func (p *Progress) Stop() {
+	p.skip = true
 }
