@@ -11,6 +11,11 @@ Gomu is a Terminal User Interface **TUI** that plays your mp3 files in your loca
 - show audio files as tree
 - vim keybindings
 
+## Installation
+```sh
+go get -u github.com/issadarkthing/gomu
+```
+
 ## TODO
 - [ ] song fade
 - [X] delete song from queue
@@ -23,9 +28,8 @@ Gomu is a Terminal User Interface **TUI** that plays your mp3 files in your loca
 - [ ] audio seeking
 - [ ] loop
 - [ ] total queue duration
-- [X] read .mp3 file only
 - [ ] add support for .wav as well
 
 
 ## Project Background
-I just want to implement my own music player with a programming language im currently learning *Go*. Gomu might not be stable as it in constant development. For now, it can do basic music player can do like adding, deleting songs from queue, skip, play, pause but not seeking or more advanced stuff; feel free to contribute :)
+I just want to implement my own music player with a programming language im currently learning [Go](https://golang.org/). Gomu might not be stable as it in constant development. For now, it can do basic music player can do like adding, deleting songs from queue, skip, play, pause but not seeking or more advanced stuff; feel free to contribute :)
