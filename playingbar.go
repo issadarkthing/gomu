@@ -59,7 +59,7 @@ func (p *Progress) Run() {
 	go func() {
 		for {
 
-			if p._progress > p.full {
+			if p._progress > p.full || p.player.isSkipped {
 
 				p._progress = 0
 				break
@@ -83,10 +83,10 @@ func (p *Progress) Run() {
 
 			x := p._progress * p.limit / p.full
 			p.textView.SetText(fmt.Sprintf("%s %s%s %s",
-				start.String(),
+				fmtDuration(start),
 				strings.Repeat("■", x),
 				strings.Repeat("□", p.limit-x),
-				end.String(),
+				fmtDuration(end),
 			))
 
 		}
@@ -108,5 +108,5 @@ func (p *Progress) NewProgress(songTitle string, full, limit int) {
 // sets default title and progress bar
 func (p *Progress) SetDefault() {
 	p.SetSongTitle("-")
-	p.textView.SetText(fmt.Sprintf("%s %s %s", "0s", strings.Repeat("□", 100), "0s"))
+	p.textView.SetText(fmt.Sprintf("%s %s %s", "00:00", strings.Repeat("□", 100), "00:00"))
 }

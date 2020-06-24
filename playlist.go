@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
@@ -89,9 +88,7 @@ func Playlist(list *tview.List, playBar *Progress, player *Player) *tview.TreeVi
 
 					go func () {
 						player.Run()
-						list.AddItem(
-							fmt.Sprintf("%s | %s", player.length.String(), audioFile.Name),
-							"", 0, nil)
+						list.AddItem("", "", 0, nil)
 					} ()
 
 				} else {
@@ -102,7 +99,7 @@ func Playlist(list *tview.List, playBar *Progress, player *Player) *tview.TreeVi
 						log(err.Error())
 					}
 					list.AddItem(
-						fmt.Sprintf("[ %s ] %s", songLength.Round(time.Second).String(), audioFile.Name), 
+						fmt.Sprintf("[ %s ] %s", fmtDuration(songLength), audioFile.Name), 
 						"", 0, nil)
 				}
 			}

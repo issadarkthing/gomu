@@ -2,7 +2,11 @@
 
 package main
 
-import "os"
+import (
+	"os"
+	"strings"
+	"time"
+)
 
 func log(text string) {
 
@@ -20,4 +24,29 @@ func log(text string) {
 		panic(err)
 	}
 
+}
+
+func fmtDuration(input time.Duration) string {
+
+	val := input.Round(time.Second).String()
+
+	if !strings.Contains(val, "m") {
+		val = "0m" + val
+	}
+	val = strings.ReplaceAll(val, "h", ":")
+	val = strings.ReplaceAll(val, "m", ":")
+	val = strings.ReplaceAll(val, "s", "")
+	var result []string
+
+	for _, v := range strings.Split(val, ":") {
+		
+		if len(v) < 2 {
+			result = append(result, "0" + v)
+		} else {
+			result = append(result, v)
+		}
+
+	}
+
+	return strings.Join(result, ":")
 }
