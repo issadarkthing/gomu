@@ -16,9 +16,10 @@ func confirmationPopup(
 
 	modal := tview.NewModal().
 		SetText(text).
-		SetBackgroundColor(tcell.ColorDefault).
+		SetBackgroundColor(tcell.ColorDarkCyan).
 		AddButtons([]string{"yes", "no"}).
-		SetButtonBackgroundColor(tcell.ColorBlack).
+		SetButtonBackgroundColor(tcell.ColorDarkCyan).
+		SetButtonTextColor(tcell.ColorBlack).
 		SetDoneFunc(handler)
 
 	pages.AddPage("confirmation-popup", center(modal, 40, 10), true, true)
