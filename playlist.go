@@ -10,12 +10,12 @@ import (
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+	"github.com/spf13/viper"
 )
 
-const (
-	musicDir        = "./music"
+var (
 	textColor       = tcell.ColorWhite
-	backGroundColor = tcell.ColorDarkCyan
+	accentColor     = tcell.ColorDarkCyan
 )
 
 type AudioFile struct {
@@ -27,17 +27,17 @@ type AudioFile struct {
 
 func Playlist(list *tview.List, playBar *Progress, player *Player) *tview.TreeView {
 
-	rootDir, err := filepath.Abs(musicDir)
+
+	rootDir, err := filepath.Abs(viper.GetString("musicDir"))
 
 	if err != nil {
 		log(err.Error())
 	}
 
-	root := tview.NewTreeNode(musicDir)
+	root := tview.NewTreeNode(viper.GetString("musicDir"))
 
 	tree := tview.NewTreeView().SetRoot(root)
 	tree.SetTitle(" Playlist ").SetBorder(true)
-	tree.SetGraphicsColor(tcell.ColorWhite)
 
 	var prevNode *tview.TreeNode
 
@@ -56,13 +56,13 @@ func Playlist(list *tview.List, playBar *Progress, player *Player) *tview.TreeVi
 		firstChild.SetColor(textColor)
 		tree.SetCurrentNode(firstChild)
 		// keep track of prev node so we can remove the color of highlight
-		prevNode = firstChild.SetColor(backGroundColor)
+		prevNode = firstChild.SetColor(accentColor)
 
 		tree.SetChangedFunc(func(node *tview.TreeNode) {
 
 			prevNode.SetColor(textColor)
 			root.SetColor(textColor)
-			node.SetColor(backGroundColor)
+			node.SetColor(accentColor)
 			prevNode = node
 		})
 
@@ -116,7 +116,7 @@ func Playlist(list *tview.List, playBar *Progress, player *Player) *tview.TreeVi
 
 				currNode.SetColor(textColor)
 				parent.SetExpanded(false)
-				parent.SetColor(backGroundColor)
+				parent.SetColor(accentColor)
 				prevNode = parent
 				tree.SetCurrentNode(parent)
 			}

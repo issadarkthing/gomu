@@ -5,6 +5,7 @@ package main
 import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+	"github.com/spf13/viper"
 )
 
 func start(app *tview.Application) {
@@ -17,7 +18,7 @@ func start(app *tview.Application) {
 	tview.Borders.BottomLeftFocus = tview.Borders.BottomLeft
 	tview.Borders.BottomRightFocus = tview.Borders.BottomRight
 	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
-	tview.Styles.BorderColor = tcell.ColorAntiqueWhite
+	tview.Styles.BorderColor = tcell.ColorWhite
 
 	player := &Player{}
 
@@ -47,6 +48,10 @@ func start(app *tview.Application) {
 
 		switch event.Rune() {
 		case 'q':
+
+			if !viper.GetBool("confirmOnExit") {
+				app.Stop()
+			}
 
 			confirmationPopup(app, pages, "Are you sure to exit?", func(_ int, label string) {
 
@@ -133,6 +138,22 @@ func cycleChildren(app *tview.Application, childrens []Children) {
 		app.SetFocus(childrens[0].(tview.Primitive))
 		childrens[0].SetBorderColor(focusedColor)
 		childrens[0].SetTitleColor(focusedColor)
+	}
+
+}
+
+
+func readConfig() {
+
+	viper.SetConfigFile("config")
+	viper.SetConfigType("json")
+	viper.AddConfigPath("/etc/gomu")
+	viper.AddConfigPath("$HOME/.gomu")
+	viper.AddConfigPath("$HOME/.config/gomu")
+	viper.AddConfigPath(".")
+
+	if err := viper.ReadInConfig(); err != nil {
+		panic(err)
 	}
 
 }

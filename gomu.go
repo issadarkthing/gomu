@@ -8,6 +8,8 @@ import (
 
 func main() {
 
+	readConfig()
+
 	app := tview.NewApplication()
 
 	start(app)

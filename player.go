@@ -138,7 +138,6 @@ func (p *Player) Run() {
 	p.done = done
 
 	sstreamer := beep.Seq(streamer, beep.Callback(func() {
-		// prevents from sending done channel if the song is skipped
 		done <- true
 	}))
 
@@ -290,7 +289,7 @@ func (p *Player) Skip() {
 	}
 }
 
-
+// gets the length of the song in the queue
 func (p *Player) GetLength(index int) (time.Duration, error) {
 	
 	if index > len(p.queue)-1 {
