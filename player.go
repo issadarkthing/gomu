@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/faiface/beep"
@@ -15,6 +16,10 @@ import (
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
 	"github.com/rivo/tview"
+)
+
+var (
+	m sync.Mutex
 )
 
 type Song struct {
@@ -30,7 +35,7 @@ type Player struct {
 	current   string
 	format    *beep.Format
 
-	isSkipped bool
+	isSkipped chan bool
 	done      chan bool
 
 	// to control the _volume internally
@@ -92,6 +97,7 @@ func (p *Player) Remove(index int) (string, error) {
 
 func (p *Player) Run() {
 
+	p.isSkipped = make(chan bool, 1)
 	first, err := p.Pop()
 
 	// removes playing song from the queue
@@ -131,17 +137,13 @@ func (p *Player) Run() {
 	song := &Song{name: GetName(f.Name()), path: first}
 	p.currentSong = *song
 
-	done := make(chan bool)
+	done := make(chan bool, 1)
 
 	p.done = done
 
 	sstreamer := beep.Seq(streamer, beep.Callback(func() {
 		// prevents from sending done channel if the song is skipped
-		if !p.isSkipped {
-			done <- true
-		} else {
-			p.isSkipped = false
-		}
+		done <- true
 	}))
 
 	ctrl := &beep.Ctrl{Streamer: sstreamer, Paused: false}
@@ -178,21 +180,29 @@ func (p *Player) Run() {
 
 		i := 0
 
+		next:
 		for {
 
-			// stop progress bar from progressing when paused
-			if !p.IsRunning {
-				continue
+			select {
+			case <-p.isSkipped:
+				break next
+
+			case <-time.After(time.Second):
+				// stop progress bar from progressing when paused
+				if !p.IsRunning {
+					continue
+				}
+
+				i++
+				p.playingBar.progress <- 1
+
+
+				if i > p.playingBar.full {
+					break next
+				}
+
 			}
 
-			i++
-			p.playingBar.progress <- 1
-
-			if i > p.playingBar.full || p.isSkipped {
-				break
-			}
-
-			time.Sleep(time.Second)
 		}
 
 	}()
@@ -207,11 +217,11 @@ next:
 			p.current = ""
 			p.IsRunning = false
 			p.format = nil
+			p.playingBar.Stop()
 
 			if len(p.queue) != 0 {
 				go p.Run()
 			}
-
 			break next
 		case <-time.After(time.Second):
 			speaker.Lock()
@@ -278,7 +288,8 @@ func (p *Player) TogglePause() {
 // skips current song
 func (p *Player) Skip() {
 	if len(p.queue) > 0 {
-		p.isSkipped = true
+		p.ctrl.Streamer = nil
+		p.isSkipped <- true
 		p.done <- true
 	}
 }
