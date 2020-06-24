@@ -8,7 +8,6 @@ import (
 	"os"
 	"path"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/faiface/beep"
@@ -18,9 +17,6 @@ import (
 	"github.com/rivo/tview"
 )
 
-var (
-	m sync.Mutex
-)
 
 type Song struct {
 	name     string
