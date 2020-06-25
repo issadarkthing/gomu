@@ -3,6 +3,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
@@ -49,9 +51,10 @@ func start(app *tview.Application) {
 		switch event.Rune() {
 		case 'q':
 
-			if !viper.GetBool("confirmOnExit") {
+			if !viper.GetBool("confirm_on_exit") {
 				app.Stop()
 			}
+
 
 			confirmationPopup(app, pages, "Are you sure to exit?", func(_ int, label string) {
 
@@ -145,15 +148,42 @@ func cycleChildren(app *tview.Application, childrens []Children) {
 
 func readConfig() {
 
-	viper.SetConfigFile("config")
-	viper.SetConfigType("json")
-	viper.AddConfigPath("/etc/gomu")
-	viper.AddConfigPath("$HOME/.gomu")
-	viper.AddConfigPath("$HOME/.config/gomu")
-	viper.AddConfigPath(".")
 
-	if err := viper.ReadInConfig(); err != nil {
+	home, err := os.UserHomeDir() 
+	configPath := home + "/.config/gomu/config"
+
+	if err != nil {
 		panic(err)
 	}
+
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath("/etc/gomu")
+	viper.AddConfigPath(home + "/.gomu")
+	viper.AddConfigPath("$HOME/.config/gomu")
+
+	if err := viper.ReadInConfig(); err != nil {
+
+
+		viper.SetDefault("music_dir", "~/music")
+		viper.SetDefault("confirm_on_exit", true)
+
+		// creates gomu config dir if does not exist
+		if _, err := os.Stat(configPath); err != nil {
+			if err := os.MkdirAll(home + "/.config/gomu", 0755); err != nil {
+				panic(err)
+			}
+		}
+
+		// if config file was not found
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			if err := viper.SafeWriteConfigAs(configPath); err != nil {
+				panic(err)
+			}
+		}
+
+
+	}
+
 
 }
