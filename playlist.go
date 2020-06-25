@@ -8,7 +8,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
@@ -27,7 +26,7 @@ type AudioFile struct {
 	Parent      *tview.TreeNode
 }
 
-func Playlist(list *tview.List, playBar *Progress, player *Player) *tview.TreeView {
+func Playlist(player *Player) *tview.TreeView {
 
 
 	rootDir, err := filepath.Abs(expandTilde(viper.GetString("music_dir")))
@@ -43,92 +42,31 @@ func Playlist(list *tview.List, playBar *Progress, player *Player) *tview.TreeVi
 
 	var prevNode *tview.TreeNode
 
-	go func() {
 
-		populate(root, rootDir)
+	populate(root, rootDir)
 
-		var firstChild *tview.TreeNode
+	var firstChild *tview.TreeNode
 
-		if len(root.GetChildren()) == 0 {
-			firstChild = root
-		} else {
-			firstChild = root.GetChildren()[0]
-		}
+	if len(root.GetChildren()) == 0 {
+		firstChild = root
+	} else {
+		firstChild = root.GetChildren()[0]
+	}
 
-		firstChild.SetColor(textColor)
-		tree.SetCurrentNode(firstChild)
-		// keep track of prev node so we can remove the color of highlight
-		prevNode = firstChild.SetColor(accentColor)
+	firstChild.SetColor(textColor)
+	tree.SetCurrentNode(firstChild)
+	// keep track of prev node so we can remove the color of highlight
+	prevNode = firstChild.SetColor(accentColor)
 
-		tree.SetChangedFunc(func(node *tview.TreeNode) {
+	tree.SetChangedFunc(func(node *tview.TreeNode) {
 
-			prevNode.SetColor(textColor)
-			root.SetColor(textColor)
-			node.SetColor(accentColor)
-			prevNode = node
-		})
-
-	}()
-
-	tree.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
-
-		currNode := tree.GetCurrentNode()
-
-		if currNode == root {
-			return e
-		}
-		audioFile := currNode.GetReference().(*AudioFile)
-
-		switch e.Rune() {
-		case 'l':
-
-			if audioFile.IsAudioFile {
-
-				player.Push(audioFile.Path)
-
-				if !player.IsRunning {
-
-					go func () {
-						player.Run()
-						list.AddItem("", "", 0, nil)
-					} ()
-
-				} else {
-
-					songLength, err := player.GetLength(len(player.queue) - 1)
-
-					if err != nil {
-						log(err.Error())
-					}
-					list.AddItem(
-						fmt.Sprintf("[ %s ] %s", fmtDuration(songLength), audioFile.Name), 
-						"", 0, nil)
-				}
-			}
-
-			currNode.SetExpanded(true)
-		case 'h':
-
-			// if closing node with no children
-			// close the node's parent
-			// remove the color of the node
-
-			if audioFile.IsAudioFile {
-				parent := audioFile.Parent
-
-				currNode.SetColor(textColor)
-				parent.SetExpanded(false)
-				parent.SetColor(accentColor)
-				prevNode = parent
-				tree.SetCurrentNode(parent)
-			}
-
-			currNode.Collapse()
-
-		}
-
-		return e
+		prevNode.SetColor(textColor)
+		root.SetColor(textColor)
+		node.SetColor(accentColor)
+		prevNode = node
 	})
+
+
 
 	tree.SetSelectedFunc(func(node *tview.TreeNode) {
 		node.SetExpanded(!node.IsExpanded())
@@ -193,18 +131,53 @@ func populate(root *tview.TreeNode, rootPath string) {
 
 }
 
-func expandTilde(_path string) string {
+func addToQueue(audioFile *AudioFile, player *Player, list *tview.List) {
 
-	if !strings.HasPrefix(_path, "~") {
-		return _path
+
+	if audioFile.IsAudioFile {
+
+		player.Push(audioFile.Path)
+
+		if !player.IsRunning {
+
+			player.IsRunning = true
+
+			go func () {
+				player.Run()
+				list.AddItem("", "", 0, nil)
+			} ()
+
+		} else {
+
+			songLength, err := player.GetLength(len(player.queue) - 1)
+
+			if err != nil {
+				log(err.Error())
+			}
+			list.AddItem(
+				fmt.Sprintf("[ %s ] %s", fmtDuration(songLength), audioFile.Name), 
+				"", 0, nil)
+			}
 	}
+}
 
-	home, err := os.UserHomeDir()	
+func addAllToQueue(root *tview.TreeNode, player *Player, list *tview.List) {
 
-	if err != nil {
-		log(err.Error())
+	var childrens []*tview.TreeNode
+
+	childrens = root.GetChildren()
+
+	// gets the parent if highlighted item is a file
+	if len(childrens) == 0 {
+		childrens = root.GetReference().(*AudioFile).Parent.GetChildren()
+	} 
+
+	for _, v := range childrens {
+
+		currNode := v.GetReference().(*AudioFile)
+
+		addToQueue(currNode, player, list)
+
 	}
-
-	return path.Join(home, strings.TrimPrefix(_path, "~"))
 
 }
