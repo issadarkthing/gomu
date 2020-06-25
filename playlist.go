@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
@@ -28,13 +30,13 @@ type AudioFile struct {
 func Playlist(list *tview.List, playBar *Progress, player *Player) *tview.TreeView {
 
 
-	rootDir, err := filepath.Abs(viper.GetString("musicDir"))
+	rootDir, err := filepath.Abs(expandTilde(viper.GetString("music_dir")))
 
 	if err != nil {
 		log(err.Error())
 	}
 
-	root := tview.NewTreeNode(viper.GetString("musicDir"))
+	root := tview.NewTreeNode(path.Base(rootDir))
 
 	tree := tview.NewTreeView().SetRoot(root)
 	tree.SetTitle(" Playlist ").SetBorder(true)
@@ -188,5 +190,21 @@ func populate(root *tview.TreeNode, rootPath string) {
 		}
 
 	}
+
+}
+
+func expandTilde(_path string) string {
+
+	if !strings.HasPrefix(_path, "~") {
+		return _path
+	}
+
+	home, err := os.UserHomeDir()	
+
+	if err != nil {
+		log(err.Error())
+	}
+
+	return path.Join(home, strings.TrimPrefix(_path, "~"))
 
 }
