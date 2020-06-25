@@ -171,41 +171,16 @@ func (p *Player) Run() {
 	p.playingBar.NewProgress(song.name, int(p.length.Seconds()), 100)
 	p.playingBar.Run()
 
-	go func() {
-
-		i := 0
-
-		next:
-		for {
-
-			select {
-			case <-p.isSkipped:
-				break next
-
-			case <-time.After(time.Second):
-				// stop progress bar from progressing when paused
-				if !p.IsRunning {
-					continue
-				}
-
-				i++
-				p.playingBar.progress <- 1
-
-
-				if i > p.playingBar.full {
-					break next
-				}
-
-			}
-
-		}
-
-	}()
+	// is used to send progress
+	i := 0
 
 next:
-
 	for {
+
 		select {
+		case <-p.isSkipped:
+			break next
+
 		case <-done:
 			close(done)
 			p.position = 0
@@ -218,12 +193,28 @@ next:
 				go p.Run()
 			}
 			break next
+
 		case <-time.After(time.Second):
+			// stop progress bar from progressing when paused
+			if !p.IsRunning {
+				continue
+			}
+
+			i++
+			p.playingBar.progress <- 1
+
 			speaker.Lock()
 			p.position = position()
 			speaker.Unlock()
+
+			if i > p.playingBar.full {
+				break next
+			}
+
 		}
+
 	}
+
 
 }
 
