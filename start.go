@@ -24,20 +24,78 @@ func start(app *tview.Application) {
 
 	player := &Player{}
 
-	child3 := PlayingBar(app, player)
-	child2 := Queue(player)
-	child1 := Playlist(child2, child3, player)
 
-	player.tree = child1
-	player.list = child2
-	player.playingBar = child3
+	playingBar := PlayingBar(app, player)
+	queue := Queue(player)
+	playlist := Playlist(player)
+
+	player.tree = playlist
+	player.list = queue
+	player.playingBar = playingBar
 	player.app = app
 
 	flex := Layout(app, player)
-
 	pages := tview.NewPages().AddPage("main", flex, true, true)
 
-	childrens := []Children{child1, child2, child3.frame}
+	playlist.SetInputCapture(func (e *tcell.EventKey) *tcell.EventKey {
+
+
+		currNode := playlist.GetCurrentNode()
+
+		if currNode == playlist.GetRoot() {
+			return e
+		}
+
+		audioFile := currNode.GetReference().(*AudioFile)
+
+		switch e.Rune() {
+		case 'l':
+
+			log("test")
+			addToQueue(audioFile, player, queue)
+			currNode.SetExpanded(true)
+
+		case 'h':
+
+			// if closing node with no children
+			// close the node's parent
+			// remove the color of the node
+
+			if audioFile.IsAudioFile {
+				parent := audioFile.Parent
+
+				currNode.SetColor(textColor)
+				parent.SetExpanded(false)
+				parent.SetColor(accentColor)
+				//prevNode = parent
+				playlist.SetCurrentNode(parent)
+			}
+
+			currNode.Collapse()
+
+		case 'L':
+
+			confirmationPopup(
+				app, 
+				pages, 
+				"Are you sure to add this whole directory into queue?", 
+				func (_ int, label string) {
+
+					if label == "yes" {
+						addAllToQueue(playlist.GetCurrentNode(), player, queue)
+					} 					
+
+					pages.RemovePage("confirmation-popup")
+
+				})
+
+		}
+
+
+		return e
+	})
+
+	childrens := []Children{playlist, queue, playingBar.frame}
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 
