@@ -178,9 +178,6 @@ next:
 	for {
 
 		select {
-		case <-p.isSkipped:
-			break next
-
 		case <-done:
 			close(done)
 			p.position = 0
@@ -275,7 +272,6 @@ func (p *Player) TogglePause() {
 func (p *Player) Skip() {
 	if len(p.queue) > 0 {
 		p.ctrl.Streamer = nil
-		p.isSkipped <- true
 		p.done <- true
 	}
 }
