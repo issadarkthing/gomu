@@ -37,6 +37,9 @@ func start(app *tview.Application) {
 	flex := Layout(app, player)
 	pages := tview.NewPages().AddPage("main", flex, true, true)
 
+
+	// to keep track of last focused panel
+	var prevPanel Children
 	playlist.SetInputCapture(func (e *tcell.EventKey) *tcell.EventKey {
 
 
@@ -86,6 +89,7 @@ func start(app *tview.Application) {
 					} 					
 
 					pages.RemovePage("confirmation-popup")
+					app.SetFocus(prevPanel.(tview.Primitive))
 
 				})
 
@@ -102,7 +106,7 @@ func start(app *tview.Application) {
 		switch event.Key() {
 		// cycle through each section
 		case tcell.KeyTAB:
-			cycleChildren(app, childrens)
+			prevPanel = cycleChildren(app, childrens)
 
 		}
 
@@ -162,7 +166,7 @@ type Children interface {
 	GetTitle() string
 }
 
-func cycleChildren(app *tview.Application, childrens []Children) {
+func cycleChildren(app *tview.Application, childrens []Children) Children {
 
 	focusedColor := tcell.ColorDarkCyan
 	unfocusedColor := tcell.ColorAntiqueWhite
@@ -190,17 +194,21 @@ func cycleChildren(app *tview.Application, childrens []Children) {
 			nextChild.SetBorderColor(focusedColor)
 			nextChild.SetTitleColor(focusedColor)
 
-			break
+			return nextChild
 		}
 	}
 
+	first := childrens[0]
+
 	if anyChildHasFocus == false {
 
-		app.SetFocus(childrens[0].(tview.Primitive))
-		childrens[0].SetBorderColor(focusedColor)
-		childrens[0].SetTitleColor(focusedColor)
+		app.SetFocus(first.(tview.Primitive))
+		first.SetBorderColor(focusedColor)
+		first.SetTitleColor(focusedColor)
+
 	}
 
+	return first
 }
 
 
