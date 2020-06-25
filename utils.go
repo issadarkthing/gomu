@@ -4,6 +4,7 @@ package main
 
 import (
 	"os"
+	"path"
 	"strings"
 	"time"
 )
@@ -49,4 +50,21 @@ func fmtDuration(input time.Duration) string {
 	}
 
 	return strings.Join(result, ":")
+}
+
+
+func expandTilde(_path string) string {
+
+	if !strings.HasPrefix(_path, "~") {
+		return _path
+	}
+
+	home, err := os.UserHomeDir()	
+
+	if err != nil {
+		log(err.Error())
+	}
+
+	return path.Join(home, strings.TrimPrefix(_path, "~"))
+
 }
