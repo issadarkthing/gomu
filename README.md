@@ -17,11 +17,11 @@ go get -u github.com/issadarkthing/gomu
 ## TODO
 - [ ] song fade
 - [X] delete song from queue
-- [ ] bulk add songs to queue
+- [x] bulk add songs to queue
 - [ ] download music from youtube
 - [ ] audio streaming
-- [ ] music change notification
-- [ ] volume change notification
+- [x] music change notification
+- [x] volume change notification
 - [ ] delete music from filesystem
 - [ ] audio seeking
 - [ ] loop
