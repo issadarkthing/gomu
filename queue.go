@@ -3,55 +3,92 @@
 package main
 
 import (
+	"errors"
+
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 )
 
-func Queue(player *Player) *tview.List {
+type Queue struct {
+	*tview.List
+}
+
+func (q *Queue) next() {
+	currIndex := q.GetCurrentItem()
+	idx := currIndex + 1
+	if currIndex == q.GetItemCount()-1 {
+		idx = 0
+	}
+	q.SetCurrentItem(idx)
+}
+
+func (q *Queue) prev() {
+	currIndex := q.GetCurrentItem()
+	q.SetCurrentItem(currIndex - 1)
+}
+
+func (q *Queue) deleteItem(index int) {
+	if index != -1 {
+		q.RemoveItem(index)
+	}
+}
+
+// gets the first item and remove it from the queue
+func (q *Queue) Pop() (string, error) {
+
+	if q.GetItemCount() == 0 {
+		return "", errors.New("Empty list")
+	}
+
+	_, first := q.GetItemText(0)
+
+	q.deleteItem(0)
+	// ensuring the list is updated
+	app.Draw()
+
+	return first, nil
+}
+
+func (q *Queue) GetItems() []string {
+
+	items := []string{}
+
+	for i := 0; i < q.GetItemCount(); i++ {
+
+		_, second := q.GetItemText(i)
+
+		items = append(items, second)
+	}
+
+	return items
+}
+
+func InitQueue() *Queue {
 
 	list := tview.NewList().
 		ShowSecondaryText(false)
 
-	next := func() {
+	queue := &Queue{list}
 
-		currIndex := list.GetCurrentItem()
-		idx := currIndex + 1
-		if currIndex == list.GetItemCount()-1 {
-			idx = 0
-		}
-		list.SetCurrentItem(idx)
-	}
-
-	prev := func() {
-		currIndex := list.GetCurrentItem()
-		list.SetCurrentItem(currIndex - 1)
-	}
-
-	list.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+	queue.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 		switch e.Rune() {
 		case 'j':
-			next()
+			queue.next()
 		case 'k':
-			prev()
+			queue.prev()
 		case 'd':
-			index := list.GetCurrentItem()
-
-			if index != -1 {
-				player.Remove(index)
-				list.RemoveItem(index)
-			}
-
+			queue.deleteItem(queue.GetCurrentItem())
 		}
 
 		return nil
 	})
 
-	list.SetHighlightFullLine(true)
-	list.SetBorder(true).SetTitle(" Queue ")
-	list.SetSelectedBackgroundColor(tcell.ColorDarkCyan)
-	list.SetSelectedTextColor(tcell.ColorWhite)
+	queue.SetHighlightFullLine(true)
+	queue.SetBorder(true).SetTitle(" Queue ")
+	queue.SetSelectedBackgroundColor(tcell.ColorDarkCyan)
+	queue.SetSelectedTextColor(tcell.ColorWhite)
 
-	return list
+	return queue
 
 }

@@ -8,8 +8,6 @@ import (
 )
 
 func confirmationPopup(
-	app *tview.Application,
-	pages *tview.Pages,
 	text string,
 	handler func(buttonIndex int, buttonLabel string),
 ) {
