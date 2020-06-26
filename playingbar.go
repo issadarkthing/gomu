@@ -12,9 +12,9 @@ import (
 	"github.com/rivo/tview"
 )
 
-func PlayingBar(app *tview.Application, player *Player) *Progress {
+func InitPlayingBar() *PlayingBar {
 
-	textView := tview.NewTextView()
+	textView := tview.NewTextView().SetTextAlign(tview.AlignCenter)
 
 	progress := InitProgressBar(textView, player)
 
@@ -29,33 +29,31 @@ func PlayingBar(app *tview.Application, player *Player) *Progress {
 	return progress
 }
 
-type Progress struct {
-	textView  *tview.TextView
+type PlayingBar struct {
+	*tview.Frame
 	full      int
 	limit     int
 	progress  chan int
-	frame     *tview.Frame
 	_progress int
-	player    *Player
 	skip      bool
+	text      *tview.TextView
 }
 
 // full is the maximum amount of value can be sent to channel
 // limit is the progress bar size
-func InitProgressBar(txt *tview.TextView, player *Player) *Progress {
-	p := &Progress{textView: txt, player: player}
-	p.progress = make(chan int)
-	p.textView.SetTextAlign(tview.AlignCenter)
+func InitProgressBar(txt *tview.TextView, player *Player) *PlayingBar {
 
-	p.frame = tview.NewFrame(p.textView).SetBorders(1, 1, 1, 1, 1, 1)
-	p.frame.SetBorder(true).SetTitle(" Now Playing ")
+	frame := tview.NewFrame(txt).SetBorders(1, 1, 1, 1, 1, 1)
+	frame.SetBorder(true).SetTitle(" Now Playing ")
+
+	p := &PlayingBar{frame, 0, 0, make(chan int), 0, false, txt}
 
 	p.SetDefault()
 
 	return p
 }
 
-func (p *Progress) Run() {
+func (p *PlayingBar) Run() {
 
 	go func() {
 		for {
@@ -68,7 +66,7 @@ func (p *Progress) Run() {
 
 			p._progress += <-p.progress
 
-			p.textView.Clear()
+			p.text.Clear()
 
 			start, err := time.ParseDuration(strconv.Itoa(p._progress) + "s")
 
@@ -81,9 +79,9 @@ func (p *Progress) Run() {
 			if err != nil {
 				panic(err)
 			}
- 
+
 			x := p._progress * p.limit / p.full
-			p.textView.SetText(fmt.Sprintf("%s |%s%s| %s",
+			p.text.SetText(fmt.Sprintf("%s |%s%s| %s",
 				fmtDuration(start),
 				strings.Repeat("█", x),
 				strings.Repeat("-", p.limit-x),
@@ -94,12 +92,12 @@ func (p *Progress) Run() {
 	}()
 }
 
-func (p *Progress) SetSongTitle(title string) {
-	p.frame.Clear()
-	p.frame.AddText(title, true, tview.AlignCenter, tcell.ColorGreen)
+func (p *PlayingBar) SetSongTitle(title string) {
+	p.Clear()
+	p.AddText(title, true, tview.AlignCenter, tcell.ColorGreen)
 }
 
-func (p *Progress) NewProgress(songTitle string, full, limit int) {
+func (p *PlayingBar) NewProgress(songTitle string, full, limit int) {
 	p.full = full
 	p.limit = limit
 	p._progress = 0
@@ -107,11 +105,11 @@ func (p *Progress) NewProgress(songTitle string, full, limit int) {
 }
 
 // sets default title and progress bar
-func (p *Progress) SetDefault() {
+func (p *PlayingBar) SetDefault() {
 	p.SetSongTitle("---------:---------")
-	p.textView.SetText(fmt.Sprintf("%s |%s| %s", "00:00", strings.Repeat("-", 100), "00:00"))
+	p.text.SetText(fmt.Sprintf("%s |%s| %s", "00:00", strings.Repeat("-", 100), "00:00"))
 }
 
-func (p *Progress) Stop() {
+func (p *PlayingBar) Stop() {
 	p.skip = true
 }

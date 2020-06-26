@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	textColor       = tcell.ColorWhite
-	accentColor     = tcell.ColorDarkCyan
+	textColor   = tcell.ColorWhite
+	accentColor = tcell.ColorDarkCyan
 )
 
 type AudioFile struct {
@@ -26,8 +26,11 @@ type AudioFile struct {
 	Parent      *tview.TreeNode
 }
 
-func Playlist(player *Player) *tview.TreeView {
+type Playlist struct {
+	*tview.TreeView
+}
 
+func InitPlaylist() *Playlist {
 
 	rootDir, err := filepath.Abs(expandTilde(viper.GetString("music_dir")))
 
@@ -38,14 +41,14 @@ func Playlist(player *Player) *tview.TreeView {
 	root := tview.NewTreeNode(path.Base(rootDir))
 
 	tree := tview.NewTreeView().SetRoot(root)
-	tree.SetTitle(" Playlist ").SetBorder(true)
+	playlist := &Playlist{tree}
 
-	var prevNode *tview.TreeNode
-
+	playlist.SetTitle(" Playlist ").SetBorder(true)
 
 	populate(root, rootDir)
 
 	var firstChild *tview.TreeNode
+	var prevNode *tview.TreeNode
 
 	if len(root.GetChildren()) == 0 {
 		firstChild = root
@@ -54,25 +57,77 @@ func Playlist(player *Player) *tview.TreeView {
 	}
 
 	firstChild.SetColor(textColor)
-	tree.SetCurrentNode(firstChild)
+	playlist.SetCurrentNode(firstChild)
 	// keep track of prev node so we can remove the color of highlight
 	prevNode = firstChild.SetColor(accentColor)
 
-	tree.SetChangedFunc(func(node *tview.TreeNode) {
-
+	playlist.SetChangedFunc(func(node *tview.TreeNode) {
 		prevNode.SetColor(textColor)
 		root.SetColor(textColor)
 		node.SetColor(accentColor)
 		prevNode = node
 	})
 
-
-
-	tree.SetSelectedFunc(func(node *tview.TreeNode) {
+	playlist.SetSelectedFunc(func(node *tview.TreeNode) {
 		node.SetExpanded(!node.IsExpanded())
 	})
 
-	return tree
+
+	playlist.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+
+		currNode := playlist.GetCurrentNode()
+
+		if currNode == playlist.GetRoot() {
+			return e
+		}
+
+		audioFile := currNode.GetReference().(*AudioFile)
+
+		switch e.Rune() {
+		case 'l':
+
+			playlist.addToQueue(audioFile)
+			currNode.SetExpanded(true)
+
+		case 'h':
+
+			// if closing node with no children
+			// close the node's parent
+			// remove the color of the node
+
+			if audioFile.IsAudioFile {
+				parent := audioFile.Parent
+
+				currNode.SetColor(textColor)
+				parent.SetExpanded(false)
+				parent.SetColor(accentColor)
+				// prevPanel = parent
+				playlist.SetCurrentNode(parent)
+			}
+
+			currNode.Collapse()
+
+		case 'L':
+
+			confirmationPopup(
+				"Are you sure to add this whole directory into queue?",
+				func(_ int, label string) {
+
+					if label == "yes" {
+						playlist.addAllToQueue(playlist.GetCurrentNode())
+					}
+
+					pages.RemovePage("confirmation-popup")
+					app.SetFocus(playlist)
+
+				})
+
+		}
+
+		return e
+	})
+
+	return playlist
 
 }
 
@@ -131,37 +186,36 @@ func populate(root *tview.TreeNode, rootPath string) {
 
 }
 
-func addToQueue(audioFile *AudioFile, player *Player, list *tview.List) {
-
+// add to queue and update queue panel
+func (playlist *Playlist) addToQueue(audioFile *AudioFile) {
 
 	if audioFile.IsAudioFile {
-
-		player.Push(audioFile.Path)
 
 		if !player.IsRunning {
 
 			player.IsRunning = true
 
-			go func () {
+			go func() {
+				queue.AddItem("", audioFile.Path, 0, nil)
 				player.Run()
-				list.AddItem("", "", 0, nil)
-			} ()
+			}()
 
 		} else {
 
-			songLength, err := player.GetLength(len(player.queue) - 1)
+			songLength, err := GetLength(audioFile.Path)
 
 			if err != nil {
 				log(err.Error())
 			}
-			list.AddItem(
-				fmt.Sprintf("[ %s ] %s", fmtDuration(songLength), audioFile.Name), 
-				"", 0, nil)
-			}
+
+			queueItemView := fmt.Sprintf("[ %s ] %s", fmtDuration(songLength), audioFile.Name)
+			queue.AddItem(queueItemView, audioFile.Path, 0, nil)
+		}
 	}
 }
 
-func addAllToQueue(root *tview.TreeNode, player *Player, list *tview.List) {
+// bulk add a playlist to queue
+func (playlist *Playlist) addAllToQueue(root *tview.TreeNode) {
 
 	var childrens []*tview.TreeNode
 
@@ -170,14 +224,12 @@ func addAllToQueue(root *tview.TreeNode, player *Player, list *tview.List) {
 	// gets the parent if highlighted item is a file
 	if len(childrens) == 0 {
 		childrens = root.GetReference().(*AudioFile).Parent.GetChildren()
-	} 
+	}
 
 	for _, v := range childrens {
-
 		currNode := v.GetReference().(*AudioFile)
 
-		addToQueue(currNode, player, list)
-
+		playlist.addToQueue(currNode)
 	}
 
 }

@@ -10,7 +10,16 @@ import (
 	"github.com/spf13/viper"
 )
 
-func start(app *tview.Application) {
+var (
+	app        *tview.Application
+	playingBar *PlayingBar
+	queue      *Queue
+	playlist   *Playlist
+	player     *Player
+	pages      *tview.Pages
+)
+
+func start(application *tview.Application) {
 	// override default border
 	// change double line border to one line border when focused
 	tview.Borders.HorizontalFocus = tview.Borders.Horizontal
@@ -22,91 +31,25 @@ func start(app *tview.Application) {
 	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
 	tview.Styles.BorderColor = tcell.ColorWhite
 
-	player := &Player{}
+	player = &Player{}
+	app = application
+	playingBar = InitPlayingBar()
+	queue = InitQueue()
+	playlist = InitPlaylist()
+
+	flex := Layout()
+	pages = tview.NewPages().AddPage("main", flex, true, true)
+
+	childrens := []Children{playlist, queue, playingBar}
 
 
-	playingBar := PlayingBar(app, player)
-	queue := Queue(player)
-	playlist := Playlist(player)
 
-	player.tree = playlist
-	player.list = queue
-	player.playingBar = playingBar
-	player.app = app
-
-	flex := Layout(app, player)
-	pages := tview.NewPages().AddPage("main", flex, true, true)
-
-
-	// to keep track of last focused panel
-	var prevPanel Children
-	playlist.SetInputCapture(func (e *tcell.EventKey) *tcell.EventKey {
-
-
-		currNode := playlist.GetCurrentNode()
-
-		if currNode == playlist.GetRoot() {
-			return e
-		}
-
-		audioFile := currNode.GetReference().(*AudioFile)
-
-		switch e.Rune() {
-		case 'l':
-
-			log("test")
-			addToQueue(audioFile, player, queue)
-			currNode.SetExpanded(true)
-
-		case 'h':
-
-			// if closing node with no children
-			// close the node's parent
-			// remove the color of the node
-
-			if audioFile.IsAudioFile {
-				parent := audioFile.Parent
-
-				currNode.SetColor(textColor)
-				parent.SetExpanded(false)
-				parent.SetColor(accentColor)
-				//prevNode = parent
-				playlist.SetCurrentNode(parent)
-			}
-
-			currNode.Collapse()
-
-		case 'L':
-
-			confirmationPopup(
-				app, 
-				pages, 
-				"Are you sure to add this whole directory into queue?", 
-				func (_ int, label string) {
-
-					if label == "yes" {
-						addAllToQueue(playlist.GetCurrentNode(), player, queue)
-					} 					
-
-					pages.RemovePage("confirmation-popup")
-					app.SetFocus(prevPanel.(tview.Primitive))
-
-				})
-
-		}
-
-
-		return e
-	})
-
-	childrens := []Children{playlist, queue, playingBar.frame}
-
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	application.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 
 		switch event.Key() {
 		// cycle through each section
 		case tcell.KeyTAB:
-			prevPanel = cycleChildren(app, childrens)
+			cycleChildren(application, childrens)
 
 		}
 
@@ -114,14 +57,13 @@ func start(app *tview.Application) {
 		case 'q':
 
 			if !viper.GetBool("confirm_on_exit") {
-				app.Stop()
+				application.Stop()
 			}
 
-
-			confirmationPopup(app, pages, "Are you sure to exit?", func(_ int, label string) {
+			confirmationPopup("Are you sure to exit?", func(_ int, label string) {
 
 				if label == "yes" {
-					app.Stop()
+					application.Stop()
 				} else {
 					pages.RemovePage("confirmation-popup")
 				}
@@ -146,13 +88,13 @@ func start(app *tview.Application) {
 	})
 
 	// fix transparent background issue
-	app.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
+	application.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
 		screen.Clear()
 		return false
 	})
 
 	// main loop
-	if err := app.SetRoot(pages, true).SetFocus(flex).Run(); err != nil {
+	if err := application.SetRoot(pages, true).SetFocus(flex).Run(); err != nil {
 		log(err.Error())
 	}
 }
@@ -168,8 +110,8 @@ type Children interface {
 
 func cycleChildren(app *tview.Application, childrens []Children) Children {
 
-	focusedColor := tcell.ColorDarkCyan
-	unfocusedColor := tcell.ColorAntiqueWhite
+	focusedColor := accentColor
+	unfocusedColor := textColor
 	anyChildHasFocus := false
 
 	for i, child := range childrens {
@@ -197,8 +139,7 @@ func cycleChildren(app *tview.Application, childrens []Children) Children {
 			return nextChild
 		}
 	}
-
-	first := childrens[0]
+first := childrens[0]
 
 	if anyChildHasFocus == false {
 
@@ -211,11 +152,9 @@ func cycleChildren(app *tview.Application, childrens []Children) Children {
 	return first
 }
 
-
 func readConfig() {
 
-
-	home, err := os.UserHomeDir() 
+	home, err := os.UserHomeDir()
 	configPath := home + "/.config/gomu/config"
 
 	if err != nil {
@@ -230,13 +169,12 @@ func readConfig() {
 
 	if err := viper.ReadInConfig(); err != nil {
 
-
 		viper.SetDefault("music_dir", "~/music")
 		viper.SetDefault("confirm_on_exit", true)
 
 		// creates gomu config dir if does not exist
 		if _, err := os.Stat(configPath); err != nil {
-			if err := os.MkdirAll(home + "/.config/gomu", 0755); err != nil {
+			if err := os.MkdirAll(home+"/.config/gomu", 0755); err != nil {
 				panic(err)
 			}
 		}
@@ -248,8 +186,6 @@ func readConfig() {
 			}
 		}
 
-
 	}
-
 
 }
