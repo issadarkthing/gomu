@@ -96,6 +96,17 @@ func start(application *tview.Application) {
 		case 'n':
 			player.Skip()
 
+		case '?':
+
+			name, _ := pages.GetFrontPage()
+
+			if name == "help-page" {
+				pages.RemovePage(name)
+				app.SetFocus(prevPanel.(tview.Primitive))
+			} else {
+				helpPopup()
+			}
+
 		}
 
 		return event
