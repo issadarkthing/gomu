@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/faiface/beep/effects"
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
+	"github.com/spf13/viper"
 )
 
 type Song struct {
@@ -74,6 +76,12 @@ func (p *Player) Run() {
 	song := &Song{name: GetName(f.Name()), path: first}
 	p.currentSong = *song
 
+	popupMessage := fmt.Sprintf("%s\n\n[ %s ]", song.name, fmtDuration(p.length))
+
+	timeout := viper.GetInt("popup_timeout")
+
+	timeoutPopup(" Current Song ", popupMessage, time.Second*time.Duration(timeout))
+
 	done := make(chan bool, 1)
 
 	p.done = done
@@ -94,6 +102,7 @@ func (p *Player) Run() {
 		Volume:   0,
 		Silent:   false,
 	}
+
 
 	// sets the volume of previous player
 	volume.Volume += p.volume
@@ -172,13 +181,19 @@ func (p *Player) CurrentSong() Song {
 	return p.currentSong
 }
 
-
 // volume up and volume down using -0.5 or +0.5
-func (p *Player) Volume(v float64) {
+func (p *Player) Volume(v float64) float64 {
+
+	if p._volume == nil {
+		p.volume += v
+		return v
+	}
+
 	speaker.Lock()
 	p._volume.Volume += v
 	p.volume = p._volume.Volume
 	speaker.Unlock()
+	return p.volume
 }
 
 func (p *Player) TogglePause() {
@@ -196,4 +211,3 @@ func (p *Player) Skip() {
 		p.done <- true
 	}
 }
-

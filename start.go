@@ -11,12 +11,16 @@ import (
 )
 
 var (
-	app        *tview.Application
-	playingBar *PlayingBar
-	queue      *Queue
-	playlist   *Playlist
-	player     *Player
-	pages      *tview.Pages
+	app         *tview.Application
+	playingBar  *PlayingBar
+	queue       *Queue
+	playlist    *Playlist
+	player      *Player
+	pages       *tview.Pages
+	prevPanel   Children
+	popupBg     = tcell.GetColor("#0A0F14")
+	textColor   = tcell.ColorWhite
+	accentColor = tcell.ColorDarkCyan
 )
 
 func start(application *tview.Application) {
@@ -40,16 +44,18 @@ func start(application *tview.Application) {
 	flex := Layout()
 	pages = tview.NewPages().AddPage("main", flex, true, true)
 
+	playlist.SetBorderColor(accentColor)
+	playlist.SetTitleColor(accentColor)
+	prevPanel = playlist
+
 	childrens := []Children{playlist, queue, playingBar}
-
-
 
 	application.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 
 		switch event.Key() {
 		// cycle through each section
 		case tcell.KeyTAB:
-			cycleChildren(application, childrens)
+			prevPanel = cycleChildren(application, childrens)
 
 		}
 
@@ -74,10 +80,18 @@ func start(application *tview.Application) {
 			player.TogglePause()
 
 		case '+':
-			player.Volume(0.5)
+			v := int(player.volume * 10) + 50
+			if v < 50 {
+				vol := player.Volume(0.5)
+				volumePopup(vol)
+			}
 
 		case '-':
-			player.Volume(-0.5)
+			v := int(player.volume * 10) + 50
+			if v > 0 {
+				vol := player.Volume(-0.5)
+				volumePopup(vol)
+			}
 
 		case 'n':
 			player.Skip()
@@ -94,7 +108,7 @@ func start(application *tview.Application) {
 	})
 
 	// main loop
-	if err := application.SetRoot(pages, true).SetFocus(flex).Run(); err != nil {
+	if err := application.SetRoot(pages, true).SetFocus(playlist).Run(); err != nil {
 		log(err.Error())
 	}
 }
@@ -139,7 +153,8 @@ func cycleChildren(app *tview.Application, childrens []Children) Children {
 			return nextChild
 		}
 	}
-first := childrens[0]
+
+	first := childrens[0]
 
 	if anyChildHasFocus == false {
 
@@ -171,6 +186,8 @@ func readConfig() {
 
 		viper.SetDefault("music_dir", "~/music")
 		viper.SetDefault("confirm_on_exit", true)
+		viper.SetDefault("confirm_bulk_add", true)
+		viper.SetDefault("popup_timeout", 10)
 
 		// creates gomu config dir if does not exist
 		if _, err := os.Stat(configPath); err != nil {

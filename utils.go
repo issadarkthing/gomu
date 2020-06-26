@@ -71,8 +71,6 @@ func expandTilde(_path string) string {
 
 }
 
-
-
 // gets the length of the song in the queue
 func GetLength(audioPath string) (time.Duration, error) {
 
@@ -94,8 +92,6 @@ func GetLength(audioPath string) (time.Duration, error) {
 
 	return format.SampleRate.D(streamer.Len()), nil
 }
-
-
 
 // detects the filetype of file
 func GetFileContentType(out *os.File) (string, error) {

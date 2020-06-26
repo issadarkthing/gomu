@@ -14,11 +14,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	textColor   = tcell.ColorWhite
-	accentColor = tcell.ColorDarkCyan
-)
-
 type AudioFile struct {
 	Name        string
 	Path        string
@@ -72,7 +67,6 @@ func InitPlaylist() *Playlist {
 		node.SetExpanded(!node.IsExpanded())
 	})
 
-
 	playlist.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 		currNode := playlist.GetCurrentNode()
@@ -108,6 +102,11 @@ func InitPlaylist() *Playlist {
 			currNode.Collapse()
 
 		case 'L':
+
+			if !viper.GetBool("confirm_bulk_add") {
+				playlist.addAllToQueue(playlist.GetCurrentNode())
+				return e
+			}
 
 			confirmationPopup(
 				"Are you sure to add this whole directory into queue?",
