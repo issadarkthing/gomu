@@ -7,8 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 )
+
+// this is used to make the popup unique
+// this mitigates the issue of closing all popups when timeout ends
+var popupCounter = 0
 
 func confirmationPopup(
 	text string,
@@ -60,12 +65,14 @@ func timeoutPopup(title string, desc string, timeout time.Duration) {
 	box := tview.NewFrame(textView).SetBorders(1, 1, 1, 1, 1, 1)
 	box.SetTitle(title).SetBorder(true).SetBackgroundColor(popupBg)
 
-	pages.AddPage("timeout-popup", topRight(box, 70, 7), true, true)
+	popupId := fmt.Sprintf("%s %d", "timeout-popup", popupCounter)
+
+	pages.AddPage(popupId, topRight(box, 70, 7), true, true)
 	app.SetFocus(prevPanel.(tview.Primitive))
 
 	go func() {
 		time.Sleep(timeout)
-		pages.RemovePage("timeout-popup")
+		pages.RemovePage(popupId)
 		app.SetFocus(prevPanel.(tview.Primitive))
 	}()
 }
@@ -84,4 +91,65 @@ func volumePopup(volume float64) {
 
 	timeoutPopup(" Volume ", progress, time.Second * 5)
 
+}
+
+func helpPopup() {
+
+	helpText := []string{
+		"j      down",
+		"k      up",
+		"tab    change panel",
+		"space  toggle play/pause",
+		"n      skip",
+		"q      quit",
+		"l      add song to queue",
+		"L      add playlist to queue",
+		"h      close node in playlist",
+		"d      remove song from queue",
+		"+      volume up",
+		"-      volume down",
+		"?      toggle help",
+	}
+
+	list := tview.NewList().ShowSecondaryText(false)
+	list.SetBackgroundColor(popupBg).SetTitle(" Help ").
+		 SetBorder(true)
+	list.SetSelectedBackgroundColor(popupBg).
+		 SetSelectedTextColor(accentColor)
+
+	for _, v := range helpText {
+		list.AddItem(v, "", 0, nil)
+	}
+
+
+	prev := func() {
+		currIndex := list.GetCurrentItem()
+		list.SetCurrentItem(currIndex - 1)
+	}
+
+	next := func() {
+		currIndex := list.GetCurrentItem()
+		idx := currIndex + 1
+		if currIndex == list.GetItemCount()-1 {
+			idx = 0
+		}
+		list.SetCurrentItem(idx)
+	}
+
+	list.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+
+		switch e.Rune() {
+		case 'j':
+			next()
+		case 'k':
+			prev()
+		case 'd':
+			queue.deleteItem(queue.GetCurrentItem())
+		}
+
+		return nil
+	})
+
+	pages.AddPage("help-page", center(list, 50, 30), true, true)
+	app.SetFocus(list)
 }
