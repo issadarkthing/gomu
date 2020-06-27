@@ -55,7 +55,6 @@ func topRight(p tview.Primitive, width, height int) tview.Primitive {
 
 func timeoutPopup(title string, desc string, timeout time.Duration) {
 
-
 	textView := tview.NewTextView().
 		SetText(fmt.Sprintf("%s", desc)).
 		SetTextColor(accentColor)
@@ -66,6 +65,7 @@ func timeoutPopup(title string, desc string, timeout time.Duration) {
 	box.SetTitle(title).SetBorder(true).SetBackgroundColor(popupBg)
 
 	popupId := fmt.Sprintf("%s %d", "timeout-popup", popupCounter)
+	popupCounter++
 
 	pages.AddPage(popupId, topRight(box, 70, 7), true, true)
 	app.SetFocus(prevPanel.(tview.Primitive))
@@ -77,10 +77,9 @@ func timeoutPopup(title string, desc string, timeout time.Duration) {
 	}()
 }
 
-
 func volumePopup(volume float64) {
 
-	vol := int(volume * 10) + 50
+	vol := int(volume*10) + 50
 
 	progress := fmt.Sprintf("\n%d |%s%s| %s",
 		vol,
@@ -89,7 +88,7 @@ func volumePopup(volume float64) {
 		"50",
 	)
 
-	timeoutPopup(" Volume ", progress, time.Second * 5)
+	timeoutPopup(" Volume ", progress, time.Second*5)
 
 }
 
@@ -109,18 +108,18 @@ func helpPopup() {
 		"+      volume up",
 		"-      volume down",
 		"?      toggle help",
+		"Y      download audio",
 	}
 
 	list := tview.NewList().ShowSecondaryText(false)
 	list.SetBackgroundColor(popupBg).SetTitle(" Help ").
-		 SetBorder(true)
+		SetBorder(true)
 	list.SetSelectedBackgroundColor(popupBg).
-		 SetSelectedTextColor(accentColor)
+		SetSelectedTextColor(accentColor)
 
 	for _, v := range helpText {
 		list.AddItem(v, "", 0, nil)
 	}
-
 
 	prev := func() {
 		currIndex := list.GetCurrentItem()
@@ -143,8 +142,6 @@ func helpPopup() {
 			next()
 		case 'k':
 			prev()
-		case 'd':
-			queue.deleteItem(queue.GetCurrentItem())
 		}
 
 		return nil
@@ -152,4 +149,33 @@ func helpPopup() {
 
 	pages.AddPage("help-page", center(list, 50, 30), true, true)
 	app.SetFocus(list)
+}
+
+func downloadMusic(selPlaylist *tview.TreeNode) {
+
+	inputField := tview.NewInputField().
+		SetLabel("Enter a url: ").
+		SetFieldWidth(0).
+		SetAcceptanceFunc(tview.InputFieldMaxLength(50))
+
+	inputField.SetBackgroundColor(popupBg).SetBorder(true).SetTitle(" Ytdl ")
+	inputField.SetFieldBackgroundColor(accentColor).SetFieldTextColor(tcell.ColorBlack)
+
+	inputField.SetDoneFunc(func(key tcell.Key) {
+
+		switch key {
+		case tcell.KeyEnter:
+			url := inputField.GetText()
+			Ytdl(url, selPlaylist)
+			pages.RemovePage("download-popup")
+
+		case tcell.KeyEscape:
+			pages.RemovePage("download-popup")
+		}
+
+	})
+
+	pages.AddPage("download-popup", center(inputField, 50, 4), true, true)
+	app.SetFocus(inputField)
+
 }
