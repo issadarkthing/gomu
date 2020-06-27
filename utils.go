@@ -3,13 +3,19 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/faiface/beep/mp3"
+	"github.com/rivo/tview"
+	"github.com/spf13/viper"
 )
 
 func log(text string) {
@@ -111,4 +117,102 @@ func GetFileContentType(out *os.File) (string, error) {
 // gets the file name by removing extension and path
 func GetName(fn string) string {
 	return strings.TrimSuffix(path.Base(fn), path.Ext(fn))
+}
+
+// download audio from youtube audio and adds the song to the selected playlist
+func Ytdl(url string, selPlaylist *tview.TreeNode) {
+
+	dir := viper.GetString("music_dir")
+
+	selAudioFile := selPlaylist.GetReference().(*AudioFile)
+	selPlaylistName := selAudioFile.Name
+
+	timeoutPopup(" Ytdl ", "Downloading", time.Second*5)
+
+	// specify the output path for ytdl
+	outputDir := fmt.Sprintf(
+		"%s/%s/%%(artist)s - %%(track)s.%%(ext)s", 
+		dir, 
+		selPlaylistName)
+
+	args := []string{
+		"--extract-audio",
+		"--audio-format",
+		"mp3",
+		"--output",
+		outputDir,
+		url,
+	}
+
+	cmd := exec.Command("youtube-dl", args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	go func() {
+
+		err := cmd.Run()
+		if err != nil {
+			timeoutPopup(" Error ", "An error occured when downloading", time.Second*5)
+			return
+		}
+
+		if cmd.Stderr != nil {
+			timeoutPopup(" Error ", "An error occured when downloading", time.Second*5)
+			return
+		}
+
+		playlistPath := fmt.Sprintf("%s/%s", expandTilde(dir), selPlaylistName)
+
+		downloadedAudioPath := downloadedFilePath(
+			stdout.Bytes(), playlistPath)
+
+		f, err := os.Open(downloadedAudioPath)
+
+		if err != nil {
+			log(err.Error())
+		}
+
+		defer f.Close()
+
+		node := tview.NewTreeNode(path.Base(f.Name()))
+
+		audioFile := &AudioFile{
+			Name:        f.Name(),
+			Path:        downloadedAudioPath,
+			IsAudioFile: true,
+			Parent:      selPlaylist,
+		}
+
+		node.SetReference(audioFile)
+		selPlaylist.AddChild(node)
+		app.Draw()
+
+		timeoutPopup(
+			" Ytdl ",
+			fmt.Sprintf("Finished downloading\n%s", 
+			path.Base(downloadedAudioPath)), time.Second*5)
+
+	}()
+
+}
+
+// this just parsing the output from the ytdl to get the audio path
+// this is used because we need to get the song name
+// example ~/path/to/song/song.mp3
+func downloadedFilePath(output []byte, dir string) string {
+
+	regexSearch := fmt.Sprintf(`\[ffmpeg\] Destination: %s\/.*.mp3`,
+		escapeBackSlash(dir))
+
+	parseAudioPathOnly := regexp.MustCompile(`\/.*mp3$`)
+
+	re := regexp.MustCompile(regexSearch)
+
+	return string(parseAudioPathOnly.Find(re.Find(output)))
+
+}
+
+func escapeBackSlash(input string) string {
+	return strings.ReplaceAll(input, "/", `\/`)
 }

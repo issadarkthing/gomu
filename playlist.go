@@ -78,6 +78,21 @@ func InitPlaylist() *Playlist {
 		audioFile := currNode.GetReference().(*AudioFile)
 
 		switch e.Rune() {
+		case 'Y':
+
+			if pages.HasPage("download-popup") {
+				pages.RemovePage("download-popup")
+			} else {
+
+				if audioFile.IsAudioFile {
+					downloadMusic(currNode)
+				} else {
+					downloadMusic(audioFile.Parent)
+				}
+
+				downloadMusic(playlist.GetCurrentNode())
+			}
+
 		case 'l':
 
 			playlist.addToQueue(audioFile)
@@ -228,7 +243,7 @@ func (playlist *Playlist) addAllToQueue(root *tview.TreeNode) {
 	for _, v := range childrens {
 		currNode := v.GetReference().(*AudioFile)
 
-		playlist.addToQueue(currNode)
+		go playlist.addToQueue(currNode)
 	}
 
 }
