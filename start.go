@@ -80,14 +80,14 @@ func start(application *tview.Application) {
 			player.TogglePause()
 
 		case '+':
-			v := int(player.volume * 10) + 50
+			v := int(player.volume*10) + 50
 			if v < 50 {
 				vol := player.Volume(0.5)
 				volumePopup(vol)
 			}
 
 		case '-':
-			v := int(player.volume * 10) + 50
+			v := int(player.volume*10) + 50
 			if v > 0 {
 				vol := player.Volume(-0.5)
 				volumePopup(vol)

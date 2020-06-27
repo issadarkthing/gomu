@@ -103,7 +103,6 @@ func (p *Player) Run() {
 		Silent:   false,
 	}
 
-
 	// sets the volume of previous player
 	volume.Volume += p.volume
 

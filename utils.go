@@ -131,8 +131,8 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 
 	// specify the output path for ytdl
 	outputDir := fmt.Sprintf(
-		"%s/%s/%%(artist)s - %%(track)s.%%(ext)s", 
-		dir, 
+		"%s/%s/%%(artist)s - %%(track)s.%%(ext)s",
+		dir,
 		selPlaylistName)
 
 	args := []string{
@@ -190,8 +190,8 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 
 		timeoutPopup(
 			" Ytdl ",
-			fmt.Sprintf("Finished downloading\n%s", 
-			path.Base(downloadedAudioPath)), time.Second*5)
+			fmt.Sprintf("Finished downloading\n%s",
+				path.Base(downloadedAudioPath)), time.Second*5)
 
 	}()
 
