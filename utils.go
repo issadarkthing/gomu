@@ -122,6 +122,14 @@ func GetName(fn string) string {
 // download audio from youtube audio and adds the song to the selected playlist
 func Ytdl(url string, selPlaylist *tview.TreeNode) {
 
+	// lookup if youtube-dl exists
+	_, err := exec.LookPath("youtube-dl")
+
+	if err != nil {
+		timeoutPopup(" Error ", "youtube-dl is not in your $PATH", time.Second*5)
+		return
+	}
+
 	dir := viper.GetString("music_dir")
 
 	selAudioFile := selPlaylist.GetReference().(*AudioFile)
