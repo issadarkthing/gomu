@@ -80,7 +80,7 @@ func (p *Player) Run() {
 
 	timeout := viper.GetInt("popup_timeout")
 
-	timeoutPopup(" Current Song ", popupMessage, time.Second*time.Duration(timeout))
+	timedPopup(" Current Song ", popupMessage, time.Second*time.Duration(timeout))
 
 	done := make(chan bool, 1)
 

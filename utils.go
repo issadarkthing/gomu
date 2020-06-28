@@ -126,7 +126,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 	_, err := exec.LookPath("youtube-dl")
 
 	if err != nil {
-		timeoutPopup(" Error ", "youtube-dl is not in your $PATH", time.Second*5)
+		timedPopup(" Error ", "youtube-dl is not in your $PATH", popupTimeout)
 		return
 	}
 
@@ -135,7 +135,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 	selAudioFile := selPlaylist.GetReference().(*AudioFile)
 	selPlaylistName := selAudioFile.Name
 
-	go timeoutPopup(" Ytdl ", "Downloading", time.Second*5)
+	go timedPopup(" Ytdl ", "Downloading", time.Second*5)
 
 	// specify the output path for ytdl
 	outputDir := fmt.Sprintf(
@@ -161,7 +161,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 
 		err := cmd.Run()
 		if err != nil {
-			timeoutPopup(" Error ", "Error running youtube-dl", time.Second*5)
+			timedPopup(" Error ", "Error running youtube-dl", time.Second*5)
 			return
 		}
 
@@ -192,7 +192,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 		selPlaylist.AddChild(node)
 		app.Draw()
 
-		timeoutPopup(
+		timedPopup(
 			" Ytdl ",
 			fmt.Sprintf("Finished downloading\n%s",
 				path.Base(downloadedAudioPath)), time.Second*5)

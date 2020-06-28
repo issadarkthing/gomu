@@ -111,11 +111,11 @@ func InitPlaylist() *Playlist {
 					err := os.RemoveAll(selectedDir.Path)
 
 					if err != nil {
-						timeoutPopup(
+						timedPopup(
 							" Error ",
 							"Unable to delete dir "+selectedDir.Name, time.Second*5)
 					} else {
-						timeoutPopup(
+						timedPopup(
 							" Success ",
 							selectedDir.Name+"\nhas been deleted successfully", time.Second*5)
 
@@ -144,10 +144,10 @@ func InitPlaylist() *Playlist {
 					err := os.Remove(audioFile.Path)
 
 					if err != nil {
-						timeoutPopup(
+						timedPopup(
 							" Error ", "Unable to delete "+audioFile.Name, time.Second*5)
 					} else {
-						timeoutPopup(
+						timedPopup(
 							" Success ",
 							audioFile.Name+"\nhas been deleted successfully", time.Second*5)
 
