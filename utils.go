@@ -135,11 +135,11 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 	selAudioFile := selPlaylist.GetReference().(*AudioFile)
 	selPlaylistName := selAudioFile.Name
 
-	timeoutPopup(" Ytdl ", "Downloading", time.Second*5)
+	go timeoutPopup(" Ytdl ", "Downloading", time.Second*5)
 
 	// specify the output path for ytdl
 	outputDir := fmt.Sprintf(
-		"%s/%s/%%(artist)s - %%(track)s.%%(ext)s",
+		"%s/%s/%%(title)s.%%(ext)s",
 		dir,
 		selPlaylistName)
 
@@ -161,14 +161,10 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 
 		err := cmd.Run()
 		if err != nil {
-			timeoutPopup(" Error ", "An error occured when downloading", time.Second*5)
+			timeoutPopup(" Error ", "Error running youtube-dl", time.Second*5)
 			return
 		}
 
-		if cmd.Stderr != nil {
-			timeoutPopup(" Error ", "An error occured when downloading", time.Second*5)
-			return
-		}
 
 		playlistPath := fmt.Sprintf("%s/%s", expandTilde(dir), selPlaylistName)
 
@@ -186,7 +182,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 		node := tview.NewTreeNode(path.Base(f.Name()))
 
 		audioFile := &AudioFile{
-			Name:        f.Name(),
+			Name:        path.Base(f.Name()),
 			Path:        downloadedAudioPath,
 			IsAudioFile: true,
 			Parent:      selPlaylist,
