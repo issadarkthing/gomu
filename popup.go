@@ -9,11 +9,16 @@ import (
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+	"github.com/spf13/viper"
 )
 
 // this is used to make the popup unique
 // this mitigates the issue of closing all popups when timeout ends
-var popupCounter = 0
+var (
+	popupCounter = 0
+	popupTimeout = time.Duration(viper.GetInt("popup_timeout")) * time.Second
+) 
+
 
 func confirmationPopup(
 	text string,
@@ -53,7 +58,7 @@ func topRight(p tview.Primitive, width, height int) tview.Primitive {
 		AddItem(nil, 0, 1, false)
 }
 
-func timeoutPopup(title string, desc string, timeout time.Duration) {
+func timedPopup(title string, desc string, timeout time.Duration) {
 
 	textView := tview.NewTextView().
 		SetText(fmt.Sprintf("%s", desc)).
@@ -88,7 +93,7 @@ func volumePopup(volume float64) {
 		"50",
 	)
 
-	timeoutPopup(" Volume ", progress, time.Second*5)
+	timedPopup(" Volume ", progress, time.Second*5)
 
 }
 
@@ -143,6 +148,7 @@ func helpPopup() {
 		case 'k':
 			prev()
 		}
+		
 
 		return nil
 	})
