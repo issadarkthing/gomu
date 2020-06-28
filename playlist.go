@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
@@ -23,6 +24,7 @@ type AudioFile struct {
 
 type Playlist struct {
 	*tview.TreeView
+	prevNode *tview.TreeNode
 }
 
 func InitPlaylist() *Playlist {
@@ -36,14 +38,23 @@ func InitPlaylist() *Playlist {
 	root := tview.NewTreeNode(path.Base(rootDir))
 
 	tree := tview.NewTreeView().SetRoot(root)
-	playlist := &Playlist{tree}
+
+	playlist := &Playlist{tree,nil}
+
+	rootAudioFile := &AudioFile{
+		Name: root.GetText(), 
+		Path: rootDir, 
+		IsAudioFile: false, 
+		Parent: nil,
+	}
+
+	root.SetReference(rootAudioFile)
 
 	playlist.SetTitle(" Playlist ").SetBorder(true)
 
 	populate(root, rootDir)
 
 	var firstChild *tview.TreeNode
-	var prevNode *tview.TreeNode
 
 	if len(root.GetChildren()) == 0 {
 		firstChild = root
@@ -54,13 +65,13 @@ func InitPlaylist() *Playlist {
 	firstChild.SetColor(textColor)
 	playlist.SetCurrentNode(firstChild)
 	// keep track of prev node so we can remove the color of highlight
-	prevNode = firstChild.SetColor(accentColor)
+	playlist.prevNode = firstChild.SetColor(accentColor)
 
 	playlist.SetChangedFunc(func(node *tview.TreeNode) {
-		prevNode.SetColor(textColor)
+		playlist.prevNode.SetColor(textColor)
 		root.SetColor(textColor)
 		node.SetColor(accentColor)
-		prevNode = node
+		playlist.prevNode = node
 	})
 
 	playlist.SetSelectedFunc(func(node *tview.TreeNode) {
@@ -78,19 +89,88 @@ func InitPlaylist() *Playlist {
 		audioFile := currNode.GetReference().(*AudioFile)
 
 		switch e.Rune() {
+
+		case 'D':
+
+			var selectedDir *AudioFile
+
+			// gets the parent dir if current focused node is not a dir
+			if audioFile.IsAudioFile {
+				selectedDir = audioFile.Parent.GetReference().(*AudioFile)
+			} else {
+				selectedDir = audioFile
+			}
+
+			confirmationPopup(
+				"Are you sure to delete this directory?", func(_ int, buttonName string) {
+
+					if buttonName == "no" {
+						return
+					}
+
+					err := os.RemoveAll(selectedDir.Path)
+
+					if err != nil {
+						timeoutPopup(
+							" Error ",
+							"Unable to delete dir "+selectedDir.Name, time.Second*5)
+					} else {
+						timeoutPopup(
+							" Success ",
+							selectedDir.Name+"\nhas been deleted successfully", time.Second*5)
+
+						playlist.Refresh()
+					}
+
+					pages.RemovePage("confirmation-popup")
+					app.SetFocus(prevPanel.(tview.Primitive))
+
+				})
+
+		case 'd':
+
+			// prevent from deleting a directory
+			if !audioFile.IsAudioFile {
+				return e
+			}
+
+			confirmationPopup(
+				"Are you sure to delete this audio file?", func(_ int, buttonName string) {
+
+					if buttonName == "no" {
+						return
+					}
+
+					err := os.Remove(audioFile.Path)
+
+					if err != nil {
+						timeoutPopup(
+							" Error ", "Unable to delete "+audioFile.Name, time.Second*5)
+					} else {
+						timeoutPopup(
+							" Success ",
+							audioFile.Name+"\nhas been deleted successfully", time.Second*5)
+
+						playlist.Refresh()
+					}
+
+					pages.RemovePage("confirmation-popup")
+					app.SetFocus(prevPanel.(tview.Primitive))
+				})
+
 		case 'Y':
 
 			if pages.HasPage("download-popup") {
 				pages.RemovePage("download-popup")
+				return e
+			}
+
+			// this ensures it downloads to
+			// the correct dir
+			if audioFile.IsAudioFile {
+				downloadMusic(audioFile.Parent)
 			} else {
-
-				if audioFile.IsAudioFile {
-					downloadMusic(currNode)
-				} else {
-					downloadMusic(audioFile.Parent)
-				}
-
-				downloadMusic(playlist.GetCurrentNode())
+				downloadMusic(currNode)
 			}
 
 		case 'l':
@@ -246,4 +326,30 @@ func (playlist *Playlist) addAllToQueue(root *tview.TreeNode) {
 		go playlist.addToQueue(currNode)
 	}
 
+}
+
+
+func (playlist *Playlist) Refresh() {
+
+	root := playlist.GetRoot()
+
+	prevFileName := playlist.GetCurrentNode().GetText()
+
+	root.ClearChildren()
+
+	populate(root, root.GetReference().(*AudioFile).Path)
+
+	root.Walk(func(node, parent *tview.TreeNode) bool {
+
+		// to preserve previously highlighted node
+		if node.GetReference().(*AudioFile).Name == prevFileName {
+			playlist.SetCurrentNode(node)
+			node.SetColor(accentColor)
+			playlist.prevNode = node
+			return false
+		}
+
+		return true
+	})
+	
 }
