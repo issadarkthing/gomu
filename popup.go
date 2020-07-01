@@ -109,7 +109,7 @@ func helpPopup() {
 		"l      add song to queue",
 		"L      add playlist to queue",
 		"h      close node in playlist",
-		"d      remove song from queue",
+		"d      remove from queue",
 		"+      volume up",
 		"-      volume down",
 		"?      toggle help",
@@ -149,6 +149,11 @@ func helpPopup() {
 			prev()
 		}
 		
+		switch e.Key() {
+		case tcell.KeyEsc:
+			pages.RemovePage("help-page")
+			app.SetFocus(prevPanel.(tview.Primitive))
+		}
 
 		return nil
 	})
@@ -182,6 +187,36 @@ func downloadMusic(selPlaylist *tview.TreeNode) {
 	})
 
 	pages.AddPage("download-popup", center(inputField, 50, 4), true, true)
+	app.SetFocus(inputField)
+
+}
+
+func CreatePlaylistPopup() {
+	
+	inputField := tview.NewInputField().
+		SetLabel("Enter a playlist name: ").
+		SetFieldWidth(0).
+		SetAcceptanceFunc(tview.InputFieldMaxLength(50))
+
+	inputField.SetBackgroundColor(popupBg).SetBorder(true).SetTitle(" New Playlist ")
+	inputField.SetFieldBackgroundColor(accentColor).SetFieldTextColor(tcell.ColorBlack)
+
+	inputField.SetDoneFunc(func(key tcell.Key) {
+
+		switch key {
+		case tcell.KeyEnter:
+			playListName := inputField.GetText()
+			playlist.CreatePlaylist(playListName)
+			pages.RemovePage("mkdir-popup")
+			app.SetFocus(prevPanel.(tview.Primitive))
+
+		case tcell.KeyEsc:
+			pages.RemovePage("mkdir-popup")
+		}
+
+	})
+
+	pages.AddPage("mkdir-popup", center(inputField, 50, 4), true, true)
 	app.SetFocus(inputField)
 
 }
