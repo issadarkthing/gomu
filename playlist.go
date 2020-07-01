@@ -40,13 +40,13 @@ func InitPlaylist() *Playlist {
 
 	tree := tview.NewTreeView().SetRoot(root)
 
-	playlist := &Playlist{tree,nil}
+	playlist := &Playlist{tree, nil}
 
 	rootAudioFile := &AudioFile{
-		Name: root.GetText(), 
-		Path: rootDir, 
-		IsAudioFile: false, 
-		Parent: nil,
+		Name:        root.GetText(),
+		Path:        rootDir,
+		IsAudioFile: false,
+		Parent:      nil,
 	}
 
 	root.SetReference(rootAudioFile)

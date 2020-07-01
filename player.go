@@ -205,6 +205,7 @@ func (p *Player) TogglePause() {
 
 // skips current song
 func (p *Player) Skip() {
+
 	if queue.GetItemCount() > 0 {
 		p.ctrl.Streamer = nil
 		p.done <- true
