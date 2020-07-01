@@ -36,6 +36,7 @@ func log(text string) {
 
 }
 
+// formats duration to my desired output mm:ss
 func fmtDuration(input time.Duration) string {
 
 	val := input.Round(time.Second).String()
@@ -61,6 +62,7 @@ func fmtDuration(input time.Duration) string {
 	return strings.Join(result, ":")
 }
 
+// expands tilde alias to /home/user
 func expandTilde(_path string) string {
 
 	if !strings.HasPrefix(_path, "~") {
@@ -165,32 +167,12 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 			return
 		}
 
-
-		playlistPath := fmt.Sprintf("%s/%s", expandTilde(dir), selPlaylistName)
+		playlistPath := path.Join(expandTilde(dir), selPlaylistName)
 
 		downloadedAudioPath := downloadedFilePath(
 			stdout.Bytes(), playlistPath)
 
-		f, err := os.Open(downloadedAudioPath)
-
-		if err != nil {
-			log(err.Error())
-		}
-
-		defer f.Close()
-
-		node := tview.NewTreeNode(path.Base(f.Name()))
-
-		audioFile := &AudioFile{
-			Name:        path.Base(f.Name()),
-			Path:        downloadedAudioPath,
-			IsAudioFile: true,
-			Parent:      selPlaylist,
-		}
-
-		node.SetReference(audioFile)
-		selPlaylist.AddChild(node)
-		app.Draw()
+		playlist.AddSongToPlaylist(downloadedAudioPath, selPlaylist)
 
 		timedPopup(
 			" Ytdl ",
