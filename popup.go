@@ -178,15 +178,15 @@ func downloadMusic(selPlaylist *tview.TreeNode) {
 		case tcell.KeyEnter:
 			url := inputField.GetText()
 			Ytdl(url, selPlaylist)
-			pages.RemovePage("download-popup")
+			pages.RemovePage("download-input-popup")
 
 		case tcell.KeyEscape:
-			pages.RemovePage("download-popup")
+			pages.RemovePage("download-input-popup")
 		}
 
 	})
 
-	pages.AddPage("download-popup", center(inputField, 50, 4), true, true)
+	pages.AddPage("download-input-popup", center(inputField, 50, 4), true, true)
 	app.SetFocus(inputField)
 
 }
@@ -207,16 +207,16 @@ func CreatePlaylistPopup() {
 		case tcell.KeyEnter:
 			playListName := inputField.GetText()
 			playlist.CreatePlaylist(playListName)
-			pages.RemovePage("mkdir-popup")
+			pages.RemovePage("mkdir-input-popup")
 			app.SetFocus(prevPanel.(tview.Primitive))
 
 		case tcell.KeyEsc:
-			pages.RemovePage("mkdir-popup")
+			pages.RemovePage("mkdir-input-popup")
 		}
 
 	})
 
-	pages.AddPage("mkdir-popup", center(inputField, 50, 4), true, true)
+	pages.AddPage("mkdir-input-popup", center(inputField, 50, 4), true, true)
 	app.SetFocus(inputField)
 
 }

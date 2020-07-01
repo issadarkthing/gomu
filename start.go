@@ -4,6 +4,7 @@ package main
 
 import (
 	"os"
+	"strings"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
@@ -59,6 +60,13 @@ func start(application *tview.Application) {
 
 		}
 
+		name, _ := pages.GetFrontPage()
+
+		// disables keybindings when writing in input fields
+		if strings.Contains(name, "-input-") {
+			return event
+		}
+
 		switch event.Rune() {
 		case 'q':
 
@@ -80,6 +88,7 @@ func start(application *tview.Application) {
 			player.TogglePause()
 
 		case '+':
+
 			v := int(player.volume*10) + 50
 			if v < 50 {
 				vol := player.Volume(0.5)
