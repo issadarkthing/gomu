@@ -36,7 +36,8 @@ func InitPlaylist() *Playlist {
 		log(err.Error())
 	}
 
-	root := tview.NewTreeNode(path.Base(rootDir))
+	root := tview.NewTreeNode(path.Base(rootDir)).
+		SetColor(accentColor)
 
 	tree := tview.NewTreeView().SetRoot(root)
 
@@ -63,16 +64,15 @@ func InitPlaylist() *Playlist {
 		firstChild = root.GetChildren()[0]
 	}
 
-	firstChild.SetColor(textColor)
-	playlist.SetCurrentNode(firstChild)
+	// firstChild.SetColor(textColor)
+	// playlist.SetCurrentNode(firstChild)
 	// keep track of prev node so we can remove the color of highlight
-	playlist.prevNode = firstChild.SetColor(accentColor)
+	// playlist.prevNode = firstChild.SetColor(accentColor)
+
+	playlist.SetHighlight(firstChild)
 
 	playlist.SetChangedFunc(func(node *tview.TreeNode) {
-		playlist.prevNode.SetColor(textColor)
-		root.SetColor(textColor)
-		node.SetColor(accentColor)
-		playlist.prevNode = node
+		playlist.SetHighlight(node)
 	})
 
 	playlist.SetSelectedFunc(func(node *tview.TreeNode) {
@@ -200,11 +200,9 @@ func InitPlaylist() *Playlist {
 			if audioFile.IsAudioFile {
 				parent := audioFile.Parent
 
-				currNode.SetColor(textColor)
+				playlist.SetHighlight(parent)
+
 				parent.SetExpanded(false)
-				parent.SetColor(accentColor)
-				// prevPanel = parent
-				playlist.SetCurrentNode(parent)
 			}
 
 			currNode.Collapse()
@@ -239,6 +237,7 @@ func InitPlaylist() *Playlist {
 
 }
 
+// add songs and their directories in Playlist panel
 func populate(root *tview.TreeNode, rootPath string) {
 
 	files, err := ioutil.ReadDir(rootPath)
@@ -302,6 +301,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 				Parent:      root,
 			}
 			child.SetReference(audioFile)
+			child.SetColor(accentColor)
 			populate(child, path)
 
 		}
@@ -324,17 +324,18 @@ func (p *Playlist) addToQueue(audioFile *AudioFile) {
 				player.Run()
 			}()
 
-		} else {
+			return 
 
-			songLength, err := GetLength(audioFile.Path)
+		} 
 
-			if err != nil {
-				log(err.Error())
-			}
+		songLength, err := GetLength(audioFile.Path)
 
-			queueItemView := fmt.Sprintf("[ %s ] %s", fmtDuration(songLength), audioFile.Name)
-			queue.AddItem(queueItemView, audioFile.Path, 0, nil)
+		if err != nil {
+			log(err.Error())
 		}
+
+		queueItemView := fmt.Sprintf("[ %s ] %s", fmtDuration(songLength), audioFile.Name)
+		queue.AddItem(queueItemView, audioFile.Path, 0, nil)
 	}
 }
 
@@ -345,7 +346,7 @@ func (p *Playlist) addAllToQueue(root *tview.TreeNode) {
 
 	childrens = root.GetChildren()
 
-	// gets the parent if highlighted item is a file
+	// gets the parent if the highlighted item is a file
 	if len(childrens) == 0 {
 		childrens = root.GetReference().(*AudioFile).Parent.GetChildren()
 	}
@@ -373,9 +374,7 @@ func (p *Playlist) Refresh() {
 
 		// to preserve previously highlighted node
 		if node.GetReference().(*AudioFile).Name == prevFileName {
-			playlist.SetCurrentNode(node)
-			node.SetColor(accentColor)
-			playlist.prevNode = node
+			p.SetHighlight(node)
 			return false
 		}
 
@@ -443,5 +442,21 @@ func (p *Playlist) CreatePlaylist(name string) error {
 	p.Refresh()
 
 	return nil
+
+}
+
+// this is used to replace default behaviour of SetCurrentNode which
+// adds color highlight attributes
+func (p *Playlist) SetHighlight(currNode *tview.TreeNode) {
+
+	if p.prevNode != nil {
+		p.prevNode.SetColor(textColor)
+	}
+	currNode.SetColor(accentColor)
+	p.SetCurrentNode(currNode)
+
+	if currNode.GetReference().(*AudioFile).IsAudioFile {
+		p.prevNode = currNode
+	}
 
 }
