@@ -19,6 +19,7 @@ type AudioFile struct {
 	Name        string
 	Path        string
 	IsAudioFile bool
+	Length      time.Duration
 	Parent      *tview.TreeNode
 }
 
@@ -90,6 +91,14 @@ func InitPlaylist() *Playlist {
 
 		switch e.Rune() {
 
+		case 'a':
+
+			name, _ := pages.GetFrontPage()
+
+			if name != "mkdir-popup" {
+				CreatePlaylistPopup()
+			}
+
 		case 'D':
 
 			var selectedDir *AudioFile
@@ -105,6 +114,8 @@ func InitPlaylist() *Playlist {
 				"Are you sure to delete this directory?", func(_ int, buttonName string) {
 
 					if buttonName == "no" {
+						pages.RemovePage("confirmation-popup")
+						app.SetFocus(prevPanel.(tview.Primitive))
 						return
 					}
 
@@ -138,6 +149,8 @@ func InitPlaylist() *Playlist {
 				"Are you sure to delete this audio file?", func(_ int, buttonName string) {
 
 					if buttonName == "no" {
+						pages.RemovePage("confirmation-popup")
+						app.SetFocus(prevPanel.(tview.Primitive))
 						return
 					}
 
@@ -216,6 +229,7 @@ func InitPlaylist() *Playlist {
 
 				})
 
+
 		}
 
 		return e
@@ -244,6 +258,9 @@ func populate(root *tview.TreeNode, rootPath string) {
 
 		defer f.Close()
 
+		child := tview.NewTreeNode(file.Name())
+		root.AddChild(child)
+
 		if !file.IsDir() {
 
 			filetype, err := GetFileContentType(f)
@@ -257,23 +274,36 @@ func populate(root *tview.TreeNode, rootPath string) {
 				continue
 			}
 
+			audioLength, err := GetLength(path)
+
+			if err != nil {
+				log(err.Error())
+			}
+
+			audioFile := &AudioFile{
+				Name:        file.Name(),
+				Path:        path,
+				IsAudioFile: true,
+				Length:      audioLength,
+				Parent:      root,
+			}
+
+			child.SetReference(audioFile)
+
 		}
-
-		child := tview.NewTreeNode(file.Name())
-		root.AddChild(child)
-
-		audioFile := &AudioFile{
-			Name:        file.Name(),
-			Path:        path,
-			IsAudioFile: true,
-			Parent:      root,
-		}
-
-		child.SetReference(audioFile)
 
 		if file.IsDir() {
-			audioFile.IsAudioFile = false
+
+			audioFile := &AudioFile{
+				Name:        file.Name(),
+				Path:        path,
+				IsAudioFile: false,
+				Length:      0,
+				Parent:      root,
+			}
+			child.SetReference(audioFile)
 			populate(child, path)
+
 		}
 
 	}
@@ -281,7 +311,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 }
 
 // add to queue and update queue panel
-func (playlist *Playlist) addToQueue(audioFile *AudioFile) {
+func (p *Playlist) addToQueue(audioFile *AudioFile) {
 
 	if audioFile.IsAudioFile {
 
@@ -309,7 +339,7 @@ func (playlist *Playlist) addToQueue(audioFile *AudioFile) {
 }
 
 // bulk add a playlist to queue
-func (playlist *Playlist) addAllToQueue(root *tview.TreeNode) {
+func (p *Playlist) addAllToQueue(root *tview.TreeNode) {
 
 	var childrens []*tview.TreeNode
 
@@ -328,8 +358,8 @@ func (playlist *Playlist) addAllToQueue(root *tview.TreeNode) {
 
 }
 
-
-func (playlist *Playlist) Refresh() {
+// refresh the playlist and read the whole root music dir
+func (p *Playlist) Refresh() {
 
 	root := playlist.GetRoot()
 
@@ -351,5 +381,67 @@ func (playlist *Playlist) Refresh() {
 
 		return true
 	})
-	
+
+}
+
+// adds child while setting reference to audio file
+func (p *Playlist) AddSongToPlaylist(audioPath string, selPlaylist *tview.TreeNode) error {
+
+	f, err := os.Open(audioPath)
+
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	node := tview.NewTreeNode(path.Base(audioPath))
+
+	audioLength, err := GetLength(audioPath)
+
+	if err != nil {
+		return err
+	}
+
+	audioFile := &AudioFile{
+		Name:        path.Base(audioPath),
+		Path:        audioPath,
+		IsAudioFile: true,
+		Length:      audioLength,
+		Parent:      selPlaylist,
+	}
+
+	node.SetReference(audioFile)
+	selPlaylist.AddChild(node)
+	app.Draw()
+
+	return nil
+
+}
+
+// creates a directory under selected node, returns error if playlist exists
+func (p *Playlist) CreatePlaylist(name string) error {
+
+	selectedNode := p.GetCurrentNode()
+
+	parentNode := selectedNode.GetReference().(*AudioFile).Parent
+
+	// if the current node is the root
+	// sets the parent to itself
+	if parentNode == nil {
+		parentNode = selectedNode
+	}
+
+	audioFile := parentNode.GetReference().(*AudioFile)
+
+	err := os.Mkdir(path.Join(audioFile.Path, name), 555)
+
+	if err != nil {
+		return err
+	}
+
+	p.Refresh()
+
+	return nil
+
 }
