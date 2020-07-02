@@ -211,3 +211,27 @@ func (p *Player) Skip() {
 		p.done <- true
 	}
 }
+
+
+
+// gets the length of the song in the queue
+func GetLength(audioPath string) (time.Duration, error) {
+
+	f, err := os.Open(audioPath)
+
+	defer f.Close()
+
+	if err != nil {
+		return 0, err
+	}
+
+	streamer, format, err := mp3.Decode(f)
+
+	defer streamer.Close()
+
+	if err != nil {
+		return 0, err
+	}
+
+	return format.SampleRate.D(streamer.Len()), nil
+}

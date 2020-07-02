@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/faiface/beep/mp3"
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
 )
@@ -82,27 +81,6 @@ func expandTilde(_path string) string {
 
 }
 
-// gets the length of the song in the queue
-func GetLength(audioPath string) (time.Duration, error) {
-
-	f, err := os.Open(audioPath)
-
-	defer f.Close()
-
-	if err != nil {
-		return 0, err
-	}
-
-	streamer, format, err := mp3.Decode(f)
-
-	defer streamer.Close()
-
-	if err != nil {
-		return 0, err
-	}
-
-	return format.SampleRate.D(streamer.Len()), nil
-}
 
 // detects the filetype of file
 func GetFileContentType(out *os.File) (string, error) {
