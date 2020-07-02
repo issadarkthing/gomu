@@ -6,27 +6,29 @@ Gomu is a Terminal User Interface **TUI** that plays your mp3 files in your loca
 
 ## Features
 - lightweight
+- simple
+- fast
 - show audio files as tree
 - vim keybindings
+- youtube-dl integration
+- audio file management
 
 ## Installation
 ```sh
 go get -u github.com/issadarkthing/gomu
 ```
 
-## TODO
-- [ ] song fade
-- [X] delete song from queue
-- [x] bulk add songs to queue
-- [ ] download music from youtube
-- [ ] audio streaming
-- [x] music change notification
-- [x] volume change notification
-- [ ] delete music from filesystem
-- [ ] audio seeking
-- [ ] loop
-- [ ] total queue duration
-- [ ] add support for .wav as well
+## Configuration
+By default, gomu will look for audio files in `~/music` directory. If you wish to change to your desired location, edit `~/.config/gomu/config` file
+and change `music_dir: path/to/your/musicDir`. Example of the config file will look like:
+
+```
+confirm_on_exit: true
+music_dir: ~/music
+confirm_bulk_add: true
+popup_timeout: 5
+```
+
 
 
 ## Project Background
