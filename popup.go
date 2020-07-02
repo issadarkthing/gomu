@@ -17,8 +17,7 @@ import (
 var (
 	popupCounter = 0
 	popupTimeout = time.Duration(viper.GetInt("popup_timeout")) * time.Second
-) 
-
+)
 
 func confirmationPopup(
 	text string,
@@ -61,7 +60,7 @@ func topRight(p tview.Primitive, width, height int) tview.Primitive {
 func timedPopup(title string, desc string, timeout time.Duration) {
 
 	textView := tview.NewTextView().
-		SetText(fmt.Sprintf("%s", desc)).
+		SetText(desc).
 		SetTextColor(accentColor)
 
 	textView.SetTextAlign(tview.AlignCenter).SetBackgroundColor(popupBg)
@@ -149,7 +148,7 @@ func helpPopup() {
 		case 'k':
 			prev()
 		}
-		
+
 		switch e.Key() {
 		case tcell.KeyEsc:
 			pages.RemovePage("help-page")
@@ -195,7 +194,7 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 }
 
 func CreatePlaylistPopup() {
-	
+
 	inputField := tview.NewInputField().
 		SetLabel("Enter a playlist name: ").
 		SetFieldWidth(0).
@@ -209,7 +208,12 @@ func CreatePlaylistPopup() {
 		switch key {
 		case tcell.KeyEnter:
 			playListName := inputField.GetText()
-			playlist.CreatePlaylist(playListName)
+			err := playlist.CreatePlaylist(playListName)
+
+			if err != nil {
+				appLog(err)
+			}
+
 			pages.RemovePage("mkdir-input-popup")
 			app.SetFocus(prevPanel.(tview.Primitive))
 

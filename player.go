@@ -15,9 +15,8 @@ import (
 )
 
 type Song struct {
-	name     string
-	path     string
-	position string
+	name string
+	path string
 }
 
 type Player struct {
@@ -57,7 +56,11 @@ func (p *Player) Run() {
 	p.length = format.SampleRate.D(streamer.Len())
 
 	if !p.hasInit {
-		speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+		err := speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+
+		if err != nil {
+			appLog(err)
+		}
 		p.hasInit = true
 	}
 
@@ -211,8 +214,6 @@ func (p *Player) Skip() {
 		p.done <- true
 	}
 }
-
-
 
 // gets the length of the song in the queue
 func GetLength(audioPath string) (time.Duration, error) {
