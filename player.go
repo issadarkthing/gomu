@@ -45,7 +45,7 @@ func (p *Player) Run() {
 
 	if err != nil {
 		p.IsRunning = false
-		log(err.Error())
+		appLog(err)
 	}
 	f, err := os.Open(first)
 
@@ -64,13 +64,13 @@ func (p *Player) Run() {
 	p.format = &format
 
 	if err != nil {
-		log(err.Error())
+		appLog(err)
 	}
 
 	defer streamer.Close()
 
 	if err != nil {
-		log(err.Error())
+		appLog(err)
 	}
 
 	song := &Song{name: GetName(f.Name()), path: first}

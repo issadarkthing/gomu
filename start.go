@@ -42,6 +42,8 @@ func start(application *tview.Application) {
 	queue = InitQueue()
 	playlist = InitPlaylist()
 
+	appLog("start app")
+
 	flex := Layout()
 	pages = tview.NewPages().AddPage("main", flex, true, true)
 
@@ -129,7 +131,7 @@ func start(application *tview.Application) {
 
 	// main loop
 	if err := application.SetRoot(pages, true).SetFocus(playlist).Run(); err != nil {
-		log(err.Error())
+		appLog(err)
 	}
 }
 
@@ -193,7 +195,7 @@ func readConfig() {
 	configPath := home + "/.config/gomu/config"
 
 	if err != nil {
-		panic(err)
+		appLog(err)
 	}
 
 	viper.SetConfigName("config")
@@ -212,14 +214,14 @@ func readConfig() {
 		// creates gomu config dir if does not exist
 		if _, err := os.Stat(configPath); err != nil {
 			if err := os.MkdirAll(home+"/.config/gomu", 0755); err != nil {
-				panic(err)
+				appLog(err)
 			}
 		}
 
 		// if config file was not found
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			if err := viper.SafeWriteConfigAs(configPath); err != nil {
-				panic(err)
+				appLog(err)
 			}
 		}
 
