@@ -5,6 +5,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -18,23 +19,25 @@ import (
 	"github.com/spf13/viper"
 )
 
-func log(text string) {
+// initialiaze simple log
+func appLog(v ...interface{}) {
 
-	f, err := os.OpenFile("message.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	tmpDir := os.TempDir()
+
+	logFile := path.Join(tmpDir, "gomu.log")
+
+	file, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 
 	if err != nil {
-		panic(err)
+		log.Fatalf("Error opening file %s", logFile)
 	}
 
-	if _, err := f.Write([]byte(text + "\n")); err != nil {
-		panic(err)
-	}
+	defer file.Close()
 
-	if err := f.Close(); err != nil {
-		panic(err)
-	}
-
+	log.SetOutput(file)
+	log.Println(v...)
 }
+
 
 // formats duration to my desired output mm:ss
 func fmtDuration(input time.Duration) string {
@@ -72,7 +75,7 @@ func expandTilde(_path string) string {
 	home, err := os.UserHomeDir()
 
 	if err != nil {
-		log(err.Error())
+		appLog(err)
 	}
 
 	return path.Join(home, strings.TrimPrefix(_path, "~"))
@@ -137,7 +140,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 	selAudioFile := selPlaylist.GetReference().(*AudioFile)
 	selPlaylistName := selAudioFile.Name
 
-	go timedPopup(" Ytdl ", "Downloading", time.Second*5)
+	timedPopup(" Ytdl ", "Downloading", time.Second*5)
 
 	// specify the output path for ytdl
 	outputDir := fmt.Sprintf(
@@ -174,10 +177,16 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 
 		playlist.AddSongToPlaylist(downloadedAudioPath, selPlaylist)
 
+		downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s", 
+			path.Base(downloadedAudioPath))
+
 		timedPopup(
 			" Ytdl ",
-			fmt.Sprintf("Finished downloading\n%s",
-				path.Base(downloadedAudioPath)), time.Second*5)
+			downloadFinishedMessage, 
+			time.Second*5,
+		)
+
+		app.Draw()
 
 	}()
 

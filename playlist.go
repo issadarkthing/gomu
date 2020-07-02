@@ -33,7 +33,7 @@ func InitPlaylist() *Playlist {
 	rootDir, err := filepath.Abs(expandTilde(viper.GetString("music_dir")))
 
 	if err != nil {
-		log(err.Error())
+		appLog(err)
 	}
 
 	root := tview.NewTreeNode(path.Base(rootDir)).
@@ -64,10 +64,6 @@ func InitPlaylist() *Playlist {
 		firstChild = root.GetChildren()[0]
 	}
 
-	// firstChild.SetColor(textColor)
-	// playlist.SetCurrentNode(firstChild)
-	// keep track of prev node so we can remove the color of highlight
-	// playlist.prevNode = firstChild.SetColor(accentColor)
 
 	playlist.SetHighlight(firstChild)
 
@@ -83,9 +79,6 @@ func InitPlaylist() *Playlist {
 
 		currNode := playlist.GetCurrentNode()
 
-		if currNode == playlist.GetRoot() {
-			return e
-		}
 
 		audioFile := currNode.GetReference().(*AudioFile)
 
@@ -181,9 +174,9 @@ func InitPlaylist() *Playlist {
 			// this ensures it downloads to
 			// the correct dir
 			if audioFile.IsAudioFile {
-				downloadMusic(audioFile.Parent)
+				downloadMusicPopup(audioFile.Parent)
 			} else {
-				downloadMusic(currNode)
+				downloadMusicPopup(currNode)
 			}
 
 		case 'l':
@@ -228,6 +221,12 @@ func InitPlaylist() *Playlist {
 				})
 
 
+		case 'r':
+
+			playlist.Refresh()
+
+
+
 		}
 
 		return e
@@ -243,7 +242,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 	files, err := ioutil.ReadDir(rootPath)
 
 	if err != nil {
-		log(err.Error())
+		appLog(err)
 	}
 
 	for _, file := range files {
@@ -252,7 +251,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 		f, err := os.Open(path)
 
 		if err != nil {
-			log(err.Error())
+			appLog(err)
 		}
 
 		defer f.Close()
@@ -265,7 +264,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 			filetype, err := GetFileContentType(f)
 
 			if err != nil {
-				log(err.Error())
+				appLog(err)
 			}
 
 			// skip if not mp3 file
@@ -276,7 +275,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 			audioLength, err := GetLength(path)
 
 			if err != nil {
-				log(err.Error())
+				appLog(err)
 			}
 
 			audioFile := &AudioFile{
@@ -331,7 +330,7 @@ func (p *Playlist) addToQueue(audioFile *AudioFile) {
 		songLength, err := GetLength(audioFile.Path)
 
 		if err != nil {
-			log(err.Error())
+			appLog(err)
 		}
 
 		queueItemView := fmt.Sprintf("[ %s ] %s", fmtDuration(songLength), audioFile.Name)
@@ -433,7 +432,7 @@ func (p *Playlist) CreatePlaylist(name string) error {
 
 	audioFile := parentNode.GetReference().(*AudioFile)
 
-	err := os.Mkdir(path.Join(audioFile.Path, name), 555)
+	err := os.Mkdir(path.Join(audioFile.Path, name), 0666)
 
 	if err != nil {
 		return err
