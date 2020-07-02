@@ -64,7 +64,6 @@ func InitPlaylist() *Playlist {
 		firstChild = root.GetChildren()[0]
 	}
 
-
 	playlist.SetHighlight(firstChild)
 
 	playlist.SetChangedFunc(func(node *tview.TreeNode) {
@@ -78,7 +77,6 @@ func InitPlaylist() *Playlist {
 	playlist.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 		currNode := playlist.GetCurrentNode()
-
 
 		audioFile := currNode.GetReference().(*AudioFile)
 
@@ -220,12 +218,9 @@ func InitPlaylist() *Playlist {
 
 				})
 
-
 		case 'r':
 
 			playlist.Refresh()
-
-
 
 		}
 
@@ -323,9 +318,9 @@ func (p *Playlist) addToQueue(audioFile *AudioFile) {
 				player.Run()
 			}()
 
-			return 
+			return
 
-		} 
+		}
 
 		songLength, err := GetLength(audioFile.Path)
 

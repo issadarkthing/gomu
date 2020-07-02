@@ -153,7 +153,11 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 		downloadedAudioPath := downloadedFilePath(
 			stdout.Bytes(), playlistPath)
 
-		playlist.AddSongToPlaylist(downloadedAudioPath, selPlaylist)
+		err = playlist.AddSongToPlaylist(downloadedAudioPath, selPlaylist)
+
+		if err != nil {
+			log.Println(err)
+		}
 
 		downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s", 
 			path.Base(downloadedAudioPath))
