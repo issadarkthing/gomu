@@ -79,6 +79,7 @@ func timedPopup(title string, desc string, timeout time.Duration) {
 		time.Sleep(timeout)
 		pages.RemovePage(popupId)
 		app.SetFocus(prevPanel.(tview.Primitive))
+		app.Draw()
 	}()
 }
 
@@ -162,7 +163,7 @@ func helpPopup() {
 	app.SetFocus(list)
 }
 
-func downloadMusic(selPlaylist *tview.TreeNode) {
+func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 
 	inputField := tview.NewInputField().
 		SetLabel("Enter a url: ").
@@ -183,6 +184,8 @@ func downloadMusic(selPlaylist *tview.TreeNode) {
 		case tcell.KeyEscape:
 			pages.RemovePage("download-input-popup")
 		}
+
+		app.SetFocus(prevPanel.(tview.Primitive))
 
 	})
 
@@ -212,6 +215,7 @@ func CreatePlaylistPopup() {
 
 		case tcell.KeyEsc:
 			pages.RemovePage("mkdir-input-popup")
+			app.SetFocus(prevPanel.(tview.Primitive))
 		}
 
 	})
