@@ -17,6 +17,5 @@ gomu
 music/
 message.log
 race.txt
-Makefile
 dist/
 bin/
