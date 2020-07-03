@@ -93,7 +93,7 @@ func volumePopup(volume float64) {
 		"50",
 	)
 
-	timedPopup(" Volume ", progress, time.Second*5)
+	timedPopup(" Volume ", progress, popupTimeout)
 
 }
 
@@ -114,6 +114,7 @@ func helpPopup() {
 		"-      volume down",
 		"?      toggle help",
 		"Y      download audio",
+		"a      add playlist",
 	}
 
 	list := tview.NewList().ShowSecondaryText(false)
