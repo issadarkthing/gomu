@@ -11,7 +11,6 @@ import (
 	"github.com/faiface/beep/effects"
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
-	"github.com/spf13/viper"
 )
 
 type Song struct {
@@ -81,9 +80,8 @@ func (p *Player) Run() {
 
 	popupMessage := fmt.Sprintf("%s\n\n[ %s ]", song.name, fmtDuration(p.length))
 
-	timeout := viper.GetInt("popup_timeout")
 
-	timedPopup(" Current Song ", popupMessage, time.Second*time.Duration(timeout))
+	timedPopup(" Current Song ", popupMessage, popupTimeout)
 
 	done := make(chan bool, 1)
 

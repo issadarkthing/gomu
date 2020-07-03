@@ -118,11 +118,11 @@ func InitPlaylist() *Playlist {
 					if err != nil {
 						timedPopup(
 							" Error ",
-							"Unable to delete dir "+selectedDir.Name, time.Second*5)
+							"Unable to delete dir "+selectedDir.Name, popupTimeout)
 					} else {
 						timedPopup(
 							" Success ",
-							selectedDir.Name+"\nhas been deleted successfully", time.Second*5)
+							selectedDir.Name+"\nhas been deleted successfully", popupTimeout)
 
 						playlist.Refresh()
 					}
@@ -152,11 +152,11 @@ func InitPlaylist() *Playlist {
 
 					if err != nil {
 						timedPopup(
-							" Error ", "Unable to delete "+audioFile.Name, time.Second*5)
+							" Error ", "Unable to delete "+audioFile.Name, popupTimeout)
 					} else {
 						timedPopup(
 							" Success ",
-							audioFile.Name+"\nhas been deleted successfully", time.Second*5)
+							audioFile.Name+"\nhas been deleted successfully", popupTimeout)
 
 						playlist.Refresh()
 					}
@@ -476,7 +476,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 	selAudioFile := selPlaylist.GetReference().(*AudioFile)
 	selPlaylistName := selAudioFile.Name
 
-	timedPopup(" Ytdl ", "Downloading", time.Second*5)
+	timedPopup(" Ytdl ", "Downloading", popupTimeout)
 
 	// specify the output path for ytdl
 	outputDir := fmt.Sprintf(
@@ -502,7 +502,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 
 		err := cmd.Run()
 		if err != nil {
-			timedPopup(" Error ", "Error running youtube-dl", time.Second*5)
+			timedPopup(" Error ", "Error running youtube-dl", popupTimeout)
 			return
 		}
 
@@ -523,7 +523,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 		timedPopup(
 			" Ytdl ",
 			downloadFinishedMessage, 
-			time.Second*5,
+			popupTimeout,
 		)
 
 		app.Draw()
