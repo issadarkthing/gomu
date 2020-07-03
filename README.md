@@ -29,6 +29,28 @@ confirm_bulk_add: true
 popup_timeout: 5
 ```
 
+## Keybindings
+
+|  Key   |       Description      |
+|--------|------------------------|
+| j      | down                   |
+| k      | up                     |
+| tab    | change panel           |
+| space  | toggle play/pause      |
+| esc    | close popup            |
+| n      | skip                   |
+| q      | quit                   |
+| l      | add song to queue      |
+| L      | add playlist to queue  |
+| h      | close node in playlist |
+| d      | remove from queue      |
+| D      | delete playlist        |
+| +      | volume up              |
+| -      | volume down            |
+| ?      | toggle help            |
+| Y      | download audio         |
+| a      | create playlist        |
+
 
 
 ## Project Background
