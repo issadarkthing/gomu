@@ -104,17 +104,19 @@ func helpPopup() {
 		"k      up",
 		"tab    change panel",
 		"space  toggle play/pause",
+		"esc    close popup",
 		"n      skip",
 		"q      quit",
 		"l      add song to queue",
 		"L      add playlist to queue",
 		"h      close node in playlist",
 		"d      remove from queue",
+		"D      delete playlist",
 		"+      volume up",
 		"-      volume down",
 		"?      toggle help",
 		"Y      download audio",
-		"a      add playlist",
+		"a      create playlist",
 	}
 
 	list := tview.NewList().ShowSecondaryText(false)
