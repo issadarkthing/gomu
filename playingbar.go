@@ -81,10 +81,10 @@ func (p *PlayingBar) Run() {
 			}
 
 			x := p._progress * p.limit / p.full
-			p.text.SetText(fmt.Sprintf("%s |%s%s| %s",
+			p.text.SetText(fmt.Sprintf("%s ┃%s%s┫ %s",
 				fmtDuration(start),
 				strings.Repeat("█", x),
-				strings.Repeat("-", p.limit-x),
+				strings.Repeat("━", p.limit-x),
 				fmtDuration(end),
 			))
 
@@ -107,7 +107,7 @@ func (p *PlayingBar) NewProgress(songTitle string, full, limit int) {
 // sets default title and progress bar
 func (p *PlayingBar) SetDefault() {
 	p.SetSongTitle("---------:---------")
-	p.text.SetText(fmt.Sprintf("%s |%s| %s", "00:00", strings.Repeat("-", 100), "00:00"))
+	p.text.SetText(fmt.Sprintf("%s ┣%s┫ %s", "00:00", strings.Repeat("━", 100), "00:00"))
 }
 
 func (p *PlayingBar) Stop() {
