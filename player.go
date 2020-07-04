@@ -186,7 +186,7 @@ func (p *Player) Volume(v float64) float64 {
 
 	if p._volume == nil {
 		p.volume += v
-		return v
+		return p.volume
 	}
 
 	speaker.Lock()
