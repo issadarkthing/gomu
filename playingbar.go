@@ -16,7 +16,7 @@ func NewPlayingBar() *PlayingBar {
 
 	textView := tview.NewTextView().SetTextAlign(tview.AlignCenter)
 
-	progress := InitProgressBar(textView, gomu.Player)
+	progress := NewProgressBar(textView, gomu.Player)
 
 	textView.SetChangedFunc(func() {
 		gomu.App.Draw()
@@ -41,7 +41,7 @@ type PlayingBar struct {
 
 // full is the maximum amount of value can be sent to channel
 // limit is the progress bar size
-func InitProgressBar(txt *tview.TextView, player *Player) *PlayingBar {
+func NewProgressBar(txt *tview.TextView, player *Player) *PlayingBar {
 
 	frame := tview.NewFrame(txt).SetBorders(1, 1, 1, 1, 1, 1)
 	frame.SetBorder(true).SetTitle(" Now Playing ")
@@ -58,6 +58,7 @@ func (p *PlayingBar) Run() {
 	go func() {
 		for {
 
+			// stop progressing if song ends or skipped
 			if p._progress > p.full || p.skip {
 				p.skip = false
 				p._progress = 0
