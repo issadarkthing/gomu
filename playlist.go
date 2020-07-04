@@ -31,7 +31,7 @@ type Playlist struct {
 	prevNode *tview.TreeNode
 }
 
-func InitPlaylist() *Playlist {
+func NewPlaylist() *Playlist {
 
 	rootDir, err := filepath.Abs(expandTilde(viper.GetString("music_dir")))
 
@@ -40,7 +40,7 @@ func InitPlaylist() *Playlist {
 	}
 
 	root := tview.NewTreeNode(path.Base(rootDir)).
-		SetColor(accentColor)
+		SetColor(gomu.AccentColor)
 
 	tree := tview.NewTreeView().SetRoot(root)
 
@@ -87,7 +87,7 @@ func InitPlaylist() *Playlist {
 
 		case 'a':
 
-			name, _ := pages.GetFrontPage()
+			name, _ := gomu.Pages.GetFrontPage()
 
 			if name != "mkdir-popup" {
 				CreatePlaylistPopup()
@@ -108,8 +108,8 @@ func InitPlaylist() *Playlist {
 				"Are you sure to delete this directory?", func(_ int, buttonName string) {
 
 					if buttonName == "no" {
-						pages.RemovePage("confirmation-popup")
-						app.SetFocus(prevPanel.(tview.Primitive))
+						gomu.Pages.RemovePage("confirmation-popup")
+						gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 						return
 					}
 
@@ -127,8 +127,8 @@ func InitPlaylist() *Playlist {
 						playlist.Refresh()
 					}
 
-					pages.RemovePage("confirmation-popup")
-					app.SetFocus(prevPanel.(tview.Primitive))
+					gomu.Pages.RemovePage("confirmation-popup")
+					gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 
 				})
 
@@ -143,8 +143,8 @@ func InitPlaylist() *Playlist {
 				"Are you sure to delete this audio file?", func(_ int, buttonName string) {
 
 					if buttonName == "no" {
-						pages.RemovePage("confirmation-popup")
-						app.SetFocus(prevPanel.(tview.Primitive))
+						gomu.Pages.RemovePage("confirmation-popup")
+						gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 						return
 					}
 
@@ -161,14 +161,14 @@ func InitPlaylist() *Playlist {
 						playlist.Refresh()
 					}
 
-					pages.RemovePage("confirmation-popup")
-					app.SetFocus(prevPanel.(tview.Primitive))
+					gomu.Pages.RemovePage("confirmation-popup")
+					gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 				})
 
 		case 'Y':
 
-			if pages.HasPage("download-popup") {
-				pages.RemovePage("download-popup")
+			if gomu.Pages.HasPage("download-popup") {
+				gomu.Pages.RemovePage("download-popup")
 				return e
 			}
 
@@ -216,8 +216,8 @@ func InitPlaylist() *Playlist {
 						playlist.addAllToQueue(playlist.GetCurrentNode())
 					}
 
-					pages.RemovePage("confirmation-popup")
-					app.SetFocus(playlist)
+					gomu.Pages.RemovePage("confirmation-popup")
+					gomu.App.SetFocus(playlist)
 
 				})
 
@@ -234,7 +234,7 @@ func InitPlaylist() *Playlist {
 
 }
 
-// add songs and their directories in Playlist panel
+// Add songs and their directories in Playlist panel
 func populate(root *tview.TreeNode, rootPath string) {
 
 	files, err := ioutil.ReadDir(rootPath)
@@ -243,6 +243,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 		appLog(err)
 	}
 
+
 	for _, file := range files {
 
 		path := filepath.Join(rootPath, file.Name())
@@ -250,12 +251,12 @@ func populate(root *tview.TreeNode, rootPath string) {
 
 		if err != nil {
 			appLog(err)
+			continue
 		}
 
 		defer f.Close()
 
 		child := tview.NewTreeNode(file.Name())
-		root.AddChild(child)
 
 		if !file.IsDir() {
 
@@ -263,6 +264,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 
 			if err != nil {
 				appLog(err)
+				continue
 			}
 
 			// skip if not mp3 file
@@ -274,6 +276,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 
 			if err != nil {
 				appLog(err)
+				continue
 			}
 
 			audioFile := &AudioFile{
@@ -288,6 +291,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 
 		}
 
+
 		if file.IsDir() {
 
 			audioFile := &AudioFile{
@@ -298,27 +302,33 @@ func populate(root *tview.TreeNode, rootPath string) {
 				Parent:      root,
 			}
 			child.SetReference(audioFile)
-			child.SetColor(accentColor)
+			child.SetColor(gomu.AccentColor)
 			populate(child, path)
 
 		}
+
+		// this is placed below because if
+		// any of the checks above returns error
+		// it will not be added to the playlist
+		root.AddChild(child)
 
 	}
 
 }
 
-// add to queue and update queue panel
+// Add to queue and update queue panel
 func (p *Playlist) addToQueue(audioFile *AudioFile) {
 
 	if audioFile.IsAudioFile {
 
-		if !player.IsRunning {
+		if !gomu.Player.IsRunning {
 
-			player.IsRunning = true
+			gomu.Player.IsRunning = true
 
 			go func() {
-				queue.AddItem("", audioFile.Path, 0, nil)
-				player.Run()
+				// we dont need the primary text as it will be popped anyway
+				gomu.Queue.AddItem("", audioFile.Path, 0, nil)
+				gomu.Player.Run()
 			}()
 
 			return
@@ -332,11 +342,11 @@ func (p *Playlist) addToQueue(audioFile *AudioFile) {
 		}
 
 		queueItemView := fmt.Sprintf("[ %s ] %s", fmtDuration(songLength), audioFile.Name)
-		queue.AddItem(queueItemView, audioFile.Path, 0, nil)
+		gomu.Queue.AddItem(queueItemView, audioFile.Path, 0, nil)
 	}
 }
 
-// bulk add a playlist to queue
+// Bulk add a playlist to queue
 func (p *Playlist) addAllToQueue(root *tview.TreeNode) {
 
 	var childrens []*tview.TreeNode
@@ -351,17 +361,17 @@ func (p *Playlist) addAllToQueue(root *tview.TreeNode) {
 	for _, v := range childrens {
 		currNode := v.GetReference().(*AudioFile)
 
-		go playlist.addToQueue(currNode)
+		go gomu.Playlist.addToQueue(currNode)
 	}
 
 }
 
-// refresh the playlist and read the whole root music dir
+// Refresh the playlist and read the whole root music dir
 func (p *Playlist) Refresh() {
 
-	root := playlist.GetRoot()
+	root := gomu.Playlist.GetRoot()
 
-	prevFileName := playlist.GetCurrentNode().GetText()
+	prevFileName := gomu.Playlist.GetCurrentNode().GetText()
 
 	root.ClearChildren()
 
@@ -380,7 +390,7 @@ func (p *Playlist) Refresh() {
 
 }
 
-// adds child while setting reference to audio file
+// Adds child while setting reference to audio file
 func (p *Playlist) AddSongToPlaylist(audioPath string, selPlaylist *tview.TreeNode) error {
 
 	f, err := os.Open(audioPath)
@@ -409,13 +419,13 @@ func (p *Playlist) AddSongToPlaylist(audioPath string, selPlaylist *tview.TreeNo
 
 	node.SetReference(audioFile)
 	selPlaylist.AddChild(node)
-	app.Draw()
+	gomu.App.Draw()
 
 	return nil
 
 }
 
-// creates a directory under selected node, returns error if playlist exists
+// Creates a directory under selected node, returns error if playlist exists
 func (p *Playlist) CreatePlaylist(name string) error {
 
 	selectedNode := p.GetCurrentNode()
@@ -442,14 +452,14 @@ func (p *Playlist) CreatePlaylist(name string) error {
 
 }
 
-// this is used to replace default behaviour of SetCurrentNode which
+// This is used to replace default behaviour of SetCurrentNode which
 // adds color highlight attributes
 func (p *Playlist) SetHighlight(currNode *tview.TreeNode) {
 
 	if p.prevNode != nil {
-		p.prevNode.SetColor(textColor)
+		p.prevNode.SetColor(gomu.TextColor)
 	}
-	currNode.SetColor(accentColor)
+	currNode.SetColor(gomu.AccentColor)
 	p.SetCurrentNode(currNode)
 
 	if currNode.GetReference().(*AudioFile).IsAudioFile {
@@ -511,7 +521,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 		downloadedAudioPath := downloadedFilePath(
 			stdout.Bytes(), playlistPath)
 
-		err = playlist.AddSongToPlaylist(downloadedAudioPath, selPlaylist)
+		err = gomu.Playlist.AddSongToPlaylist(downloadedAudioPath, selPlaylist)
 
 		if err != nil {
 			log.Println(err)
@@ -526,7 +536,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 			getPopupTimeout(),
 		)
 
-		app.Draw()
+		gomu.App.Draw()
 
 	}()
 

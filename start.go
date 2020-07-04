@@ -11,58 +11,94 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	app         *tview.Application
-	playingBar  *PlayingBar
-	queue       *Queue
-	playlist    *Playlist
-	player      *Player
-	pages       *tview.Pages
-	prevPanel   Children
-	popupBg     = tcell.GetColor("#0A0F14")
-	textColor   = tcell.ColorWhite
-	accentColor = tcell.ColorDarkCyan
-)
+// var (
+// 	app         *tview.Application
+// 	playingBar  *PlayingBar
+// 	queue       *Queue
+// 	playlist    *Playlist
+// 	player      *Player
+// 	pages       *tview.Pages
+// 	prevPanel   Children
+// 	popupBg     = tcell.GetColor("#0A0F14")
+// 	textColor   = tcell.ColorWhite
+// 	accentColor = tcell.ColorDarkCyan
+// )
+
+type Gomu struct {
+	App         *tview.Application
+	PlayingBar  *PlayingBar
+	Queue       *Queue
+	Playlist    *Playlist
+	Player      *Player
+	Pages       *tview.Pages
+	PrevPanel   Children
+	PopupBg     tcell.Color
+	TextColor   tcell.Color
+	AccentColor tcell.Color
+}
+
+// Creates new instance of gomu with default values
+func NewGomu() *Gomu {
+
+	gomu := &Gomu{
+		PopupBg:     tcell.GetColor("#0A0F14"),
+		TextColor:   tcell.ColorWhite,
+		AccentColor: tcell.ColorDarkCyan,
+	}
+
+	return gomu
+}
+
+// Initialize childrens/panels this is seperated from 
+// constructor function `NewGomu` so that we can 
+// test independently
+func (g *Gomu) InitChildrens(app *tview.Application) {
+	g.App = app
+	g.PlayingBar = NewPlayingBar()
+	g.Queue = NewQueue()
+	g.Playlist = NewPlaylist()
+	g.Player = &Player{}
+	g.Pages = tview.NewPages()
+}
+
+var gomu *Gomu
 
 func start(application *tview.Application) {
 	// override default border
 	// change double line border to one line border when focused
-	tview.Borders.HorizontalFocus = tview.Borders.Horizontal
-	tview.Borders.VerticalFocus = tview.Borders.Vertical
-	tview.Borders.TopLeftFocus = tview.Borders.TopLeft
-	tview.Borders.TopRightFocus = tview.Borders.TopRight
-	tview.Borders.BottomLeftFocus = tview.Borders.BottomLeft
-	tview.Borders.BottomRightFocus = tview.Borders.BottomRight
+	tview.Borders.HorizontalFocus         = tview.Borders.Horizontal
+	tview.Borders.VerticalFocus           = tview.Borders.Vertical
+	tview.Borders.TopLeftFocus            = tview.Borders.TopLeft
+	tview.Borders.TopRightFocus           = tview.Borders.TopRight
+	tview.Borders.BottomLeftFocus         = tview.Borders.BottomLeft
+	tview.Borders.BottomRightFocus        = tview.Borders.BottomRight
 	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
-	tview.Styles.BorderColor = tcell.ColorWhite
+	tview.Styles.BorderColor              = tcell.ColorWhite
 
-	player = &Player{}
-	app = application
-	playingBar = InitPlayingBar()
-	queue = InitQueue()
-	playlist = InitPlaylist()
+	gomu = NewGomu()
+	gomu.InitChildrens(application)
+
 
 	appLog("start app")
 
-	flex := Layout()
-	pages = tview.NewPages().AddPage("main", flex, true, true)
+	flex := Layout(gomu)
+	gomu.Pages.AddPage("main", flex, true, true)
 
-	playlist.SetBorderColor(accentColor)
-	playlist.SetTitleColor(accentColor)
-	prevPanel = playlist
+	gomu.Playlist.SetBorderColor(gomu.AccentColor)
+	gomu.Playlist.SetTitleColor(gomu.AccentColor)
+	gomu.PrevPanel = gomu.Playlist
 
-	childrens := []Children{playlist, queue, playingBar}
+	childrens := []Children{gomu.Playlist, gomu.Queue, gomu.PlayingBar}
 
 	application.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 
 		switch event.Key() {
 		// cycle through each section
 		case tcell.KeyTAB:
-			prevPanel = cycleChildren(application, childrens)
-
+			gomu.PrevPanel = cycleChildren(gomu, childrens) 
 		}
 
-		name, _ := pages.GetFrontPage()
+		name, _ := gomu.Pages.GetFrontPage()
 
 		// disables keybindings when writing in input fields
 		if strings.Contains(name, "-input-") {
@@ -81,38 +117,38 @@ func start(application *tview.Application) {
 				if label == "yes" {
 					application.Stop()
 				} else {
-					pages.RemovePage("confirmation-popup")
+					gomu.Pages.RemovePage("confirmation-popup")
 				}
 
 			})
 
 		case ' ':
-			player.TogglePause()
+			gomu.Player.TogglePause()
 
 		case '+':
-			v := int(player.volume*10) + 50
+			v := int(gomu.Player.volume*10) + 50
 			if v < 50 {
-				vol := player.Volume(0.5)
+				vol := gomu.Player.Volume(0.5)
 				volumePopup(vol)
 			}
 
 		case '-':
-			v := int(player.volume*10) + 50
+			v := int(gomu.Player.volume*10) + 50
 			if v > 0 {
-				vol := player.Volume(-0.5)
+				vol := gomu.Player.Volume(-0.5)
 				volumePopup(vol)
 			}
 
 		case 'n':
-			player.Skip()
+			gomu.Player.Skip()
 
 		case '?':
 
-			name, _ := pages.GetFrontPage()
+			name, _ := gomu.Pages.GetFrontPage()
 
 			if name == "help-page" {
-				pages.RemovePage(name)
-				app.SetFocus(prevPanel.(tview.Primitive))
+				gomu.Pages.RemovePage(name)
+				gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 			} else {
 				helpPopup()
 			}
@@ -129,7 +165,7 @@ func start(application *tview.Application) {
 	})
 
 	// main loop
-	if err := application.SetRoot(pages, true).SetFocus(playlist).Run(); err != nil {
+	if err := application.SetRoot(gomu.Pages, true).SetFocus(gomu.Playlist).Run(); err != nil {
 		appLog(err)
 	}
 }
@@ -143,10 +179,10 @@ type Children interface {
 	GetTitle() string
 }
 
-func cycleChildren(app *tview.Application, childrens []Children) Children {
+func cycleChildren(gomu *Gomu, childrens []Children) Children {
 
-	focusedColor := accentColor
-	unfocusedColor := textColor
+	focusedColor := gomu.AccentColor
+	unfocusedColor := gomu.TextColor
 	anyChildHasFocus := false
 
 	for i, child := range childrens {
@@ -167,7 +203,7 @@ func cycleChildren(app *tview.Application, childrens []Children) Children {
 			child.SetBorderColor(unfocusedColor)
 			child.SetTitleColor(unfocusedColor)
 
-			app.SetFocus(nextChild.(tview.Primitive))
+			gomu.App.SetFocus(nextChild.(tview.Primitive))
 			nextChild.SetBorderColor(focusedColor)
 			nextChild.SetTitleColor(focusedColor)
 
@@ -179,7 +215,7 @@ func cycleChildren(app *tview.Application, childrens []Children) Children {
 
 	if !anyChildHasFocus {
 
-		app.SetFocus(first.(tview.Primitive))
+		gomu.App.SetFocus(first.(tview.Primitive))
 		first.SetBorderColor(focusedColor)
 		first.SetTitleColor(focusedColor)
 
@@ -229,13 +265,13 @@ func readConfig() {
 }
 
 // layout is used to organize the panels
-func Layout() *tview.Flex {
+func Layout(gomu *Gomu) *tview.Flex {
 
 	flex := tview.NewFlex().
-		AddItem(playlist, 0, 1, false).
+		AddItem(gomu.Playlist, 0, 1, false).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-			AddItem(queue, 0, 7, false).
-			AddItem(playingBar, 0, 1, false), 0, 3, false)
+			AddItem(gomu.Queue, 0, 7, false).
+			AddItem(gomu.PlayingBar, 0, 1, false), 0, 3, false)
 
 	return flex
 

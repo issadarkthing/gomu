@@ -13,6 +13,7 @@ type Queue struct {
 	*tview.List
 }
 
+// highlight the next item in the queue
 func (q *Queue) next() {
 	currIndex := q.GetCurrentItem()
 	idx := currIndex + 1
@@ -22,11 +23,14 @@ func (q *Queue) next() {
 	q.SetCurrentItem(idx)
 }
 
+// highlight the previous item in the queue
 func (q *Queue) prev() {
 	currIndex := q.GetCurrentItem()
 	q.SetCurrentItem(currIndex - 1)
 }
 
+// usually used with GetCurrentItem which can return -1 if
+// no item highlighted
 func (q *Queue) deleteItem(index int) {
 	if index != -1 {
 		q.RemoveItem(index)
@@ -34,6 +38,7 @@ func (q *Queue) deleteItem(index int) {
 }
 
 // gets the first item and remove it from the queue
+// app.Draw() must be called after calling this function
 func (q *Queue) Pop() (string, error) {
 
 	if q.GetItemCount() == 0 {
@@ -43,12 +48,13 @@ func (q *Queue) Pop() (string, error) {
 	_, first := q.GetItemText(0)
 
 	q.deleteItem(0)
-	// ensuring the list is updated
-	app.Draw()
 
 	return first, nil
 }
 
+// GetItems is used to get the secondary text
+// which is used to store the path of the audio file
+// this is for the sake of convenience
 func (q *Queue) GetItems() []string {
 
 	items := []string{}
@@ -63,7 +69,7 @@ func (q *Queue) GetItems() []string {
 	return items
 }
 
-func InitQueue() *Queue {
+func NewQueue() *Queue {
 
 	list := tview.NewList().
 		ShowSecondaryText(false)
