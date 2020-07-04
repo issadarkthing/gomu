@@ -118,11 +118,11 @@ func InitPlaylist() *Playlist {
 					if err != nil {
 						timedPopup(
 							" Error ",
-							"Unable to delete dir "+selectedDir.Name, popupTimeout)
+							"Unable to delete dir "+selectedDir.Name, getPopupTimeout())
 					} else {
 						timedPopup(
 							" Success ",
-							selectedDir.Name+"\nhas been deleted successfully", popupTimeout)
+							selectedDir.Name+"\nhas been deleted successfully", getPopupTimeout())
 
 						playlist.Refresh()
 					}
@@ -152,11 +152,11 @@ func InitPlaylist() *Playlist {
 
 					if err != nil {
 						timedPopup(
-							" Error ", "Unable to delete "+audioFile.Name, popupTimeout)
+							" Error ", "Unable to delete "+audioFile.Name, getPopupTimeout())
 					} else {
 						timedPopup(
 							" Success ",
-							audioFile.Name+"\nhas been deleted successfully", popupTimeout)
+							audioFile.Name+"\nhas been deleted successfully", getPopupTimeout())
 
 						playlist.Refresh()
 					}
@@ -467,7 +467,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 	_, err := exec.LookPath("youtube-dl")
 
 	if err != nil {
-		timedPopup(" Error ", "youtube-dl is not in your $PATH", popupTimeout)
+		timedPopup(" Error ", "youtube-dl is not in your $PATH", getPopupTimeout())
 		return
 	}
 
@@ -476,7 +476,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 	selAudioFile := selPlaylist.GetReference().(*AudioFile)
 	selPlaylistName := selAudioFile.Name
 
-	timedPopup(" Ytdl ", "Downloading", popupTimeout)
+	timedPopup(" Ytdl ", "Downloading", getPopupTimeout())
 
 	// specify the output path for ytdl
 	outputDir := fmt.Sprintf(
@@ -502,7 +502,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 
 		err := cmd.Run()
 		if err != nil {
-			timedPopup(" Error ", "Error running youtube-dl", popupTimeout)
+			timedPopup(" Error ", "Error running youtube-dl", getPopupTimeout())
 			return
 		}
 
@@ -523,7 +523,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 		timedPopup(
 			" Ytdl ",
 			downloadFinishedMessage, 
-			popupTimeout,
+			getPopupTimeout(),
 		)
 
 		app.Draw()

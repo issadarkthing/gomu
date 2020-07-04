@@ -81,7 +81,7 @@ func (p *Player) Run() {
 	popupMessage := fmt.Sprintf("%s\n\n[ %s ]", song.name, fmtDuration(p.length))
 
 
-	timedPopup(" Current Song ", popupMessage, popupTimeout)
+	timedPopup(" Current Song ", popupMessage, getPopupTimeout())
 
 	done := make(chan bool, 1)
 
