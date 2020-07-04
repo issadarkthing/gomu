@@ -21,7 +21,7 @@ $(BIN_DIR):
 $(INSTALL_DIR):
 	@mkdir -p $@
 
-build: $(BIN_DIR)
+build: test $(BIN_DIR) 
 	${GO} build -v -o $(BIN_DIR)/$(BIN_NAME)
 
 install: build $(INSTALL_DIR)
