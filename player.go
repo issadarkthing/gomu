@@ -39,7 +39,9 @@ type Player struct {
 func (p *Player) Run() {
 
 	p.isSkipped = make(chan bool, 1)
-	first, err := queue.Pop()
+	first, err := gomu.Queue.Pop()
+	// ensuring the list is updated
+	gomu.App.Draw()
 
 	if err != nil {
 		p.IsRunning = false
@@ -118,8 +120,8 @@ func (p *Player) Run() {
 	p.position = position()
 	p.IsRunning = true
 
-	playingBar.NewProgress(song.name, int(p.length.Seconds()), 100)
-	playingBar.Run()
+	gomu.PlayingBar.NewProgress(song.name, int(p.length.Seconds()), 100)
+	gomu.PlayingBar.Run()
 
 	// is used to send progress
 	i := 0
@@ -133,9 +135,9 @@ next:
 			p.position = 0
 			p.IsRunning = false
 			p.format = nil
-			playingBar.Stop()
+			gomu.PlayingBar.Stop()
 
-			if queue.GetItemCount() != 0 {
+			if gomu.Queue.GetItemCount() != 0 {
 				go p.Run()
 			}
 			break next
@@ -147,13 +149,13 @@ next:
 			}
 
 			i++
-			playingBar.progress <- 1
+			gomu.PlayingBar.progress <- 1
 
 			speaker.Lock()
 			p.position = position()
 			speaker.Unlock()
 
-			if i > playingBar.full {
+			if i > gomu.PlayingBar.full {
 				break next
 			}
 
@@ -207,7 +209,7 @@ func (p *Player) TogglePause() {
 // skips current song
 func (p *Player) Skip() {
 
-	if queue.GetItemCount() > 0 {
+	if gomu.Queue.GetItemCount() > 0 {
 		p.ctrl.Streamer = nil
 		p.done <- true
 	}

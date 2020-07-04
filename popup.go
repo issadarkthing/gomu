@@ -40,14 +40,14 @@ func confirmationPopup(
 
 	modal := tview.NewModal().
 		SetText(text).
-		SetBackgroundColor(popupBg).
+		SetBackgroundColor(gomu.PopupBg).
 		AddButtons([]string{"yes", "no"}).
-		SetButtonBackgroundColor(popupBg).
-		SetButtonTextColor(accentColor).
+		SetButtonBackgroundColor(gomu.PopupBg).
+		SetButtonTextColor(gomu.AccentColor).
 		SetDoneFunc(handler)
 
-	pages.AddPage("confirmation-popup", center(modal, 40, 10), true, true)
-	app.SetFocus(modal)
+	gomu.Pages.AddPage("confirmation-popup", center(modal, 40, 10), true, true)
+	gomu.App.SetFocus(modal)
 
 }
 
@@ -75,25 +75,25 @@ func timedPopup(title string, desc string, timeout time.Duration) {
 
 	textView := tview.NewTextView().
 		SetText(desc).
-		SetTextColor(accentColor)
+		SetTextColor(gomu.AccentColor)
 
-	textView.SetTextAlign(tview.AlignCenter).SetBackgroundColor(popupBg)
+	textView.SetTextAlign(tview.AlignCenter).SetBackgroundColor(gomu.PopupBg)
 
 	box := tview.NewFrame(textView).SetBorders(1, 1, 1, 1, 1, 1)
-	box.SetTitle(title).SetBorder(true).SetBackgroundColor(popupBg)
+	box.SetTitle(title).SetBorder(true).SetBackgroundColor(gomu.PopupBg)
 
 	popupId := fmt.Sprintf("%s %d", "timeout-popup", popupCounter)
 	popupCounter++
 
-	pages.AddPage(popupId, topRight(box, 70, 7), true, true)
-	app.SetFocus(prevPanel.(tview.Primitive))
+	gomu.Pages.AddPage(popupId, topRight(box, 70, 7), true, true)
+	gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 
 
 	go func() {
 		time.Sleep(timeout)
-		pages.RemovePage(popupId)
-		app.SetFocus(prevPanel.(tview.Primitive))
-		app.Draw()
+		gomu.Pages.RemovePage(popupId)
+		gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
+		gomu.App.Draw()
 	}()
 }
 
@@ -135,10 +135,10 @@ func helpPopup() {
 	}
 
 	list := tview.NewList().ShowSecondaryText(false)
-	list.SetBackgroundColor(popupBg).SetTitle(" Help ").
+	list.SetBackgroundColor(gomu.PopupBg).SetTitle(" Help ").
 		SetBorder(true)
-	list.SetSelectedBackgroundColor(popupBg).
-		SetSelectedTextColor(accentColor)
+	list.SetSelectedBackgroundColor(gomu.PopupBg).
+		SetSelectedTextColor(gomu.AccentColor)
 
 	for _, v := range helpText {
 		list.AddItem(v, "", 0, nil)
@@ -169,15 +169,15 @@ func helpPopup() {
 
 		switch e.Key() {
 		case tcell.KeyEsc:
-			pages.RemovePage("help-page")
-			app.SetFocus(prevPanel.(tview.Primitive))
+			gomu.Pages.RemovePage("help-page")
+			gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 		}
 
 		return nil
 	})
 
-	pages.AddPage("help-page", center(list, 50, 30), true, true)
-	app.SetFocus(list)
+	gomu.Pages.AddPage("help-page", center(list, 50, 30), true, true)
+	gomu.App.SetFocus(list)
 }
 
 func downloadMusicPopup(selPlaylist *tview.TreeNode) {
@@ -187,8 +187,8 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 		SetFieldWidth(0).
 		SetAcceptanceFunc(tview.InputFieldMaxLength(50))
 
-	inputField.SetBackgroundColor(popupBg).SetBorder(true).SetTitle(" Ytdl ")
-	inputField.SetFieldBackgroundColor(accentColor).SetFieldTextColor(tcell.ColorBlack)
+	inputField.SetBackgroundColor(gomu.PopupBg).SetBorder(true).SetTitle(" Ytdl ")
+	inputField.SetFieldBackgroundColor(gomu.AccentColor).SetFieldTextColor(tcell.ColorBlack)
 
 	inputField.SetDoneFunc(func(key tcell.Key) {
 
@@ -196,18 +196,18 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 		case tcell.KeyEnter:
 			url := inputField.GetText()
 			Ytdl(url, selPlaylist)
-			pages.RemovePage("download-input-popup")
+			gomu.Pages.RemovePage("download-input-popup")
 
 		case tcell.KeyEscape:
-			pages.RemovePage("download-input-popup")
+			gomu.Pages.RemovePage("download-input-popup")
 		}
 
-		app.SetFocus(prevPanel.(tview.Primitive))
+		gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 
 	})
 
-	pages.AddPage("download-input-popup", center(inputField, 50, 4), true, true)
-	app.SetFocus(inputField)
+	gomu.Pages.AddPage("download-input-popup", center(inputField, 50, 4), true, true)
+	gomu.App.SetFocus(inputField)
 
 }
 
@@ -218,31 +218,31 @@ func CreatePlaylistPopup() {
 		SetFieldWidth(0).
 		SetAcceptanceFunc(tview.InputFieldMaxLength(50))
 
-	inputField.SetBackgroundColor(popupBg).SetBorder(true).SetTitle(" New Playlist ")
-	inputField.SetFieldBackgroundColor(accentColor).SetFieldTextColor(tcell.ColorBlack)
+	inputField.SetBackgroundColor(gomu.PopupBg).SetBorder(true).SetTitle(" New Playlist ")
+	inputField.SetFieldBackgroundColor(gomu.AccentColor).SetFieldTextColor(tcell.ColorBlack)
 
 	inputField.SetDoneFunc(func(key tcell.Key) {
 
 		switch key {
 		case tcell.KeyEnter:
 			playListName := inputField.GetText()
-			err := playlist.CreatePlaylist(playListName)
+			err := gomu.Playlist.CreatePlaylist(playListName)
 
 			if err != nil {
 				appLog(err)
 			}
 
-			pages.RemovePage("mkdir-input-popup")
-			app.SetFocus(prevPanel.(tview.Primitive))
+			gomu.Pages.RemovePage("mkdir-input-popup")
+			gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 
 		case tcell.KeyEsc:
-			pages.RemovePage("mkdir-input-popup")
-			app.SetFocus(prevPanel.(tview.Primitive))
+			gomu.Pages.RemovePage("mkdir-input-popup")
+			gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 		}
 
 	})
 
-	pages.AddPage("mkdir-input-popup", center(inputField, 50, 4), true, true)
-	app.SetFocus(inputField)
+	gomu.Pages.AddPage("mkdir-input-popup", center(inputField, 50, 4), true, true)
+	gomu.App.SetFocus(inputField)
 
 }

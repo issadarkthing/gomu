@@ -12,16 +12,16 @@ import (
 	"github.com/rivo/tview"
 )
 
-func InitPlayingBar() *PlayingBar {
+func NewPlayingBar() *PlayingBar {
 
 	textView := tview.NewTextView().SetTextAlign(tview.AlignCenter)
 
-	progress := InitProgressBar(textView, player)
+	progress := InitProgressBar(textView, gomu.Player)
 
 	textView.SetChangedFunc(func() {
-		app.Draw()
+		gomu.App.Draw()
 
-		if !player.IsRunning {
+		if !gomu.Player.IsRunning {
 			progress.SetDefault()
 		}
 	})
