@@ -209,7 +209,7 @@ func readConfig() {
 		viper.SetDefault("music_dir", "~/music")
 		viper.SetDefault("confirm_on_exit", true)
 		viper.SetDefault("confirm_bulk_add", true)
-		viper.SetDefault("popup_timeout", 10)
+		viper.SetDefault("popup_timeout", "5s")
 
 		// creates gomu config dir if does not exist
 		if _, err := os.Stat(configPath); err != nil {

@@ -16,8 +16,22 @@ import (
 // this mitigates the issue of closing all popups when timeout ends
 var (
 	popupCounter = 0
-	popupTimeout = time.Duration(viper.GetInt("popup_timeout")) * time.Second
 )
+
+// gets popup timeout from config file
+func getPopupTimeout() time.Duration {
+
+	dur := viper.GetString("popup_timeout")
+
+	m, err := time.ParseDuration(dur)
+
+	if err != nil {
+		appLog(err)
+	}
+
+	return m
+
+}
 
 func confirmationPopup(
 	text string,
@@ -74,6 +88,7 @@ func timedPopup(title string, desc string, timeout time.Duration) {
 	pages.AddPage(popupId, topRight(box, 70, 7), true, true)
 	app.SetFocus(prevPanel.(tview.Primitive))
 
+
 	go func() {
 		time.Sleep(timeout)
 		pages.RemovePage(popupId)
@@ -93,7 +108,7 @@ func volumePopup(volume float64) {
 		"50",
 	)
 
-	timedPopup(" Volume ", progress, popupTimeout)
+	timedPopup(" Volume ", progress, getPopupTimeout())
 
 }
 
