@@ -82,3 +82,20 @@ func TestEscapeBackSlash(t *testing.T) {
 		}
 	}
 }
+
+func TestExpandTilde(t *testing.T) {
+
+	sample := map[string]string{
+		"~/music": "/home/terra/music",
+		"/home/terra/Music": "/home/terra/Music",
+	}
+
+	for k, v := range sample {
+
+		got := expandTilde(k)
+
+		if got != v {
+			t.Errorf("expected %s; got %s", v, got)
+		}
+	}
+}
