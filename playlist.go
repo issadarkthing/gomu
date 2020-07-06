@@ -440,7 +440,7 @@ func (p *Playlist) CreatePlaylist(name string) error {
 
 	audioFile := parentNode.GetReference().(*AudioFile)
 
-	err := os.Mkdir(path.Join(audioFile.Path, name), 0666)
+	err := os.Mkdir(path.Join(audioFile.Path, name), 0744)
 
 	if err != nil {
 		return err
