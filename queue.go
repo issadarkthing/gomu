@@ -4,6 +4,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
@@ -39,7 +40,7 @@ func (q *Queue) deleteItem(index int) {
 
 // gets the first item and remove it from the queue
 // app.Draw() must be called after calling this function
-func (q *Queue) Pop() (string, error) {
+func (q *Queue) Dequeue() (string, error) {
 
 	if q.GetItemCount() == 0 {
 		return "", errors.New("Empty list")
@@ -50,6 +51,35 @@ func (q *Queue) Pop() (string, error) {
 	q.deleteItem(0)
 
 	return first, nil
+}
+
+// Add item to the list and returns the length of the queue
+func (q *Queue) Enqueue(audioFile *AudioFile) int {
+
+	if !gomu.Player.IsRunning {
+
+		gomu.Player.IsRunning = true
+
+		go func() {
+			// we dont need the primary text as it will be popped anyway
+			q.AddItem("", audioFile.Path, 0, nil)
+			gomu.Player.Run()
+		}()
+
+		return q.GetItemCount()
+
+	}
+
+	songLength, err := GetLength(audioFile.Path)
+
+	if err != nil {
+		appLog(err)
+	}
+
+	queueItemView := fmt.Sprintf("[ %s ] %s", fmtDuration(songLength), audioFile.Name)
+	q.AddItem(queueItemView, audioFile.Path, 0, nil)
+
+	return q.GetItemCount()
 }
 
 // GetItems is used to get the secondary text

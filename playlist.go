@@ -182,7 +182,7 @@ func NewPlaylist() *Playlist {
 
 		case 'l':
 
-			playlist.AddToQueue(audioFile)
+			gomu.Queue.Enqueue(audioFile)
 			currNode.SetExpanded(true)
 
 		case 'h':
@@ -316,35 +316,6 @@ func populate(root *tview.TreeNode, rootPath string) {
 
 }
 
-// Add to queue and update queue panel
-func (p *Playlist) AddToQueue(audioFile *AudioFile) {
-
-	if audioFile.IsAudioFile {
-
-		if !gomu.Player.IsRunning {
-
-			gomu.Player.IsRunning = true
-
-			go func() {
-				// we dont need the primary text as it will be popped anyway
-				gomu.Queue.AddItem("", audioFile.Path, 0, nil)
-				gomu.Player.Run()
-			}()
-
-			return
-
-		}
-
-		songLength, err := GetLength(audioFile.Path)
-
-		if err != nil {
-			appLog(err)
-		}
-
-		queueItemView := fmt.Sprintf("[ %s ] %s", fmtDuration(songLength), audioFile.Name)
-		gomu.Queue.AddItem(queueItemView, audioFile.Path, 0, nil)
-	}
-}
 
 // Bulk add a playlist to queue
 func (p *Playlist) AddAllToQueue(root *tview.TreeNode) {
@@ -361,7 +332,7 @@ func (p *Playlist) AddAllToQueue(root *tview.TreeNode) {
 	for _, v := range childrens {
 		currNode := v.GetReference().(*AudioFile)
 
-		gomu.Playlist.AddToQueue(currNode)
+		gomu.Queue.Enqueue(currNode)
 	}
 
 }
