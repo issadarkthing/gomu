@@ -182,7 +182,7 @@ func NewPlaylist() *Playlist {
 
 		case 'l':
 
-			playlist.addToQueue(audioFile)
+			playlist.AddToQueue(audioFile)
 			currNode.SetExpanded(true)
 
 		case 'h':
@@ -204,7 +204,7 @@ func NewPlaylist() *Playlist {
 		case 'L':
 
 			if !viper.GetBool("confirm_bulk_add") {
-				playlist.addAllToQueue(playlist.GetCurrentNode())
+				playlist.AddAllToQueue(playlist.GetCurrentNode())
 				return e
 			}
 
@@ -213,7 +213,7 @@ func NewPlaylist() *Playlist {
 				func(_ int, label string) {
 
 					if label == "yes" {
-						playlist.addAllToQueue(playlist.GetCurrentNode())
+						playlist.AddAllToQueue(playlist.GetCurrentNode())
 					}
 
 					gomu.Pages.RemovePage("confirmation-popup")
@@ -317,7 +317,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 }
 
 // Add to queue and update queue panel
-func (p *Playlist) addToQueue(audioFile *AudioFile) {
+func (p *Playlist) AddToQueue(audioFile *AudioFile) {
 
 	if audioFile.IsAudioFile {
 
@@ -347,7 +347,7 @@ func (p *Playlist) addToQueue(audioFile *AudioFile) {
 }
 
 // Bulk add a playlist to queue
-func (p *Playlist) addAllToQueue(root *tview.TreeNode) {
+func (p *Playlist) AddAllToQueue(root *tview.TreeNode) {
 
 	var childrens []*tview.TreeNode
 
@@ -361,7 +361,7 @@ func (p *Playlist) addAllToQueue(root *tview.TreeNode) {
 	for _, v := range childrens {
 		currNode := v.GetReference().(*AudioFile)
 
-		go gomu.Playlist.addToQueue(currNode)
+		gomu.Playlist.AddToQueue(currNode)
 	}
 
 }
@@ -468,6 +468,32 @@ func (p *Playlist) SetHighlight(currNode *tview.TreeNode) {
 
 }
 
+// Traverses the playlist and finds the AudioFile struct
+func (p *Playlist) FindAudioFile(audioName string) *AudioFile {
+
+	root := p.GetRoot()
+
+	if root == nil {
+		return nil
+	}
+
+	var selNode *AudioFile
+
+	root.Walk(func(node, _ *tview.TreeNode) bool {
+
+		audioFile := node.GetReference().(*AudioFile)
+
+		if audioFile.Name == audioName {
+			selNode = audioFile
+			return false
+		}
+
+		return true
+	})
+
+	return selNode
+
+}
 
 
 // download audio from youtube audio and adds the song to the selected playlist

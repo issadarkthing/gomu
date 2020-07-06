@@ -9,6 +9,7 @@ import (
 	"github.com/rivo/tview"
 )
 
+// Prepares for test
 func preparePlaylist() *Gomu {
 
 	gomu := NewGomu()
@@ -55,7 +56,6 @@ func TestPopulate(t *testing.T) {
 	// calculate the amount of mp3 files
 	_ = filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 
-
 		if info.IsDir() {
 			items++
 			return nil
@@ -67,7 +67,6 @@ func TestPopulate(t *testing.T) {
 		}
 
 		defer f.Close()
-
 
 		fileType, e := GetFileContentType(f)
 
@@ -81,7 +80,6 @@ func TestPopulate(t *testing.T) {
 
 		return nil
 	})
-
 
 	root := tview.NewTreeNode(path.Base(rootDir))
 
@@ -118,7 +116,7 @@ func TestAddToQueue(t *testing.T) {
 	})
 
 	for _, v := range selNode {
-		gomu.Playlist.addToQueue(v)
+		gomu.Playlist.AddToQueue(v)
 	}
 
 	queueLen := gomu.Queue.GetItemCount()
@@ -126,39 +124,39 @@ func TestAddToQueue(t *testing.T) {
 	if queueLen != 1 {
 		t.Errorf("Invalid count in queue; expected %d, got %d", 1, queueLen)
 	}
-	
+
 }
-
-
 
 func TestAddAllToQueue(t *testing.T) {
 
 	gomu = preparePlaylist()
 
-	var selNode []*AudioFile
+	var songs []*tview.TreeNode
 
 	gomu.Playlist.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
 
-		audioFile := node.GetReference().(*AudioFile)
-
-		if audioFile.IsAudioFile {
-			selNode = append(selNode, audioFile)
-			return false
+		if node.GetReference().(*AudioFile).Name == "rap" {
+			gomu.Playlist.AddAllToQueue(node)
+			// remove first song because it will be popped right away
+			songs = node.GetChildren()[1:]
 		}
 
 		return true
 	})
 
-	for _, v := range selNode {
-		gomu.Playlist.addToQueue(v)
+	queue := gomu.Queue.GetItems()
+
+	for i, song := range songs {
+
+		audioFile := song.GetReference().(*AudioFile)
+
+		// strips the path of the song in the queue
+		s := filepath.Base(queue[i])
+
+		if audioFile.Name != s {
+			t.Errorf("Expected \"%s\", got \"%s\"", audioFile.Name, s)
+		}
+
 	}
 
-	queueLen := gomu.Queue.GetItemCount()
-
-	// we subtract selNode by one because the first element in
-	// the queue will be poppped anyway
-	if len(selNode)-1 != queueLen {
-		t.Errorf("Invalid count in queue; expected %d, got %d", len(selNode)-1, queueLen)
-	}
-	
 }
