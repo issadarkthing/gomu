@@ -2,6 +2,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/rivo/tview"
 )
 
 var sample = map[string]string{
@@ -19,7 +21,6 @@ func TestQueueNext(t *testing.T) {
 	for _, v := range sample {
 		q.AddItem(v, "", 0, nil)
 	}
-
 
 	q.SetCurrentItem(0)
 	q.next()
@@ -39,7 +40,6 @@ func TestQueuePrev(t *testing.T) {
 	for _, v := range sample {
 		q.AddItem(v, "", 0, nil)
 	}
-
 
 	q.SetCurrentItem(3)
 	q.prev()
@@ -80,7 +80,7 @@ func TestQueuePop(t *testing.T) {
 
 	initLen := q.GetItemCount()
 
-	_, err := q.Pop()
+	_, err := q.Dequeue()
 
 	if err != nil {
 		panic(err)
@@ -94,10 +94,50 @@ func TestQueuePop(t *testing.T) {
 
 	firstItem := q.GetItems()[0]
 
-	got, _ := q.Pop()
+	got, _ := q.Dequeue()
 
 	if got != firstItem {
 		t.Errorf("Pop does not return the first item from the queue")
+	}
+
+}
+
+func TestEnqueue(t *testing.T) {
+
+	gomu = preparePlaylist()
+
+	var audioFiles []*AudioFile
+
+	gomu.Playlist.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
+
+		audioFile := node.GetReference().(*AudioFile)
+
+		if len(audioFiles) < 2 && audioFile.IsAudioFile {
+			audioFiles = append(audioFiles, audioFile)
+			return false
+		}
+
+		return true
+	})
+
+	for _, v := range audioFiles {
+		gomu.Queue.Enqueue(v)
+	}
+
+	queue := gomu.Queue.GetItems()
+
+	// remove first item because it will be popped once enqueued
+	for i, audioFile := range audioFiles[1:] {
+
+		if queue[i] != audioFile.Path {
+			t.Errorf("Invalid path; expected %s got %s", audioFile.Path, queue[i])
+		}
+	}
+
+	queueLen := gomu.Queue.GetItemCount()
+
+	if queueLen != 1 {
+		t.Errorf("Invalid count in queue; expected %d, got %d", 1, queueLen)
 	}
 
 }
@@ -128,7 +168,6 @@ func TestQueueGetItems(t *testing.T) {
 			t.Error("GetItems does not return correct items")
 		}
 	}
-
 
 }
 

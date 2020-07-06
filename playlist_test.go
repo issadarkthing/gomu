@@ -97,35 +97,7 @@ func TestPopulate(t *testing.T) {
 
 }
 
-func TestAddToQueue(t *testing.T) {
 
-	gomu = preparePlaylist()
-
-	var selNode []*AudioFile
-
-	gomu.Playlist.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
-
-		audioFile := node.GetReference().(*AudioFile)
-
-		if len(selNode) < 2 && audioFile.IsAudioFile {
-			selNode = append(selNode, audioFile)
-			return false
-		}
-
-		return true
-	})
-
-	for _, v := range selNode {
-		gomu.Playlist.AddToQueue(v)
-	}
-
-	queueLen := gomu.Queue.GetItemCount()
-
-	if queueLen != 1 {
-		t.Errorf("Invalid count in queue; expected %d, got %d", 1, queueLen)
-	}
-
-}
 
 func TestAddAllToQueue(t *testing.T) {
 

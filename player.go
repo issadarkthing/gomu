@@ -39,7 +39,7 @@ type Player struct {
 func (p *Player) Run() {
 
 	p.isSkipped = make(chan bool, 1)
-	first, err := gomu.Queue.Pop()
+	first, err := gomu.Queue.Dequeue()
 	// ensuring the list is updated
 	gomu.App.Draw()
 
