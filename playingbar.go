@@ -12,6 +12,7 @@ import (
 	"github.com/rivo/tview"
 )
 
+// Playing bar shows progress of the song and the title of the song
 func NewPlayingBar() *PlayingBar {
 
 	textView := tview.NewTextView().SetTextAlign(tview.AlignCenter)
@@ -53,6 +54,8 @@ func NewProgressBar(txt *tview.TextView, player *Player) *PlayingBar {
 	return p
 }
 
+// start processing progress bar 
+// runs asynchronusly
 func (p *PlayingBar) Run() {
 
 	go func() {
@@ -72,13 +75,13 @@ func (p *PlayingBar) Run() {
 			start, err := time.ParseDuration(strconv.Itoa(p._progress) + "s")
 
 			if err != nil {
-				panic(err)
+				appLog(err)
 			}
 
 			end, err := time.ParseDuration(strconv.Itoa(p.full) + "s")
 
 			if err != nil {
-				panic(err)
+				appLog(err)
 			}
 
 			x := p._progress * p.limit / p.full

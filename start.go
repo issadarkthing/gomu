@@ -11,18 +11,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-// var (
-// 	app         *tview.Application
-// 	playingBar  *PlayingBar
-// 	queue       *Queue
-// 	playlist    *Playlist
-// 	player      *Player
-// 	pages       *tview.Pages
-// 	prevPanel   Children
-// 	popupBg     = tcell.GetColor("#0A0F14")
-// 	textColor   = tcell.ColorWhite
-// 	accentColor = tcell.ColorDarkCyan
-// )
+// created so we can keep track of childrens in slices
+type Panel interface {
+	HasFocus() bool
+	SetBorderColor(color tcell.Color) *tview.Box
+	SetTitleColor(color tcell.Color) *tview.Box
+	SetTitle(s string) *tview.Box
+	GetTitle() string
+}
 
 type Gomu struct {
 	App         *tview.Application
@@ -31,10 +27,11 @@ type Gomu struct {
 	Playlist    *Playlist
 	Player      *Player
 	Pages       *tview.Pages
-	PrevPanel   Children
+	PrevPanel   Panel
 	PopupBg     tcell.Color
 	TextColor   tcell.Color
 	AccentColor tcell.Color
+	Panels      []Panel
 }
 
 // Creates new instance of gomu with default values
@@ -49,18 +46,79 @@ func NewGomu() *Gomu {
 	return gomu
 }
 
-// Initialize childrens/panels this is seperated from 
+// Initialize childrens/panels this is seperated from
 // constructor function `NewGomu` so that we can 
 // test independently
-func (g *Gomu) InitChildrens(app *tview.Application) {
+func (g *Gomu) InitPanels(app *tview.Application) {
 	g.App = app
 	g.PlayingBar = NewPlayingBar()
 	g.Queue = NewQueue()
 	g.Playlist = NewPlaylist()
 	g.Player = &Player{}
 	g.Pages = tview.NewPages()
+	g.Panels = []Panel{g.Playlist, g.Queue, g.PlayingBar}
 }
 
+// cycle between panels
+func (g *Gomu) CyclePanels() Panel {
+
+	var anyChildHasFocus bool
+
+	for i, child := range g.Panels {
+
+		if child.HasFocus() {
+
+			anyChildHasFocus = true
+
+
+			var nextChild Panel
+
+			// if its the last element set the child back to one
+			if i == len(g.Panels)-1 {
+				nextChild = g.Panels[0]
+			} else {
+				nextChild = g.Panels[i+1]
+			}
+
+			g.SetFocusPanel(nextChild)
+
+			g.PrevPanel = nextChild
+			return nextChild
+		}
+	}
+
+	first := g.Panels[0]
+
+	if !anyChildHasFocus {
+		g.SetFocusPanel(first)
+	}
+
+	g.PrevPanel = first
+	return first
+}
+
+// changes title and border color when focusing panel
+// and changes color of the previous panel as well
+func (g *Gomu) SetFocusPanel(panel Panel) {
+
+	g.App.SetFocus(panel.(tview.Primitive))
+	panel.SetBorderColor(g.AccentColor)
+	panel.SetTitleColor(g.AccentColor)
+
+	if g.PrevPanel == nil {
+		return
+	}
+
+	g.SetUnfocusPanel(g.PrevPanel)
+}
+
+// removes the color of the given panel
+func (g *Gomu) SetUnfocusPanel(panel Panel) {
+	g.PrevPanel.SetBorderColor(g.TextColor)
+	g.PrevPanel.SetTitleColor((g.TextColor))
+}
+
+// one single instance of global variable
 var gomu *Gomu
 
 func start(application *tview.Application) {
@@ -76,7 +134,7 @@ func start(application *tview.Application) {
 	tview.Styles.BorderColor              = tcell.ColorWhite
 
 	gomu = NewGomu()
-	gomu.InitChildrens(application)
+	gomu.InitPanels(application)
 
 
 	appLog("start app")
@@ -88,14 +146,14 @@ func start(application *tview.Application) {
 	gomu.Playlist.SetTitleColor(gomu.AccentColor)
 	gomu.PrevPanel = gomu.Playlist
 
-	childrens := []Children{gomu.Playlist, gomu.Queue, gomu.PlayingBar}
 
 	application.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 
 		switch event.Key() {
 		// cycle through each section
 		case tcell.KeyTAB:
-			gomu.PrevPanel = cycleChildren(gomu, childrens) 
+			gomu.CyclePanels()
+
 		}
 
 		name, _ := gomu.Pages.GetFrontPage()
@@ -170,59 +228,7 @@ func start(application *tview.Application) {
 	}
 }
 
-// created so we can keep track of childrens in slices
-type Children interface {
-	HasFocus() bool
-	SetBorderColor(color tcell.Color) *tview.Box
-	SetTitleColor(color tcell.Color) *tview.Box
-	SetTitle(s string) *tview.Box
-	GetTitle() string
-}
 
-func cycleChildren(gomu *Gomu, childrens []Children) Children {
-
-	focusedColor := gomu.AccentColor
-	unfocusedColor := gomu.TextColor
-	anyChildHasFocus := false
-
-	for i, child := range childrens {
-
-		if child.HasFocus() {
-
-			anyChildHasFocus = true
-
-			var nextChild Children
-
-			// if its the last element set the child back to one
-			if i == len(childrens)-1 {
-				nextChild = childrens[0]
-			} else {
-				nextChild = childrens[i+1]
-			}
-
-			child.SetBorderColor(unfocusedColor)
-			child.SetTitleColor(unfocusedColor)
-
-			gomu.App.SetFocus(nextChild.(tview.Primitive))
-			nextChild.SetBorderColor(focusedColor)
-			nextChild.SetTitleColor(focusedColor)
-
-			return nextChild
-		}
-	}
-
-	first := childrens[0]
-
-	if !anyChildHasFocus {
-
-		gomu.App.SetFocus(first.(tview.Primitive))
-		first.SetBorderColor(focusedColor)
-		first.SetTitleColor(focusedColor)
-
-	}
-
-	return first
-}
 
 func readConfig() {
 

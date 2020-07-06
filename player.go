@@ -49,6 +49,10 @@ func (p *Player) Run() {
 	}
 	f, err := os.Open(first)
 
+	if err != nil {
+		appLog(err)
+	}
+
 	defer f.Close()
 
 	streamer, format, err := mp3.Decode(f)
@@ -220,19 +224,21 @@ func GetLength(audioPath string) (time.Duration, error) {
 
 	f, err := os.Open(audioPath)
 
-	defer f.Close()
 
 	if err != nil {
 		return 0, err
 	}
+
+	defer f.Close()
 
 	streamer, format, err := mp3.Decode(f)
 
-	defer streamer.Close()
 
 	if err != nil {
 		return 0, err
 	}
+
+	defer streamer.Close()
 
 	return format.SampleRate.D(streamer.Len()), nil
 }

@@ -80,7 +80,11 @@ func TestQueuePop(t *testing.T) {
 
 	initLen := q.GetItemCount()
 
-	q.Pop()
+	_, err := q.Pop()
+
+	if err != nil {
+		panic(err)
+	}
 
 	finalLen := q.GetItemCount()
 

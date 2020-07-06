@@ -53,25 +53,26 @@ func TestPopulate(t *testing.T) {
 	items := 0
 
 	// calculate the amount of mp3 files
-	filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+
 
 		if info.IsDir() {
 			items++
 			return nil
 		}
 
-		f, err := os.Open(path)
-		if err != nil {
-			return err
+		f, e := os.Open(path)
+		if e != nil {
+			return e
 		}
 
 		defer f.Close()
 
 
-		fileType, err := GetFileContentType(f)
+		fileType, e := GetFileContentType(f)
 
-		if err != nil {
-			return err
+		if e != nil {
+			return e
 		}
 
 		if fileType == "mpeg" {
@@ -80,6 +81,7 @@ func TestPopulate(t *testing.T) {
 
 		return nil
 	})
+
 
 	root := tview.NewTreeNode(path.Base(rootDir))
 
