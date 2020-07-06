@@ -47,7 +47,7 @@ func NewGomu() *Gomu {
 }
 
 // Initialize childrens/panels this is seperated from
-// constructor function `NewGomu` so that we can 
+// constructor function `NewGomu` so that we can
 // test independently
 func (g *Gomu) InitPanels(app *tview.Application) {
 	g.App = app
@@ -69,7 +69,6 @@ func (g *Gomu) CyclePanels() Panel {
 		if child.HasFocus() {
 
 			anyChildHasFocus = true
-
 
 			var nextChild Panel
 
@@ -124,18 +123,17 @@ var gomu *Gomu
 func start(application *tview.Application) {
 	// override default border
 	// change double line border to one line border when focused
-	tview.Borders.HorizontalFocus         = tview.Borders.Horizontal
-	tview.Borders.VerticalFocus           = tview.Borders.Vertical
-	tview.Borders.TopLeftFocus            = tview.Borders.TopLeft
-	tview.Borders.TopRightFocus           = tview.Borders.TopRight
-	tview.Borders.BottomLeftFocus         = tview.Borders.BottomLeft
-	tview.Borders.BottomRightFocus        = tview.Borders.BottomRight
+	tview.Borders.HorizontalFocus = tview.Borders.Horizontal
+	tview.Borders.VerticalFocus = tview.Borders.Vertical
+	tview.Borders.TopLeftFocus = tview.Borders.TopLeft
+	tview.Borders.TopRightFocus = tview.Borders.TopRight
+	tview.Borders.BottomLeftFocus = tview.Borders.BottomLeft
+	tview.Borders.BottomRightFocus = tview.Borders.BottomRight
 	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
-	tview.Styles.BorderColor              = tcell.ColorWhite
+	tview.Styles.BorderColor = tcell.ColorWhite
 
 	gomu = NewGomu()
 	gomu.InitPanels(application)
-
 
 	appLog("start app")
 
@@ -145,7 +143,6 @@ func start(application *tview.Application) {
 	gomu.Playlist.SetBorderColor(gomu.AccentColor)
 	gomu.Playlist.SetTitleColor(gomu.AccentColor)
 	gomu.PrevPanel = gomu.Playlist
-
 
 	application.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 
@@ -169,7 +166,6 @@ func start(application *tview.Application) {
 			if !viper.GetBool("confirm_on_exit") {
 				application.Stop()
 			}
-
 			confirmationPopup("Are you sure to exit?", func(_ int, label string) {
 
 				if label == "yes" {
@@ -227,8 +223,6 @@ func start(application *tview.Application) {
 		appLog(err)
 	}
 }
-
-
 
 func readConfig() {
 

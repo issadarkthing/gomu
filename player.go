@@ -86,7 +86,6 @@ func (p *Player) Run() {
 
 	popupMessage := fmt.Sprintf("%s\n\n[ %s ]", song.name, fmtDuration(p.length))
 
-
 	timedPopup(" Current Song ", popupMessage, getPopupTimeout())
 
 	done := make(chan bool, 1)
@@ -224,7 +223,6 @@ func GetLength(audioPath string) (time.Duration, error) {
 
 	f, err := os.Open(audioPath)
 
-
 	if err != nil {
 		return 0, err
 	}
@@ -232,7 +230,6 @@ func GetLength(audioPath string) (time.Duration, error) {
 	defer f.Close()
 
 	streamer, format, err := mp3.Decode(f)
-
 
 	if err != nil {
 		return 0, err
