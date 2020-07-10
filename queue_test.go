@@ -40,7 +40,6 @@ func TestDequeue(t *testing.T) {
 
 	audioFiles := gomu.Playlist.GetAudioFiles()
 
-
 	for _, v := range audioFiles {
 		gomu.Queue.Enqueue(v)
 	}
@@ -52,7 +51,7 @@ func TestDequeue(t *testing.T) {
 	finalLen := len(gomu.Queue.Items)
 
 	if initLen-1 != finalLen {
-		t.Errorf("Expected %d got %d", finalLen, initLen-1)	
+		t.Errorf("Expected %d got %d", initLen-1, finalLen)
 	}
 
 }
@@ -94,7 +93,6 @@ func TestQueueDeleteItem(t *testing.T) {
 
 }
 
-
 func TestEnqueue(t *testing.T) {
 
 	gomu = preparePlaylist()
@@ -134,7 +132,6 @@ func TestEnqueue(t *testing.T) {
 	}
 
 }
-
 
 func TestQueueGetItems(t *testing.T) {
 

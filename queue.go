@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"time"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
@@ -43,7 +44,35 @@ func (q *Queue) prev() {
 func (q *Queue) DeleteItem(index int) {
 	if index != -1 {
 		q.RemoveItem(index)
+
+		var nItems []*AudioFile
+
+		for i, v := range q.Items {
+			if i == index {
+				continue
+			}
+
+			nItems = append(nItems, v)
+		}
+
+		q.Items = nItems
+		q.UpdateTitle()
+
 	}
+}
+
+func (q *Queue) UpdateTitle() {
+
+	var totalLength time.Duration
+
+	for _, v := range q.Items {
+		totalLength += v.Length
+	}
+
+	fmtTime := fmtDuration(totalLength)
+
+	q.SetTitle(fmt.Sprintf("┤ Queue ├──┤%s├", fmtTime))
+
 }
 
 // gets the first item and remove it from the queue
@@ -54,11 +83,10 @@ func (q *Queue) Dequeue() (string, error) {
 		return "", errors.New("Empty list")
 	}
 
-	q.Items = q.Items[1:]
-
 	_, first := q.GetItemText(0)
 
 	q.DeleteItem(0)
+	q.UpdateTitle()
 
 	return first, nil
 }
@@ -73,7 +101,7 @@ func (q *Queue) Enqueue(audioFile *AudioFile) int {
 		gomu.Player.IsRunning = true
 
 		go func() {
-			// we dont need the primary text as it will be popped anyway
+			// we dont need the primary text as it will be dequeued anyway
 			q.AddItem("", audioFile.Path, 0, nil)
 			gomu.Player.Run()
 		}()
@@ -90,6 +118,7 @@ func (q *Queue) Enqueue(audioFile *AudioFile) int {
 
 	queueItemView := fmt.Sprintf("[ %s ] %s", fmtDuration(songLength), GetName(audioFile.Name))
 	q.AddItem(queueItemView, audioFile.Path, 0, nil)
+	q.UpdateTitle()
 
 	return q.GetItemCount()
 }
@@ -118,12 +147,10 @@ func (q *Queue) SaveQueue() error {
 	songNames := make([]string, 0, len(songPaths))
 	var content string
 
-
 	for _, songPath := range songPaths {
 		hashed := Sha1Hex(GetName(songPath))
-		songNames = append(songNames, hashed)	
+		songNames = append(songNames, hashed)
 	}
-
 
 	for _, v := range songNames {
 		content += v + "\n"
@@ -137,6 +164,15 @@ func (q *Queue) SaveQueue() error {
 	}
 
 	return nil
+
+}
+
+// Clears current queue
+func (q *Queue) ClearQueue() {
+
+	q.Items = []*AudioFile{}
+	q.Clear()
+	q.UpdateTitle()
 
 }
 
@@ -205,7 +241,6 @@ func (q *Queue) GetSavedQueue() ([]string, error) {
 		return nil, err
 	}
 
-
 	return records, nil
 }
 
@@ -230,15 +265,19 @@ func NewQueue() *Queue {
 			queue.prev()
 		case 'd':
 			queue.DeleteItem(queue.GetCurrentItem())
+		case 'D':
+			queue.ClearQueue()
 		}
 
 		return nil
 	})
 
-	queue.SetHighlightFullLine(true)
-	queue.SetBorder(true).SetTitle(" Queue ")
-	queue.SetSelectedBackgroundColor(tcell.ColorDarkCyan)
-	queue.SetSelectedTextColor(tcell.ColorWhite)
+	queue.UpdateTitle()
+	queue.SetBorder(true).SetTitleAlign(tview.AlignLeft)
+	queue.
+		SetSelectedBackgroundColor(tcell.ColorDarkCyan).
+		SetSelectedTextColor(tcell.ColorWhite).
+		SetHighlightFullLine(true)
 
 	return queue
 
