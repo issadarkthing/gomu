@@ -88,12 +88,9 @@ func timedPopup(title string, desc string, timeout time.Duration) {
 	gomu.Pages.AddPage(popupId, topRight(box, 70, 7), true, true)
 	gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 
-
 	go func() {
 		time.Sleep(timeout)
 		gomu.Pages.RemovePage(popupId)
-		gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
-		gomu.App.Draw()
 	}()
 }
 
