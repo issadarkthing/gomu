@@ -29,10 +29,9 @@ func appLog(v ...interface{}) {
 	defer file.Close()
 
 	log.SetOutput(file)
-	log.SetFlags(log.Ldate|log.Ltime|log.Llongfile)
+	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 	log.Println(v...)
 }
-
 
 // formats duration to my desired output mm:ss
 func fmtDuration(input time.Duration) string {
@@ -77,7 +76,6 @@ func expandTilde(_path string) string {
 
 }
 
-
 // detects the filetype of file
 func GetFileContentType(out *os.File) (string, error) {
 
@@ -98,7 +96,6 @@ func GetName(fn string) string {
 	return strings.TrimSuffix(path.Base(fn), path.Ext(fn))
 }
 
-
 // this just parsing the output from the ytdl to get the audio path
 // this is used because we need to get the song name
 // example ~/path/to/song/song.mp3
@@ -118,4 +115,3 @@ func downloadedFilePath(output []byte, dir string) string {
 func escapeBackSlash(input string) string {
 	return strings.ReplaceAll(input, "/", `\/`)
 }
-

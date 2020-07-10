@@ -118,7 +118,6 @@ func (g *Gomu) SetUnfocusPanel(panel Panel) {
 	g.PrevPanel.SetTitleColor((g.TextColor))
 }
 
-
 // one single instance of global variable
 var gomu *Gomu
 
@@ -177,8 +176,8 @@ func start(application *tview.Application) {
 				if label == "no" {
 					gomu.Pages.RemovePage("confirmation-popup")
 					return
-				} 
-				
+				}
+
 				if err := gomu.Queue.SaveQueue(); err != nil {
 					appLog(err)
 				}
@@ -274,7 +273,6 @@ func readConfig() {
 	}
 
 }
-
 
 // layout is used to organize the panels
 func Layout(gomu *Gomu) *tview.Flex {

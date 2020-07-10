@@ -54,7 +54,7 @@ func NewProgressBar(txt *tview.TextView, player *Player) *PlayingBar {
 	return p
 }
 
-// start processing progress bar 
+// start processing progress bar
 // runs asynchronusly
 func (p *PlayingBar) Run() {
 
