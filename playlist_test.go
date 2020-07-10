@@ -97,8 +97,6 @@ func TestPopulate(t *testing.T) {
 
 }
 
-
-
 func TestAddAllToQueue(t *testing.T) {
 
 	gomu = preparePlaylist()
@@ -132,4 +130,3 @@ func TestAddAllToQueue(t *testing.T) {
 	}
 
 }
-

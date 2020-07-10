@@ -55,7 +55,10 @@ func NewPlaylist() *Playlist {
 
 	root.SetReference(rootAudioFile)
 
-	playlist.SetTitle(" Playlist ").SetBorder(true)
+	playlist.
+		SetTitle(" Playlist ").
+		SetBorder(true).
+		SetTitleAlign(tview.AlignLeft)
 
 	populate(root, rootDir)
 
@@ -245,7 +248,6 @@ func populate(root *tview.TreeNode, rootPath string) {
 		appLog(err)
 	}
 
-
 	for _, file := range files {
 
 		path := filepath.Join(rootPath, file.Name())
@@ -293,7 +295,6 @@ func populate(root *tview.TreeNode, rootPath string) {
 
 		}
 
-
 		if file.IsDir() {
 
 			audioFile := &AudioFile{
@@ -317,7 +318,6 @@ func populate(root *tview.TreeNode, rootPath string) {
 	}
 
 }
-
 
 // Bulk add a playlist to queue
 func (p *Playlist) AddAllToQueue(root *tview.TreeNode) {
@@ -399,7 +399,7 @@ func (p *Playlist) AddSongToPlaylist(audioPath string, selPlaylist *tview.TreeNo
 }
 
 func (p *Playlist) GetAudioFiles() []*AudioFile {
-	
+
 	root := p.GetRoot()
 
 	audioFiles := []*AudioFile{}
@@ -408,7 +408,7 @@ func (p *Playlist) GetAudioFiles() []*AudioFile {
 
 		audioFile := node.GetReference().(*AudioFile)
 		audioFiles = append(audioFiles, audioFile)
-		
+
 		return true
 	})
 
@@ -488,7 +488,6 @@ func (p *Playlist) FindAudioFile(audioName string) *AudioFile {
 
 }
 
-
 // download audio from youtube audio and adds the song to the selected playlist
 func Ytdl(url string, selPlaylist *tview.TreeNode) {
 
@@ -546,12 +545,12 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 			log.Println(err)
 		}
 
-		downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s", 
+		downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s",
 			path.Base(downloadedAudioPath))
 
 		timedPopup(
 			" Ytdl ",
-			downloadFinishedMessage, 
+			downloadFinishedMessage,
 			getPopupTimeout(),
 		)
 

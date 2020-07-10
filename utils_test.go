@@ -30,9 +30,9 @@ func TestFmtDuration(t *testing.T) {
 func TestGetName(t *testing.T) {
 
 	samples := map[string]string{
-		"hello.mp3": "hello",
-		"~/music/fl.mp3": "fl",
-		"/home/terra/Music/pop/hola na.mp3": "hola na",
+		"hello.mp3":                                "hello",
+		"~/music/fl.mp3":                           "fl",
+		"/home/terra/Music/pop/hola na.mp3":        "hola na",
 		"~/macklemary - (ft jello) extreme!! .mp3": "macklemary - (ft jello) extreme!! ",
 	}
 
@@ -45,7 +45,6 @@ func TestGetName(t *testing.T) {
 		}
 	}
 }
-
 
 func TestDownloadedFilePath(t *testing.T) {
 
@@ -65,11 +64,10 @@ Deleting original file /tmp/Powfu - death bed (coffee for your head) (Official V
 
 }
 
-
 func TestEscapeBackSlash(t *testing.T) {
 
 	sample := map[string]string{
-		"/home/terra": "\\/home\\/terra",
+		"/home/terra":       "\\/home\\/terra",
 		"~/Documents/memes": "~\\/Documents\\/memes",
 	}
 
@@ -86,7 +84,7 @@ func TestEscapeBackSlash(t *testing.T) {
 func TestExpandTilde(t *testing.T) {
 
 	sample := map[string]string{
-		"~/music": "/home/terra/music",
+		"~/music":           "/home/terra/music",
 		"/home/terra/Music": "/home/terra/Music",
 	}
 
