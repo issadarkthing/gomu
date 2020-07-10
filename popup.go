@@ -91,6 +91,7 @@ func timedPopup(title string, desc string, timeout time.Duration) {
 	go func() {
 		time.Sleep(timeout)
 		gomu.Pages.RemovePage(popupId)
+		gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 	}()
 }
 
