@@ -33,6 +33,30 @@ func TestQueueNext(t *testing.T) {
 
 }
 
+func TestDequeue(t *testing.T) {
+
+	gomu := preparePlaylist()
+	gomu.Queue = NewQueue()
+
+	audioFiles := gomu.Playlist.GetAudioFiles()
+
+
+	for _, v := range audioFiles {
+		gomu.Queue.Enqueue(v)
+	}
+
+	initLen := len(gomu.Queue.Items)
+
+	gomu.Queue.Dequeue()
+
+	finalLen := len(gomu.Queue.Items)
+
+	if initLen-1 != finalLen {
+		t.Errorf("Expected %d got %d", finalLen, initLen-1)	
+	}
+
+}
+
 func TestQueuePrev(t *testing.T) {
 
 	q := NewQueue()
@@ -61,7 +85,7 @@ func TestQueueDeleteItem(t *testing.T) {
 	}
 
 	initLen := q.GetItemCount()
-	q.deleteItem(-1)
+	q.DeleteItem(-1)
 	finalLen := q.GetItemCount()
 
 	if initLen != finalLen {
@@ -70,37 +94,6 @@ func TestQueueDeleteItem(t *testing.T) {
 
 }
 
-func TestQueuePop(t *testing.T) {
-
-	q := NewQueue()
-
-	for _, v := range sample {
-		q.AddItem(v, "", 0, nil)
-	}
-
-	initLen := q.GetItemCount()
-
-	_, err := q.Dequeue()
-
-	if err != nil {
-		panic(err)
-	}
-
-	finalLen := q.GetItemCount()
-
-	if finalLen == initLen {
-		t.Errorf("Pop does not remove one element from the queue")
-	}
-
-	firstItem := q.GetItems()[0]
-
-	got, _ := q.Dequeue()
-
-	if got != firstItem {
-		t.Errorf("Pop does not return the first item from the queue")
-	}
-
-}
 
 func TestEnqueue(t *testing.T) {
 
