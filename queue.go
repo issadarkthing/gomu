@@ -21,6 +21,7 @@ type Queue struct {
 	*tview.List
 	SavedQueuePath string
 	Items          []*AudioFile
+	IsLoop         bool
 }
 
 // highlight the next item in the queue
@@ -77,14 +78,13 @@ func (q *Queue) UpdateTitle() {
 
 // gets the first item and remove it from the queue
 // app.Draw() must be called after calling this function
-func (q *Queue) Dequeue() (string, error) {
+func (q *Queue) Dequeue() (*AudioFile, error) {
 
 	if q.GetItemCount() == 0 {
-		return "", errors.New("Empty list")
+		return nil, errors.New("Empty list")
 	}
 
-	_, first := q.GetItemText(0)
-
+	first := q.Items[0]
 	q.DeleteItem(0)
 	q.UpdateTitle()
 

@@ -13,10 +13,6 @@ import (
 	"github.com/faiface/beep/speaker"
 )
 
-type Song struct {
-	name string
-	path string
-}
 
 type Player struct {
 	IsRunning bool
@@ -33,7 +29,7 @@ type Player struct {
 	resampler   *beep.Resampler
 	position    time.Duration
 	length      time.Duration
-	currentSong Song
+	currentSong *AudioFile
 }
 
 func (p *Player) Run() {
@@ -47,7 +43,9 @@ func (p *Player) Run() {
 		p.IsRunning = false
 		appLog(err)
 	}
-	f, err := os.Open(first)
+
+
+	f, err := os.Open(first.Path)
 
 	if err != nil {
 		appLog(err)
@@ -81,10 +79,9 @@ func (p *Player) Run() {
 		appLog(err)
 	}
 
-	song := &Song{name: GetName(f.Name()), path: first}
-	p.currentSong = *song
+	p.currentSong = first
 
-	popupMessage := fmt.Sprintf("%s\n\n[ %s ]", song.name, fmtDuration(p.length))
+	popupMessage := fmt.Sprintf("%s\n\n[ %s ]", first.Name, fmtDuration(p.length))
 
 	timedPopup(" Current Song ", popupMessage, getPopupTimeout())
 
@@ -123,7 +120,7 @@ func (p *Player) Run() {
 	p.position = position()
 	p.IsRunning = true
 
-	gomu.PlayingBar.NewProgress(song.name, int(p.length.Seconds()), 100)
+	gomu.PlayingBar.NewProgress(first.Name, int(p.length.Seconds()), 100)
 	gomu.PlayingBar.Run()
 
 	// is used to send progress
@@ -182,9 +179,6 @@ func (p *Player) Play() {
 	speaker.Unlock()
 }
 
-func (p *Player) CurrentSong() Song {
-	return p.currentSong
-}
 
 // volume up and volume down using -0.5 or +0.5
 func (p *Player) Volume(v float64) float64 {
