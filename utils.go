@@ -29,6 +29,7 @@ func appLog(v ...interface{}) {
 	defer file.Close()
 
 	log.SetOutput(file)
+	log.SetFlags(log.Ldate|log.Ltime|log.Llongfile)
 	log.Println(v...)
 }
 
@@ -117,3 +118,4 @@ func downloadedFilePath(output []byte, dir string) string {
 func escapeBackSlash(input string) string {
 	return strings.ReplaceAll(input, "/", `\/`)
 }
+
