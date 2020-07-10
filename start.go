@@ -27,6 +27,7 @@ type Gomu struct {
 	Playlist    *Playlist
 	Player      *Player
 	Pages       *tview.Pages
+	Popups      []tview.Primitive
 	PrevPanel   Panel
 	PopupBg     tcell.Color
 	TextColor   tcell.Color
@@ -117,6 +118,7 @@ func (g *Gomu) SetUnfocusPanel(panel Panel) {
 	g.PrevPanel.SetTitleColor((g.TextColor))
 }
 
+
 // one single instance of global variable
 var gomu *Gomu
 
@@ -144,6 +146,10 @@ func start(application *tview.Application) {
 	gomu.Playlist.SetTitleColor(gomu.AccentColor)
 	gomu.PrevPanel = gomu.Playlist
 
+	if err := gomu.Queue.LoadQueue(); err != nil {
+		appLog(err)
+	}
+
 	application.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 
 		switch event.Key() {
@@ -168,11 +174,16 @@ func start(application *tview.Application) {
 			}
 			confirmationPopup("Are you sure to exit?", func(_ int, label string) {
 
-				if label == "yes" {
-					application.Stop()
-				} else {
+				if label == "no" {
 					gomu.Pages.RemovePage("confirmation-popup")
+					return
+				} 
+				
+				if err := gomu.Queue.SaveQueue(); err != nil {
+					appLog(err)
 				}
+
+				application.Stop()
 
 			})
 
@@ -263,6 +274,7 @@ func readConfig() {
 	}
 
 }
+
 
 // layout is used to organize the panels
 func Layout(gomu *Gomu) *tview.Flex {

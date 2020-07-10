@@ -258,7 +258,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 
 		defer f.Close()
 
-		child := tview.NewTreeNode(file.Name())
+		child := tview.NewTreeNode(GetName(file.Name()))
 
 		if !file.IsDir() {
 
@@ -374,7 +374,7 @@ func (p *Playlist) AddSongToPlaylist(audioPath string, selPlaylist *tview.TreeNo
 
 	defer f.Close()
 
-	node := tview.NewTreeNode(path.Base(audioPath))
+	node := tview.NewTreeNode(GetName(audioPath))
 
 	audioLength, err := GetLength(audioPath)
 
@@ -396,6 +396,23 @@ func (p *Playlist) AddSongToPlaylist(audioPath string, selPlaylist *tview.TreeNo
 
 	return nil
 
+}
+
+func (p *Playlist) GetAudioFiles() []*AudioFile {
+	
+	root := p.GetRoot()
+
+	audioFiles := []*AudioFile{}
+
+	root.Walk(func(node, _ *tview.TreeNode) bool {
+
+		audioFile := node.GetReference().(*AudioFile)
+		audioFiles = append(audioFiles, audioFile)
+		
+		return true
+	})
+
+	return audioFiles
 }
 
 // Creates a directory under selected node, returns error if playlist exists
@@ -442,6 +459,7 @@ func (p *Playlist) SetHighlight(currNode *tview.TreeNode) {
 }
 
 // Traverses the playlist and finds the AudioFile struct
+// audioName must be hashed with sha1 first
 func (p *Playlist) FindAudioFile(audioName string) *AudioFile {
 
 	root := p.GetRoot()
@@ -456,7 +474,9 @@ func (p *Playlist) FindAudioFile(audioName string) *AudioFile {
 
 		audioFile := node.GetReference().(*AudioFile)
 
-		if audioFile.Name == audioName {
+		hashed := Sha1Hex(GetName(audioFile.Name))
+
+		if hashed == audioName {
 			selNode = audioFile
 			return false
 		}

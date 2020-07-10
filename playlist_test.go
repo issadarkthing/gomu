@@ -54,7 +54,7 @@ func TestPopulate(t *testing.T) {
 	items := 0
 
 	// calculate the amount of mp3 files
-	_ = filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+	filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 
 		if info.IsDir() {
 			items++
@@ -132,3 +132,4 @@ func TestAddAllToQueue(t *testing.T) {
 	}
 
 }
+
