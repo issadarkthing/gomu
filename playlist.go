@@ -182,8 +182,10 @@ func NewPlaylist() *Playlist {
 
 		case 'l':
 
-			gomu.Queue.Enqueue(audioFile)
-			currNode.SetExpanded(true)
+			if audioFile.IsAudioFile {
+				gomu.Queue.Enqueue(audioFile)
+				currNode.SetExpanded(true)
+			}
 
 		case 'h':
 
