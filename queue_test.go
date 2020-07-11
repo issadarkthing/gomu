@@ -103,7 +103,7 @@ func TestEnqueue(t *testing.T) {
 
 		audioFile := node.GetReference().(*AudioFile)
 
-		if len(audioFiles) < 2 && audioFile.IsAudioFile {
+		if len(audioFiles) < 4 && audioFile.IsAudioFile {
 			audioFiles = append(audioFiles, audioFile)
 			return false
 		}
@@ -118,7 +118,7 @@ func TestEnqueue(t *testing.T) {
 	queue := gomu.Queue.GetItems()
 
 	// remove first item because it will be popped once enqueued
-	for i, audioFile := range audioFiles[1:] {
+	for i, audioFile := range audioFiles {
 
 		if queue[i] != audioFile.Path {
 			t.Errorf("Invalid path; expected %s got %s", audioFile.Path, queue[i])
@@ -127,7 +127,7 @@ func TestEnqueue(t *testing.T) {
 
 	queueLen := gomu.Queue.GetItemCount()
 
-	if queueLen != 1 {
+	if queueLen != 4 {
 		t.Errorf("Invalid count in queue; expected %d, got %d", 1, queueLen)
 	}
 

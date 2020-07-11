@@ -107,8 +107,6 @@ func TestAddAllToQueue(t *testing.T) {
 
 		if node.GetReference().(*AudioFile).Name == "rap" {
 			gomu.Playlist.AddAllToQueue(node)
-			// remove first song because it will be popped right away
-			songs = node.GetChildren()[1:]
 		}
 
 		return true

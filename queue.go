@@ -94,22 +94,21 @@ func (q *Queue) Dequeue() (*AudioFile, error) {
 // Add item to the list and returns the length of the queue
 func (q *Queue) Enqueue(audioFile *AudioFile) int {
 
-	q.Items = append(q.Items, audioFile)
-
-	if !gomu.Player.IsRunning {
+	if !gomu.Player.IsRunning && "false" == os.Getenv("TEST") {
 
 		gomu.Player.IsRunning = true
 
 		go func() {
-			// we dont need the primary text as it will be dequeued anyway
-			q.AddItem("", audioFile.Path, 0, nil)
-			gomu.Player.Run()
+
+			gomu.Player.Run(audioFile)
+
 		}()
 
 		return q.GetItemCount()
 
 	}
 
+	q.Items = append(q.Items, audioFile)
 	songLength, err := GetLength(audioFile.Path)
 
 	if err != nil {

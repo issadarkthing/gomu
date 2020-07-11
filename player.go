@@ -32,20 +32,13 @@ type Player struct {
 	currentSong *AudioFile
 }
 
-func (p *Player) Run() {
+
+
+func (p *Player) Run(currSong *AudioFile) {
 
 	p.isSkipped = make(chan bool, 1)
-	first, err := gomu.Queue.Dequeue()
-	// ensuring the list is updated
-	gomu.App.Draw()
 
-	if err != nil {
-		p.IsRunning = false
-		appLog(err)
-	}
-
-
-	f, err := os.Open(first.Path)
+	f, err := os.Open(currSong.Path)
 
 	if err != nil {
 		appLog(err)
@@ -64,6 +57,7 @@ func (p *Player) Run() {
 		if err != nil {
 			appLog(err)
 		}
+
 		p.hasInit = true
 	}
 
@@ -79,9 +73,9 @@ func (p *Player) Run() {
 		appLog(err)
 	}
 
-	p.currentSong = first
+	p.currentSong = currSong
 
-	popupMessage := fmt.Sprintf("%s\n\n[ %s ]", first.Name, fmtDuration(p.length))
+	popupMessage := fmt.Sprintf("%s\n\n[ %s ]", currSong.Name, fmtDuration(p.length))
 
 	timedPopup(" Current Song ", popupMessage, getPopupTimeout())
 
@@ -120,7 +114,7 @@ func (p *Player) Run() {
 	p.position = position()
 	p.IsRunning = true
 
-	gomu.PlayingBar.NewProgress(first.Name, int(p.length.Seconds()), 100)
+	gomu.PlayingBar.NewProgress(currSong.Name, int(p.length.Seconds()), 100)
 	gomu.PlayingBar.Run()
 
 	// is used to send progress
@@ -137,9 +131,15 @@ next:
 			p.format = nil
 			gomu.PlayingBar.Stop()
 
-			if gomu.Queue.GetItemCount() != 0 {
-				go p.Run()
+			nextSong, err := gomu.Queue.Dequeue()
+			gomu.App.Draw()
+
+			if err != nil {
+				break next
 			}
+
+			go p.Run(nextSong)
+
 			break next
 
 		case <-time.After(time.Second):
@@ -178,7 +178,6 @@ func (p *Player) Play() {
 	p.IsRunning = true
 	speaker.Unlock()
 }
-
 
 // volume up and volume down using -0.5 or +0.5
 func (p *Player) Volume(v float64) float64 {
