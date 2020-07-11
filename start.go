@@ -246,7 +246,7 @@ func readConfig() {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("/etc/gomu")
-	viper.AddConfigPath(home + "/.gomu")
+	viper.AddConfigPath("$HOME/.gomu")
 	viper.AddConfigPath("$HOME/.config/gomu")
 
 	if err := viper.ReadInConfig(); err != nil {
