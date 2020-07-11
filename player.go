@@ -11,8 +11,8 @@ import (
 	"github.com/faiface/beep/effects"
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
+	"github.com/spf13/viper"
 )
-
 
 type Player struct {
 	IsRunning bool
@@ -32,7 +32,13 @@ type Player struct {
 	currentSong *AudioFile
 }
 
+func NewPlayer() *Player {
 
+	// Read initial volume from config
+	var initVol float64 = (viper.GetFloat64("volume") - 50.0) / 10.0
+
+	return &Player{volume: initVol}
+}
 
 func (p *Player) Run(currSong *AudioFile) {
 

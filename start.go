@@ -55,7 +55,7 @@ func (g *Gomu) InitPanels(app *tview.Application) {
 	g.PlayingBar = NewPlayingBar()
 	g.Queue = NewQueue()
 	g.Playlist = NewPlaylist()
-	g.Player = &Player{}
+	g.Player = NewPlayer()
 	g.Pages = tview.NewPages()
 	g.Panels = []Panel{g.Playlist, g.Queue, g.PlayingBar}
 }
@@ -255,6 +255,7 @@ func readConfig() {
 		viper.SetDefault("confirm_on_exit", true)
 		viper.SetDefault("confirm_bulk_add", true)
 		viper.SetDefault("popup_timeout", "5s")
+		viper.SetDefault("volume", "50")
 
 		// creates gomu config dir if does not exist
 		if _, err := os.Stat(configPath); err != nil {
