@@ -93,13 +93,13 @@ func GetFileContentType(out *os.File) (string, error) {
 
 // gets the file name by removing extension and path
 func GetName(fn string) string {
-	return strings.TrimSuffix(path.Base(fn), path.Ext(fn))
+	return strings.TrimSuffix(path.Base(fn), ".mp3")
 }
 
 // this just parsing the output from the ytdl to get the audio path
 // this is used because we need to get the song name
 // example ~/path/to/song/song.mp3
-func downloadedFilePath(output []byte, dir string) string {
+func extractFilePath(output []byte, dir string) string {
 
 	regexSearch := fmt.Sprintf(`\[ffmpeg\] Destination: %s\/.*.mp3`,
 		escapeBackSlash(dir))
