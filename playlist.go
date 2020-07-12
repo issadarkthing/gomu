@@ -121,11 +121,11 @@ func NewPlaylist() *Playlist {
 					if err != nil {
 						timedPopup(
 							" Error ",
-							"Unable to delete dir "+selectedDir.Name, getPopupTimeout())
+							"Unable to delete dir "+selectedDir.Name, getPopupTimeout(), 0, 0)
 					} else {
 						timedPopup(
 							" Success ",
-							selectedDir.Name+"\nhas been deleted successfully", getPopupTimeout())
+							selectedDir.Name+"\nhas been deleted successfully", getPopupTimeout(), 0, 0)
 
 						playlist.Refresh()
 					}
@@ -155,11 +155,11 @@ func NewPlaylist() *Playlist {
 
 					if err != nil {
 						timedPopup(
-							" Error ", "Unable to delete "+audioFile.Name, getPopupTimeout())
+							" Error ", "Unable to delete "+audioFile.Name, getPopupTimeout(), 0, 0)
 					} else {
 						timedPopup(
 							" Success ",
-							audioFile.Name+"\nhas been deleted successfully", getPopupTimeout())
+							audioFile.Name+"\nhas been deleted successfully", getPopupTimeout(), 0, 0)
 
 						playlist.Refresh()
 					}
@@ -260,7 +260,8 @@ func populate(root *tview.TreeNode, rootPath string) {
 
 		defer f.Close()
 
-		child := tview.NewTreeNode(GetName(file.Name()))
+		songName := GetName(file.Name())
+		child := tview.NewTreeNode(songName)
 
 		if !file.IsDir() {
 
@@ -284,7 +285,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 			}
 
 			audioFile := &AudioFile{
-				Name:        file.Name(),
+				Name:        songName,
 				Path:        path,
 				IsAudioFile: true,
 				Length:      audioLength,
@@ -298,7 +299,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 		if file.IsDir() {
 
 			audioFile := &AudioFile{
-				Name:        file.Name(),
+				Name:        songName,
 				Path:        path,
 				IsAudioFile: false,
 				Length:      0,
@@ -495,7 +496,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 	_, err := exec.LookPath("youtube-dl")
 
 	if err != nil {
-		timedPopup(" Error ", "youtube-dl is not in your $PATH", getPopupTimeout())
+		timedPopup(" Error ", "youtube-dl is not in your $PATH", getPopupTimeout(), 0, 0)
 		return
 	}
 
@@ -504,7 +505,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 	selAudioFile := selPlaylist.GetReference().(*AudioFile)
 	selPlaylistName := selAudioFile.Name
 
-	timedPopup(" Ytdl ", "Downloading", getPopupTimeout())
+	timedPopup(" Ytdl ", "Downloading", getPopupTimeout(), 0, 0)
 
 	// specify the output path for ytdl
 	outputDir := fmt.Sprintf(
@@ -530,7 +531,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 
 		err := cmd.Run()
 		if err != nil {
-			timedPopup(" Error ", "Error running youtube-dl", getPopupTimeout())
+			timedPopup(" Error ", "Error running youtube-dl", getPopupTimeout(), 0, 0)
 			return
 		}
 
@@ -551,8 +552,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 		timedPopup(
 			" Ytdl ",
 			downloadFinishedMessage,
-			getPopupTimeout(),
-		)
+			getPopupTimeout(), 0, 0)
 
 		gomu.App.Draw()
 

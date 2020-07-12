@@ -83,7 +83,7 @@ func (p *Player) Run(currSong *AudioFile) {
 
 	popupMessage := fmt.Sprintf("%s\n\n[ %s ]", currSong.Name, fmtDuration(p.length))
 
-	timedPopup(" Current Song ", popupMessage, getPopupTimeout())
+	timedPopup(" Current Song ", popupMessage, getPopupTimeout(), 0, 0)
 
 	done := make(chan bool, 1)
 
