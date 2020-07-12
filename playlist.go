@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -187,6 +186,7 @@ func NewPlaylist() *Playlist {
 
 			if audioFile.IsAudioFile {
 				gomu.Queue.Enqueue(audioFile)
+			} else {
 				currNode.SetExpanded(true)
 			}
 
@@ -530,8 +530,10 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 	go func() {
 
 		err := cmd.Run()
+
 		if err != nil {
 			timedPopup(" Error ", "Error running youtube-dl", getPopupTimeout(), 0, 0)
+			appLog(err)
 			return
 		}
 
@@ -544,8 +546,9 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 		} 
 
 		err = gomu.Playlist.AddSongToPlaylist(audioPath, selPlaylist)
+
 		if err != nil {
-			log.Println(err)
+			appLog(err)
 		}
 
 		downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s",
