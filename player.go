@@ -18,7 +18,7 @@ type Player struct {
 	IsRunning bool
 	hasInit   bool
 	format    *beep.Format
-
+	isLoop    bool
 	isSkipped chan bool
 	done      chan bool
 
@@ -120,6 +120,11 @@ func (p *Player) Run(currSong *AudioFile) {
 	p.position = position()
 	p.IsRunning = true
 
+	if p.isLoop {
+		gomu.Queue.Enqueue(currSong)
+		gomu.App.Draw()
+	}
+
 	gomu.PlayingBar.NewProgress(currSong.Name, int(p.length.Seconds()), 100)
 	gomu.PlayingBar.Run()
 
@@ -195,6 +200,7 @@ func (p *Player) Volume(v float64) float64 {
 	}
 
 	defer func() {
+		// saves the volume
 		volume := int(p.volume*10) + 50
 		viper.Set("volume", volume)
 	}()
@@ -217,10 +223,20 @@ func (p *Player) TogglePause() {
 // skips current song
 func (p *Player) Skip() {
 
-	if gomu.Queue.GetItemCount() > 0 {
-		p.ctrl.Streamer = nil
-		p.done <- true
+	if gomu.Queue.GetItemCount() < 1 {
+		return
 	}
+
+	p.ctrl.Streamer = nil
+	p.done <- true
+}
+
+// Toggles the queue to loop
+// dequeued item will be enqueued back
+// function returns loop state
+func (p *Player) ToggleLoop() bool {
+	p.isLoop = !p.isLoop
+	return p.isLoop
 }
 
 // gets the length of the song in the queue
