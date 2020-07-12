@@ -72,7 +72,7 @@ func (q *Queue) UpdateTitle() {
 
 	fmtTime := fmtDuration(totalLength)
 
-	q.SetTitle(fmt.Sprintf("┤ Queue ├──┤%s├", fmtTime))
+	q.SetTitle(fmt.Sprintf("┤ Queue ├──┤%d|%s├", len(q.Items), fmtTime))
 
 }
 
@@ -266,6 +266,17 @@ func NewQueue() *Queue {
 			queue.DeleteItem(queue.GetCurrentItem())
 		case 'D':
 			queue.ClearQueue()
+		case 'z':
+			isLoop := gomu.Player.ToggleLoop()
+			var msg string
+
+			if isLoop {
+				msg = "on"
+			} else {
+				msg = "off"
+			}
+
+			timedPopup("Loop", msg, getPopupTimeout(), 30, 5)
 		}
 
 		return nil

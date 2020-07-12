@@ -71,7 +71,12 @@ func topRight(p tview.Primitive, width, height int) tview.Primitive {
 		AddItem(nil, 0, 1, false)
 }
 
-func timedPopup(title string, desc string, timeout time.Duration) {
+func timedPopup(title string, desc string, timeout time.Duration, width, height int) {
+
+	if width == 0 && height == 0 {
+		width = 70
+		height = 7
+	}
 
 	textView := tview.NewTextView().
 		SetText(desc).
@@ -79,13 +84,13 @@ func timedPopup(title string, desc string, timeout time.Duration) {
 
 	textView.SetTextAlign(tview.AlignCenter).SetBackgroundColor(gomu.PopupBg)
 
-	box := tview.NewFrame(textView).SetBorders(1, 1, 1, 1, 1, 1)
+	box := tview.NewFrame(textView).SetBorders(1, 0, 0, 0, 0, 0)
 	box.SetTitle(title).SetBorder(true).SetBackgroundColor(gomu.PopupBg)
 
 	popupId := fmt.Sprintf("%s %d", "timeout-popup", popupCounter)
 	popupCounter++
 
-	gomu.Pages.AddPage(popupId, topRight(box, 70, 7), true, true)
+	gomu.Pages.AddPage(popupId, topRight(box, width, height), true, true)
 	gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 
 	go func() {
@@ -106,7 +111,7 @@ func volumePopup(volume float64) {
 		"50",
 	)
 
-	timedPopup(" Volume ", progress, getPopupTimeout())
+	timedPopup(" Volume ", progress, getPopupTimeout(), 0, 0)
 
 }
 
@@ -123,8 +128,8 @@ func helpPopup() {
 		"l      add song to queue",
 		"L      add playlist to queue",
 		"h      close node in playlist",
-		"d      remove from queue",
-		"D      delete playlist",
+		"d      delete song/remove from queue",
+		"D      delete playlist/clear queue",
 		"+      volume up",
 		"-      volume down",
 		"?      toggle help",
