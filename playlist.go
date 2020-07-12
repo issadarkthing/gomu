@@ -537,17 +537,19 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 
 		playlistPath := path.Join(expandTilde(dir), selPlaylistName)
 
-		downloadedAudioPath := downloadedFilePath(
-			stdout.Bytes(), playlistPath)
+		audioPath := extractFilePath(stdout.Bytes(), playlistPath)
 
-		err = gomu.Playlist.AddSongToPlaylist(downloadedAudioPath, selPlaylist)
+		if err != nil {
+			appLog(err)
+		} 
 
+		err = gomu.Playlist.AddSongToPlaylist(audioPath, selPlaylist)
 		if err != nil {
 			log.Println(err)
 		}
 
 		downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s",
-			path.Base(downloadedAudioPath))
+			path.Base(audioPath))
 
 		timedPopup(
 			" Ytdl ",
@@ -559,3 +561,4 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 	}()
 
 }
+

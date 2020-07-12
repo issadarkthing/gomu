@@ -56,7 +56,7 @@ Deleting original file /tmp/Powfu - death bed (coffee for your head) (Official V
 
 	result := "/tmp/Powfu - death bed (coffee for your head) (Official Video) ft. beabadoobee.mp3"
 
-	got := downloadedFilePath([]byte(sample), "/tmp")
+	got := extractFilePath([]byte(sample), "/tmp")
 
 	if got != result {
 		t.Errorf("downloadedFilePath(%s); expected %s got %s", sample, result, got)
