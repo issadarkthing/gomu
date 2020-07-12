@@ -182,6 +182,10 @@ func start(application *tview.Application) {
 					appLog(err)
 				}
 
+				if err := viper.WriteConfig(); err != nil {
+					appLog(err)
+				}
+
 				application.Stop()
 
 			})
