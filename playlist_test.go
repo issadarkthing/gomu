@@ -45,7 +45,7 @@ func TestPopulate(t *testing.T) {
 
 	gomu = NewGomu()
 
-	rootDir, err := filepath.Abs("./music")
+	rootDir, err := filepath.Abs("./test")
 
 	if err != nil {
 		panic(err)
@@ -84,7 +84,7 @@ func TestPopulate(t *testing.T) {
 	root := tview.NewTreeNode(path.Base(rootDir))
 
 	root.SetReference(&AudioFile{
-		Name: "Music",
+		Name:        "Music",
 		IsAudioFile: false,
 	})
 
@@ -93,11 +93,8 @@ func TestPopulate(t *testing.T) {
 	gotItems := 0
 	root.Walk(func(node, _ *tview.TreeNode) bool {
 
+		gotItems++
 
-		if node.GetReference().(*AudioFile).IsAudioFile {
-			gotItems++
-		}
-		
 		return true
 	})
 
