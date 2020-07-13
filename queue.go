@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path"
 	"time"
@@ -243,6 +244,25 @@ func (q *Queue) GetSavedQueue() ([]string, error) {
 	return records, nil
 }
 
+func (q *Queue) Shuffle() {
+
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(q.Items), func(i, j int) { q.Items[i], q.Items[j] = q.Items[j], q.Items[i] })
+
+	q.Clear()
+
+	for _, v := range q.Items {
+		audioLen, err := GetLength(v.Path)
+		appLog(err)
+
+		queueText := fmt.Sprintf("[ %s ] %s", fmtDuration(audioLen), v.Name)
+		q.AddItem(queueText, v.Path, 0, nil)
+	}
+
+	q.UpdateTitle()
+
+}
+
 // Initiliaze new queue with default values
 func NewQueue() *Queue {
 
@@ -277,6 +297,8 @@ func NewQueue() *Queue {
 			}
 
 			timedPopup("Loop", msg, getPopupTimeout(), 30, 5)
+		case 's':
+			queue.Shuffle()
 		}
 
 		return nil
