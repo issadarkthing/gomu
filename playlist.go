@@ -294,6 +294,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 			}
 
 			child.SetReference(audioFile)
+			root.AddChild(child)
 
 		}
 
@@ -308,14 +309,10 @@ func populate(root *tview.TreeNode, rootPath string) {
 			}
 			child.SetReference(audioFile)
 			child.SetColor(gomu.AccentColor)
+			root.AddChild(child)
 			populate(child, path)
 
 		}
-
-		// this is placed below because if
-		// any of the checks above returns error
-		// it will not be added to the playlist
-		root.AddChild(child)
 
 	}
 
