@@ -381,7 +381,7 @@ func (p *Playlist) Refresh() {
 	root.Walk(func(node, parent *tview.TreeNode) bool {
 
 		// to preserve previously highlighted node
-		if node.GetReference().(*AudioFile).Name == prevFileName {
+		if node.GetText() == prevFileName {
 			p.SetHighlight(node)
 			return false
 		}
