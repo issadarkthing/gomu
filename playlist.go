@@ -5,6 +5,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -337,6 +338,32 @@ func (p *Playlist) AddAllToQueue(root *tview.TreeNode) {
 
 		gomu.Queue.Enqueue(currNode)
 	}
+
+}
+
+// Triggers fzf to find in current directory
+func (p *Playlist) FuzzySearch() {
+
+	_, err := exec.LookPath("fzf")
+
+	if err != nil {
+		timedPopup(" Error ", "FZF not found in your $PATH", getPopupTimeout(), 0, 0)
+		appLog(err)
+		return
+	}
+
+	rootPath := p.GetRoot().GetReference().(*AudioFile).Path
+
+	cmd := exec.Command("fzf", "--multi")
+	stdin, err := cmd.StdinPipe()
+
+	go func(c io.WriteCloser) {
+		filepath.Walk(rootPath, func(path string, f os.FileInfo, err error) error {
+
+			io.WriteString(c, path)
+			return err
+		})
+	}(stdin)
 
 }
 
