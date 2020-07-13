@@ -83,16 +83,26 @@ func TestPopulate(t *testing.T) {
 
 	root := tview.NewTreeNode(path.Base(rootDir))
 
+	root.SetReference(&AudioFile{
+		Name: "Music",
+		IsAudioFile: false,
+	})
+
 	populate(root, rootDir)
 
 	gotItems := 0
-	root.Walk(func(node, parent *tview.TreeNode) bool {
-		gotItems++
+	root.Walk(func(node, _ *tview.TreeNode) bool {
+
+
+		if node.GetReference().(*AudioFile).IsAudioFile {
+			gotItems++
+		}
+		
 		return true
 	})
 
 	if gotItems != items {
-		t.Error("populate() does not return correct amount of file")
+		t.Errorf("Invalid amount of file; expected %d got %d", items, gotItems)
 	}
 
 }
