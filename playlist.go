@@ -517,14 +517,14 @@ func (p *Playlist) FindAudioFile(audioName string) *AudioFile {
 }
 
 // download audio from youtube audio and adds the song to the selected playlist
-func Ytdl(url string, selPlaylist *tview.TreeNode) {
+func Ytdl(url string, selPlaylist *tview.TreeNode) (error, chan error) {
 
 	// lookup if youtube-dl exists
 	_, err := exec.LookPath("youtube-dl")
 
 	if err != nil {
 		timedPopup(" Error ", "youtube-dl is not in your $PATH", getPopupTimeout(), 0, 0)
-		return
+		return err, nil
 	}
 
 	dir := viper.GetString("music_dir")
@@ -554,6 +554,8 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
+	e := make(chan error)
+
 	go func() {
 
 		err := cmd.Run()
@@ -561,6 +563,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 		if err != nil {
 			timedPopup(" Error ", "Error running youtube-dl", getPopupTimeout(), 0, 0)
 			appLog(err)
+			e <- err
 			return
 		}
 
@@ -570,12 +573,14 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 
 		if err != nil {
 			appLog(err)
-		} 
+			e <- err
+		}
 
 		err = gomu.Playlist.AddSongToPlaylist(audioPath, selPlaylist)
 
 		if err != nil {
 			appLog(err)
+			e <- err
 		}
 
 		downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s",
@@ -588,7 +593,10 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) {
 
 		gomu.App.Draw()
 
+		e <- nil
+
 	}()
 
-}
+	return nil, e
 
+}
