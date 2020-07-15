@@ -12,24 +12,6 @@ import (
 	"github.com/rivo/tview"
 )
 
-// Playing bar shows progress of the song and the title of the song
-func NewPlayingBar() *PlayingBar {
-
-	textView := tview.NewTextView().SetTextAlign(tview.AlignCenter)
-
-	progress := NewProgressBar(textView, gomu.Player)
-
-	textView.SetChangedFunc(func() {
-		gomu.App.Draw()
-
-		if !gomu.Player.IsRunning {
-			progress.SetDefault()
-		}
-	})
-
-	return progress
-}
-
 type PlayingBar struct {
 	*tview.Frame
 	full      int
@@ -40,19 +22,30 @@ type PlayingBar struct {
 	text      *tview.TextView
 }
 
-// full is the maximum amount of value can be sent to channel
-// limit is the progress bar size
-func NewProgressBar(txt *tview.TextView, player *Player) *PlayingBar {
+// Playing bar shows progress of the song and the title of the song
+func NewPlayingBar() *PlayingBar {
 
-	frame := tview.NewFrame(txt).SetBorders(1, 1, 1, 1, 1, 1)
+	textView := tview.NewTextView().SetTextAlign(tview.AlignCenter)
+
+	frame := tview.NewFrame(textView).SetBorders(1, 1, 1, 1, 1, 1)
 	frame.SetBorder(true).SetTitle(" Now Playing ")
 
-	p := &PlayingBar{frame, 0, 0, make(chan int), 0, false, txt}
-
+	p := &PlayingBar{frame, 0, 0, make(chan int), 0, false, textView}
 	p.SetDefault()
+
+
+	textView.SetChangedFunc(func() {
+		gomu.App.Draw()
+
+		if !gomu.Player.IsRunning {
+			p.SetDefault()
+		}
+	})
 
 	return p
 }
+
+
 
 // start processing progress bar
 // runs asynchronusly
