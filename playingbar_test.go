@@ -22,15 +22,15 @@ func Test_NewProgress(t *testing.T) {
 	p.NewProgress("sample", full, limit)
 
 	if p.full != full {
-		t.Errorf("Expected %d; got %d", full, p.full)	
+		t.Errorf("Expected %d; got %d", full, p.full)
 	}
 
 	if p.limit != limit {
-		t.Errorf("Expected %d; got %d", limit, p.limit)	
+		t.Errorf("Expected %d; got %d", limit, p.limit)
 	}
 
 	if p._progress != 0 {
-		t.Errorf("Expected %d; got %d", 0, p._progress)	
+		t.Errorf("Expected %d; got %d", 0, p._progress)
 	}
 
 }
