@@ -126,7 +126,7 @@ func helpPopup() {
 		"esc    close popup",
 		"n      skip",
 		"q      quit",
-		"l      add song to queue",
+		"l      add/play song",
 		"L      add playlist to queue",
 		"h      close node in playlist",
 		"d      delete song/remove from queue",
@@ -136,6 +136,7 @@ func helpPopup() {
 		"?      toggle help",
 		"Y      download audio",
 		"a      create playlist",
+		"z      toggle loop",
 	}
 
 	list := tview.NewList().ShowSecondaryText(false)
