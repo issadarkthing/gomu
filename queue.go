@@ -43,14 +43,20 @@ func (q *Queue) prev() {
 
 // usually used with GetCurrentItem which can return -1 if
 // no item highlighted
-func (q *Queue) DeleteItem(index int) {
+func (q *Queue) DeleteItem(index int) *AudioFile {
+
+	// deleted audio file
+	var dAudio *AudioFile
+
 	if index != -1 {
 		q.RemoveItem(index)
 
 		var nItems []*AudioFile
 
 		for i, v := range q.Items {
+
 			if i == index {
+				dAudio = v
 				continue
 			}
 
@@ -61,8 +67,11 @@ func (q *Queue) DeleteItem(index int) {
 		q.UpdateTitle()
 
 	}
+
+	return dAudio
 }
 
+// Update queue title which shows number of items and total length
 func (q *Queue) UpdateTitle() {
 
 	var totalLength time.Duration
@@ -75,6 +84,18 @@ func (q *Queue) UpdateTitle() {
 
 	q.SetTitle(fmt.Sprintf("┤ Queue ├──┤%d|%s├", len(q.Items), fmtTime))
 
+}
+
+// Add item to the front of the queue
+func (q *Queue) PushFront(audioFile *AudioFile) {
+
+	q.Items = append([]*AudioFile{audioFile}, q.Items...)
+
+	songLength := audioFile.Length
+
+	queueItemView := fmt.Sprintf("[ %s ] %s", fmtDuration(songLength), GetName(audioFile.Name))
+	q.InsertItem(0, queueItemView, audioFile.Path, 0, nil)
+	q.UpdateTitle()
 }
 
 // gets the first item and remove it from the queue
@@ -286,6 +307,10 @@ func NewQueue() *Queue {
 			queue.DeleteItem(queue.GetCurrentItem())
 		case 'D':
 			queue.ClearQueue()
+		case 'x':
+			a := queue.DeleteItem(queue.GetCurrentItem())
+			queue.PushFront(a)
+			gomu.Player.Skip()
 		case 'z':
 			isLoop := gomu.Player.ToggleLoop()
 			var msg string
