@@ -33,7 +33,6 @@ func NewPlayingBar() *PlayingBar {
 	p := &PlayingBar{frame, 0, 0, make(chan int), 0, false, textView}
 	p.SetDefault()
 
-
 	textView.SetChangedFunc(func() {
 		gomu.App.Draw()
 
@@ -44,8 +43,6 @@ func NewPlayingBar() *PlayingBar {
 
 	return p
 }
-
-
 
 // start processing progress bar
 // runs asynchronusly
