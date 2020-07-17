@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -47,7 +48,7 @@ func (p *Player) Run(currSong *AudioFile) {
 	f, err := os.Open(currSong.Path)
 
 	if err != nil {
-		appLog(err)
+		log.Println(err)
 	}
 
 	defer f.Close()
@@ -61,7 +62,7 @@ func (p *Player) Run(currSong *AudioFile) {
 		err := speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
 
 		if err != nil {
-			appLog(err)
+			log.Println(err)
 		}
 
 		p.hasInit = true
@@ -70,13 +71,13 @@ func (p *Player) Run(currSong *AudioFile) {
 	p.format = &format
 
 	if err != nil {
-		appLog(err)
+		log.Println(err)
 	}
 
 	defer streamer.Close()
 
 	if err != nil {
-		appLog(err)
+		log.Println(err)
 	}
 
 	p.currentSong = currSong

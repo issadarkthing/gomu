@@ -3,6 +3,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"strings"
 
@@ -137,7 +138,7 @@ func start(application *tview.Application) {
 	gomu = NewGomu()
 	gomu.InitPanels(application)
 
-	appLog("start app")
+	log.Println("start app")
 
 	flex := Layout(gomu)
 	gomu.Pages.AddPage("main", flex, true, true)
@@ -147,7 +148,7 @@ func start(application *tview.Application) {
 	gomu.PrevPanel = gomu.Playlist
 
 	if err := gomu.Queue.LoadQueue(); err != nil {
-		appLog(err)
+		log.Println(err)
 	}
 
 	application.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -180,11 +181,11 @@ func start(application *tview.Application) {
 				}
 
 				if err := gomu.Queue.SaveQueue(); err != nil {
-					appLog(err)
+					log.Println(err)
 				}
 
 				if err := viper.WriteConfig(); err != nil {
-					appLog(err)
+					log.Println(err)
 				}
 
 				application.Stop()
@@ -235,7 +236,7 @@ func start(application *tview.Application) {
 
 	// main loop
 	if err := application.SetRoot(gomu.Pages, true).SetFocus(gomu.Playlist).Run(); err != nil {
-		appLog(err)
+		log.Println(err)
 	}
 }
 
@@ -245,7 +246,7 @@ func readConfig() {
 	configPath := home + "/.config/gomu/config"
 
 	if err != nil {
-		appLog(err)
+		log.Println(err)
 	}
 
 	viper.SetConfigName("config")
@@ -265,14 +266,14 @@ func readConfig() {
 		// creates gomu config dir if does not exist
 		if _, err := os.Stat(configPath); err != nil {
 			if err := os.MkdirAll(home+"/.config/gomu", 0755); err != nil {
-				appLog(err)
+				log.Println(err)
 			}
 		}
 
 		// if config file was not found
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			if err := viper.SafeWriteConfigAs(configPath); err != nil {
-				appLog(err)
+				log.Println(err)
 			}
 		}
 

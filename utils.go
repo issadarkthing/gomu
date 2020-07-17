@@ -13,25 +13,6 @@ import (
 	"time"
 )
 
-// simple logging utility
-func appLog(v ...interface{}) {
-
-	tmpDir := os.TempDir()
-
-	logFile := path.Join(tmpDir, "gomu.log")
-
-	file, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-
-	if err != nil {
-		log.Fatalf("Error opening file %s", logFile)
-	}
-
-	defer file.Close()
-
-	log.SetOutput(file)
-	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
-	log.Println(v...)
-}
 
 // formats duration to my desired output mm:ss
 func fmtDuration(input time.Duration) string {
@@ -69,7 +50,7 @@ func expandTilde(_path string) string {
 	home, err := os.UserHomeDir()
 
 	if err != nil {
-		appLog(err)
+		log.Println(err)
 	}
 
 	return path.Join(home, strings.TrimPrefix(_path, "~"))
