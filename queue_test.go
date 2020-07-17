@@ -35,8 +35,7 @@ func TestQueueNext(t *testing.T) {
 
 func TestDequeue(t *testing.T) {
 
-	gomu := preparePlaylist()
-	gomu.Queue = NewQueue()
+	gomu := prepareTest()
 
 	audioFiles := gomu.Playlist.GetAudioFiles()
 
@@ -95,7 +94,7 @@ func TestQueueDeleteItem(t *testing.T) {
 
 func TestEnqueue(t *testing.T) {
 
-	gomu = preparePlaylist()
+	gomu = prepareTest()
 
 	var audioFiles []*AudioFile
 
@@ -156,6 +155,46 @@ func TestQueueGetItems(t *testing.T) {
 		if !SliceHas(v, sampleValues) {
 			t.Error("GetItems does not return correct items")
 		}
+	}
+
+}
+
+func TestPushFront(t *testing.T) {
+
+	gomu = prepareTest()
+	rapPlaylist := gomu.Playlist.GetRoot().GetChildren()[1]
+	gomu.Playlist.AddAllToQueue(rapPlaylist)
+
+	selSong := gomu.Queue.DeleteItem(2)
+
+	gomu.Queue.PushFront(selSong)
+
+	for i, v := range gomu.Queue.Items {
+
+		if v == selSong && i != 0 {
+			t.Errorf("Item does not move to the 0th index")
+		}
+
+	}
+
+}
+
+func TestClearQueue(t *testing.T) {
+
+	gomu = prepareTest()
+	rapPlaylist := gomu.Playlist.GetRoot().GetChildren()[1]
+	gomu.Playlist.AddAllToQueue(rapPlaylist)
+
+	gomu.Queue.ClearQueue()
+
+	queueLen := len(gomu.Queue.Items)
+	if queueLen != 0 {
+		t.Errorf("Expected %d; got %d", 0, queueLen)
+	}
+
+	listLen := len(gomu.Queue.GetItems())
+	if listLen != 0 {
+		t.Errorf("Expected %d; got %d", 0, listLen)
 	}
 
 }

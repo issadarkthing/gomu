@@ -31,6 +31,22 @@ type Playlist struct {
 	prevNode *tview.TreeNode
 }
 
+func (p *Playlist) Help() []string {
+
+	return []string{
+		"j      down",
+		"k      up",
+		"h      close node",
+		"l      add song to queue",
+		"L      add playlist to queue",
+		"d      delete file from filesystem",
+		"D      delete playlist from filesystem",
+		"Y      download audio",
+		"r      refresh",
+	}
+
+}
+
 func NewPlaylist() *Playlist {
 
 	rootDir, err := filepath.Abs(expandTilde(viper.GetString("music_dir")))
@@ -44,13 +60,13 @@ func NewPlaylist() *Playlist {
 
 	tree := tview.NewTreeView().SetRoot(root)
 
-	playlist := &Playlist{tree, nil}
+	playlist := &Playlist{
+		TreeView: tree,
+	}
 
 	rootAudioFile := &AudioFile{
-		Name:        root.GetText(),
-		Path:        rootDir,
-		IsAudioFile: false,
-		Parent:      nil,
+		Name: root.GetText(),
+		Path: rootDir,
 	}
 
 	root.SetReference(rootAudioFile)

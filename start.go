@@ -18,6 +18,7 @@ type Panel interface {
 	SetTitleColor(color tcell.Color) *tview.Box
 	SetTitle(s string) *tview.Box
 	GetTitle() string
+	Help() []string
 }
 
 type Gomu struct {
@@ -218,7 +219,7 @@ func start(application *tview.Application) {
 				gomu.Pages.RemovePage(name)
 				gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 			} else {
-				helpPopup()
+				helpPopup(gomu.PrevPanel)
 			}
 
 		}
