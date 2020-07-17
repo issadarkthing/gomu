@@ -22,6 +22,10 @@ type PlayingBar struct {
 	text      *tview.TextView
 }
 
+func (p *PlayingBar) Help() []string {
+	return []string{}
+}
+
 // Playing bar shows progress of the song and the title of the song
 func NewPlayingBar() *PlayingBar {
 
@@ -30,7 +34,12 @@ func NewPlayingBar() *PlayingBar {
 	frame := tview.NewFrame(textView).SetBorders(1, 1, 1, 1, 1, 1)
 	frame.SetBorder(true).SetTitle(" Now Playing ")
 
-	p := &PlayingBar{frame, 0, 0, make(chan int), 0, false, textView}
+	p := &PlayingBar{
+		Frame:    frame,
+		text:     textView,
+		progress: make(chan int),
+	}
+
 	p.SetDefault()
 
 	textView.SetChangedFunc(func() {

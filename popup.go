@@ -116,27 +116,26 @@ func volumePopup(volume float64) {
 
 }
 
-func helpPopup() {
+func helpPopup(panel Panel) {
 
-	helpText := []string{
-		"j      down",
-		"k      up",
+	helpText := panel.Help()
+
+	genHelp := []string{
+		" ",
 		"tab    change panel",
 		"space  toggle play/pause",
 		"esc    close popup",
 		"n      skip",
 		"q      quit",
-		"l      add/play song",
-		"L      add playlist to queue",
-		"h      close node in playlist",
-		"d      delete song/remove from queue",
-		"D      delete playlist/clear queue",
 		"+      volume up",
 		"-      volume down",
 		"?      toggle help",
-		"Y      download audio",
-		"a      create playlist",
-		"z      toggle loop",
+	}
+
+	for _, v := range genHelp {
+
+		helpText = append(helpText, v)
+
 	}
 
 	list := tview.NewList().ShowSecondaryText(false)

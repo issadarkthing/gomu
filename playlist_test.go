@@ -10,7 +10,7 @@ import (
 )
 
 // Prepares for test
-func preparePlaylist() *Gomu {
+func prepareTest() *Gomu {
 
 	gomu := NewGomu()
 	gomu.Player = &Player{}
@@ -21,7 +21,7 @@ func preparePlaylist() *Gomu {
 	}
 	gomu.App = tview.NewApplication()
 
-	rootDir, err := filepath.Abs("./music")
+	rootDir, err := filepath.Abs("./test")
 	if err != nil {
 		panic(err)
 	}
@@ -106,7 +106,7 @@ func TestPopulate(t *testing.T) {
 
 func TestAddAllToQueue(t *testing.T) {
 
-	gomu = preparePlaylist()
+	gomu = prepareTest()
 
 	var songs []*tview.TreeNode
 

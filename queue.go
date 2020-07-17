@@ -265,6 +265,20 @@ func (q *Queue) GetSavedQueue() ([]string, error) {
 	return records, nil
 }
 
+func (q *Queue) Help() []string {
+
+	return []string{
+		"j      down",
+		"k      up",
+		"l      play selected song",
+		"d      remove from queue",
+		"D      clear queue",
+		"z      toggle loop",
+		"s      shuffle",
+	}
+
+}
+
 func (q *Queue) Shuffle() {
 
 	rand.Seed(time.Now().UnixNano())
@@ -293,7 +307,6 @@ func NewQueue() *Queue {
 	queue := &Queue{
 		List:           list,
 		SavedQueuePath: "~/.local/share/gomu/queue.cache",
-		Items:          []*AudioFile{},
 	}
 
 	queue.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
@@ -307,7 +320,7 @@ func NewQueue() *Queue {
 			queue.DeleteItem(queue.GetCurrentItem())
 		case 'D':
 			queue.ClearQueue()
-		case 'x':
+		case 'l':
 			a := queue.DeleteItem(queue.GetCurrentItem())
 			queue.PushFront(a)
 			gomu.Player.Skip()
