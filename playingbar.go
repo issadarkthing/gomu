@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -74,13 +75,13 @@ func (p *PlayingBar) Run() {
 			start, err := time.ParseDuration(strconv.Itoa(p._progress) + "s")
 
 			if err != nil {
-				appLog(err)
+				log.Println(err)
 			}
 
 			end, err := time.ParseDuration(strconv.Itoa(p.full) + "s")
 
 			if err != nil {
-				appLog(err)
+				log.Println(err)
 			}
 
 			x := p._progress * p.limit / p.full

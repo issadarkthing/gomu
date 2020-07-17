@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -52,7 +53,7 @@ func NewPlaylist() *Playlist {
 	rootDir, err := filepath.Abs(expandTilde(viper.GetString("music_dir")))
 
 	if err != nil {
-		appLog(err)
+		log.Println(err)
 	}
 
 	root := tview.NewTreeNode(path.Base(rootDir)).
@@ -262,7 +263,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 	files, err := ioutil.ReadDir(rootPath)
 
 	if err != nil {
-		appLog(err)
+		log.Println(err)
 	}
 
 	for _, file := range files {
@@ -271,7 +272,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 		f, err := os.Open(path)
 
 		if err != nil {
-			appLog(err)
+			log.Println(err)
 			continue
 		}
 
@@ -285,7 +286,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 			filetype, err := GetFileContentType(f)
 
 			if err != nil {
-				appLog(err)
+				log.Println(err)
 				continue
 			}
 
@@ -297,7 +298,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 			audioLength, err := GetLength(path)
 
 			if err != nil {
-				appLog(err)
+				log.Println(err)
 				continue
 			}
 
@@ -361,7 +362,7 @@ func (p *Playlist) FuzzySearch() {
 
 	if err != nil {
 		timedPopup(" Error ", "FZF not found in your $PATH", getPopupTimeout(), 0, 0)
-		appLog(err)
+		log.Println(err)
 		return
 	}
 
@@ -575,7 +576,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) (error, chan error) {
 
 		if err != nil {
 			timedPopup(" Error ", "Error running youtube-dl", getPopupTimeout(), 0, 0)
-			appLog(err)
+			log.Println(err)
 			e <- err
 			return
 		}
@@ -585,14 +586,14 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) (error, chan error) {
 		audioPath := extractFilePath(stdout.Bytes(), playlistPath)
 
 		if err != nil {
-			appLog(err)
+			log.Println(err)
 			e <- err
 		}
 
 		err = gomu.Playlist.AddSongToPlaylist(audioPath, selPlaylist)
 
 		if err != nil {
-			appLog(err)
+			log.Println(err)
 			e <- err
 		}
 

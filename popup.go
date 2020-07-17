@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -26,7 +27,7 @@ func getPopupTimeout() time.Duration {
 	m, err := time.ParseDuration(dur)
 
 	if err != nil {
-		appLog(err)
+		log.Println(err)
 	}
 
 	return m
@@ -233,7 +234,7 @@ func CreatePlaylistPopup() {
 			err := gomu.Playlist.CreatePlaylist(playListName)
 
 			if err != nil {
-				appLog(err)
+				log.Println(err)
 			}
 
 			gomu.Pages.RemovePage("mkdir-input-popup")
