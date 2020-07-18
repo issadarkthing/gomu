@@ -3,6 +3,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"strings"
@@ -123,7 +124,8 @@ func (g *Gomu) SetUnfocusPanel(panel Panel) {
 // one single instance of global variable
 var gomu *Gomu
 
-func start(application *tview.Application) {
+func start(application *tview.Application, args Args) {
+
 	// override default border
 	// change double line border to one line border when focused
 	tview.Borders.HorizontalFocus = tview.Borders.Horizontal
@@ -143,12 +145,16 @@ func start(application *tview.Application) {
 	flex := Layout(gomu)
 	gomu.Pages.AddPage("main", flex, true, true)
 
+	// sets the first focused panel
 	gomu.Playlist.SetBorderColor(gomu.AccentColor)
 	gomu.Playlist.SetTitleColor(gomu.AccentColor)
 	gomu.PrevPanel = gomu.Playlist
 
-	if err := gomu.Queue.LoadQueue(); err != nil {
-		log.Println(err)
+	if *args.load {
+		// load saved queue from previous
+		if err := gomu.Queue.LoadQueue(); err != nil {
+			log.Println(err)
+		}
 	}
 
 	application.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -240,10 +246,18 @@ func start(application *tview.Application) {
 	}
 }
 
-func readConfig() {
+func readConfig(args Args) {
+
+	configPath := *args.config
+	musicDir := *args.music
 
 	home, err := os.UserHomeDir()
-	configPath := home + "/.config/gomu/config"
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	defaultPath := home + "/.config/gomu/config"
 
 	if err != nil {
 		log.Println(err)
@@ -251,20 +265,22 @@ func readConfig() {
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
+	viper.AddConfigPath(expandTilde(configPath))
 	viper.AddConfigPath("/etc/gomu")
 	viper.AddConfigPath("$HOME/.gomu")
 	viper.AddConfigPath("$HOME/.config/gomu")
 
 	if err := viper.ReadInConfig(); err != nil {
 
-		viper.SetDefault("music_dir", "~/music")
+		viper.SetDefault("music_dir", musicDir)
 		viper.SetDefault("confirm_on_exit", true)
 		viper.SetDefault("confirm_bulk_add", true)
 		viper.SetDefault("popup_timeout", "5s")
 		viper.SetDefault("volume", "50")
 
+
 		// creates gomu config dir if does not exist
-		if _, err := os.Stat(configPath); err != nil {
+		if _, err := os.Stat(defaultPath); err != nil {
 			if err := os.MkdirAll(home+"/.config/gomu", 0755); err != nil {
 				log.Println(err)
 			}
@@ -272,13 +288,32 @@ func readConfig() {
 
 		// if config file was not found
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			if err := viper.SafeWriteConfigAs(configPath); err != nil {
+			if err := viper.SafeWriteConfigAs(defaultPath); err != nil {
 				log.Println(err)
 			}
 		}
 
 	}
 
+}
+
+type Args struct {
+	config *string
+	load   *bool
+	music  *string
+}
+
+func getArgs() Args {
+
+	ar := Args{
+		config: flag.String("config", "~/.config/gomu/config", "specify config file"),
+		load:   flag.Bool("load", true, "load previous queue"),
+		music:	flag.String("music", "~/music", "specify music directory"),
+	}
+
+	flag.Parse()
+
+	return ar
 }
 
 // layout is used to organize the panels
