@@ -13,7 +13,6 @@ import (
 	"time"
 )
 
-
 // formats duration to my desired output mm:ss
 func fmtDuration(input time.Duration) string {
 

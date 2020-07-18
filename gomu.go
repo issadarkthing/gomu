@@ -14,11 +14,13 @@ func main() {
 
 	os.Setenv("TEST", "false")
 
-	readConfig()
+	args := getArgs()
+
+	readConfig(args)
 
 	app := tview.NewApplication()
 
-	start(app)
+	start(app, args)
 
 }
 
@@ -38,3 +40,5 @@ func init() {
 	log.SetOutput(file)
 	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 }
+
+
