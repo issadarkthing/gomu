@@ -199,6 +199,50 @@ func TestClearQueue(t *testing.T) {
 
 }
 
+func TestShuffle(t *testing.T) {
+
+	gomu = prepareTest()
+
+	root := gomu.Playlist.GetRoot()
+	rapDir := root.GetChildren()[1]
+
+	gomu.Playlist.AddAllToQueue(rapDir)
+
+	sameCounter := 0
+	const limit int = 10
+
+	for i := 0; i < limit; i++ {
+		items := gomu.Queue.GetItems()
+
+		gomu.Queue.Shuffle()
+
+		got := gomu.Queue.GetItems()
+
+		if Equal(items, got) {
+			sameCounter++
+		}
+	}
+
+	if sameCounter == limit {
+		t.Error("Items in queue are not changed")
+	}
+
+}
+
+// Equal tells whether a and b contain the same elements.
+// A nil argument is equivalent to an empty slice.
+func Equal(a, b []string) bool {
+    if len(a) != len(b) {
+        return false
+    }
+    for i, v := range a {
+        if v != b[i] {
+            return false
+        }
+    }
+    return true
+}
+
 // utility function to check elem in a slice
 func SliceHas(item string, s []string) bool {
 
