@@ -343,7 +343,7 @@ func (p *Playlist) AddAllToQueue(root *tview.TreeNode) {
 	childrens = root.GetChildren()
 
 	// gets the parent if the highlighted item is a file
-	if len(childrens) == 0 {
+	if root.GetReference().(*AudioFile).IsAudioFile {
 		childrens = root.GetReference().(*AudioFile).Parent.GetChildren()
 	}
 
