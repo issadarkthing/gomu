@@ -13,6 +13,13 @@ import (
 	"time"
 )
 
+// Wraps error in a formatted way. 
+// function name should be supplied on where the error occured
+// newly created err should have a newline
+func WrapError(fnName string, err error) error {
+	return fmt.Errorf("%s: \n%e", fnName, err)
+}
+
 // formats duration to my desired output mm:ss
 func fmtDuration(input time.Duration) string {
 

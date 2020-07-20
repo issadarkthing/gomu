@@ -59,7 +59,9 @@ func (p *Player) Run(currSong *AudioFile) {
 	p.length = format.SampleRate.D(streamer.Len())
 
 	if !p.hasInit {
-		err := speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+
+		err := speaker.
+			Init(format.SampleRate, format.SampleRate.N(time.Second/10))
 
 		if err != nil {
 			log.Println(err)
@@ -82,7 +84,8 @@ func (p *Player) Run(currSong *AudioFile) {
 
 	p.currentSong = currSong
 
-	popupMessage := fmt.Sprintf("%s\n\n[ %s ]", currSong.Name, fmtDuration(p.length))
+	popupMessage := fmt.Sprintf("%s\n\n[ %s ]", 
+		currSong.Name, fmtDuration(p.length))
 
 	timedPopup(" Current Song ", popupMessage, getPopupTimeout(), 0, 0)
 
@@ -94,7 +97,11 @@ func (p *Player) Run(currSong *AudioFile) {
 		done <- true
 	}))
 
-	ctrl := &beep.Ctrl{Streamer: sstreamer, Paused: false}
+	ctrl := &beep.Ctrl{
+		Streamer: sstreamer, 
+		Paused: false,
+	}
+
 	p.ctrl = ctrl
 
 	resampler := beep.ResampleRatio(4, 1, ctrl)
@@ -243,10 +250,12 @@ func (p *Player) ToggleLoop() bool {
 // gets the length of the song in the queue
 func GetLength(audioPath string) (time.Duration, error) {
 
+	fnName := "GetLength"
+
 	f, err := os.Open(audioPath)
 
 	if err != nil {
-		return 0, err
+		return 0, WrapError(fnName, err)
 	}
 
 	defer f.Close()
@@ -254,7 +263,7 @@ func GetLength(audioPath string) (time.Duration, error) {
 	streamer, format, err := mp3.Decode(f)
 
 	if err != nil {
-		return 0, err
+		return 0, WrapError(fnName, err)
 	}
 
 	defer streamer.Close()

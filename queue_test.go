@@ -165,7 +165,11 @@ func TestPushFront(t *testing.T) {
 	rapPlaylist := gomu.Playlist.GetRoot().GetChildren()[1]
 	gomu.Playlist.AddAllToQueue(rapPlaylist)
 
-	selSong := gomu.Queue.DeleteItem(2)
+	selSong, err := gomu.Queue.DeleteItem(2)
+
+	if err != nil {
+		panic(err)
+	}
 
 	gomu.Queue.PushFront(selSong)
 
@@ -232,15 +236,15 @@ func TestShuffle(t *testing.T) {
 // Equal tells whether a and b contain the same elements.
 // A nil argument is equivalent to an empty slice.
 func Equal(a, b []string) bool {
-    if len(a) != len(b) {
-        return false
-    }
-    for i, v := range a {
-        if v != b[i] {
-            return false
-        }
-    }
-    return true
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // utility function to check elem in a slice
