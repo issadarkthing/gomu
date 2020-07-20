@@ -287,8 +287,8 @@ func (q *Queue) Help() []string {
 func (q *Queue) Shuffle() {
 
 	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(q.Items), func(i, j int) { 
-		q.Items[i], q.Items[j] = q.Items[j], q.Items[i] 
+	rand.Shuffle(len(q.Items), func(i, j int) {
+		q.Items[i], q.Items[j] = q.Items[j], q.Items[i]
 	})
 
 	q.Clear()

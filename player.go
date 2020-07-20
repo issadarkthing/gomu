@@ -84,7 +84,7 @@ func (p *Player) Run(currSong *AudioFile) {
 
 	p.currentSong = currSong
 
-	popupMessage := fmt.Sprintf("%s\n\n[ %s ]", 
+	popupMessage := fmt.Sprintf("%s\n\n[ %s ]",
 		currSong.Name, fmtDuration(p.length))
 
 	timedPopup(" Current Song ", popupMessage, getPopupTimeout(), 0, 0)
@@ -98,8 +98,8 @@ func (p *Player) Run(currSong *AudioFile) {
 	}))
 
 	ctrl := &beep.Ctrl{
-		Streamer: sstreamer, 
-		Paused: false,
+		Streamer: sstreamer,
+		Paused:   false,
 	}
 
 	p.ctrl = ctrl
