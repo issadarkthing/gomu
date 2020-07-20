@@ -219,14 +219,14 @@ func (p *Playlist) DeleteSong(audioFile *AudioFile) (err error) {
 
 			if err != nil {
 
-				timedPopup(" Error ", "Unable to delete "+audioFile.Name, 
+				timedPopup(" Error ", "Unable to delete "+audioFile.Name,
 					getPopupTimeout(), 0, 0)
 
 				err = WrapError("DeleteSong", err)
 
 			} else {
 
-				timedPopup(" Success ", audioFile.Name+"\nhas been deleted successfully", 
+				timedPopup(" Success ", audioFile.Name+"\nhas been deleted successfully",
 					getPopupTimeout(), 0, 0)
 
 				p.Refresh()
@@ -234,7 +234,7 @@ func (p *Playlist) DeleteSong(audioFile *AudioFile) (err error) {
 
 			gomu.Pages.RemovePage("confirmation-popup")
 			gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
-	})
+		})
 
 	return nil
 }
@@ -251,7 +251,7 @@ func (p *Playlist) DeletePlaylist(audioFile *AudioFile) (err error) {
 		selectedDir = audioFile
 	}
 
-	confirmationPopup("Are you sure to delete this directory?", 
+	confirmationPopup("Are you sure to delete this directory?",
 		func(_ int, buttonName string) {
 
 			if buttonName == "no" {
@@ -266,7 +266,7 @@ func (p *Playlist) DeletePlaylist(audioFile *AudioFile) (err error) {
 
 				timedPopup(
 					" Error ",
-					"Unable to delete dir "+selectedDir.Name, 
+					"Unable to delete dir "+selectedDir.Name,
 					getPopupTimeout(), 0, 0)
 
 				err = WrapError("DeletePlaylist", err)
@@ -275,7 +275,7 @@ func (p *Playlist) DeletePlaylist(audioFile *AudioFile) (err error) {
 
 				timedPopup(
 					" Success ",
-					selectedDir.Name+"\nhas been deleted successfully", 
+					selectedDir.Name+"\nhas been deleted successfully",
 					getPopupTimeout(), 0, 0)
 
 				p.Refresh()
@@ -284,7 +284,7 @@ func (p *Playlist) DeletePlaylist(audioFile *AudioFile) (err error) {
 			gomu.Pages.RemovePage("confirmation-popup")
 			gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 
-	})
+		})
 
 	return nil
 }
@@ -572,7 +572,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) (error, chan error) {
 	_, err := exec.LookPath("youtube-dl")
 
 	if err != nil {
-		timedPopup(" Error ", "youtube-dl is not in your $PATH", 
+		timedPopup(" Error ", "youtube-dl is not in your $PATH",
 			getPopupTimeout(), 0, 0)
 
 		return err, nil

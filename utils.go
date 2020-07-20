@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// Wraps error in a formatted way. 
+// Wraps error in a formatted way.
 // function name should be supplied on where the error occured
 // newly created err should have a newline
 func WrapError(fnName string, err error) error {
