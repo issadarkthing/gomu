@@ -28,6 +28,7 @@ func getPopupTimeout() time.Duration {
 
 	if err != nil {
 		log.Println(err)
+		return time.Second * 5
 	}
 
 	return m
@@ -47,7 +48,8 @@ func confirmationPopup(
 		SetButtonTextColor(gomu.AccentColor).
 		SetDoneFunc(handler)
 
-	gomu.Pages.AddPage("confirmation-popup", center(modal, 40, 10), true, true)
+	gomu.Pages.
+		AddPage("confirmation-popup", center(modal, 40, 10), true, true)
 	gomu.App.SetFocus(modal)
 
 }
@@ -72,7 +74,9 @@ func topRight(p tview.Primitive, width, height int) tview.Primitive {
 		AddItem(nil, 0, 1, false)
 }
 
-func timedPopup(title string, desc string, timeout time.Duration, width, height int) {
+func timedPopup(
+	title string, desc string, timeout time.Duration, width, height int,
+) {
 
 	if width == 0 && height == 0 {
 		width = 70
@@ -133,10 +137,9 @@ func helpPopup(panel Panel) {
 		"?      toggle help",
 	}
 
+	// add help text from the panel
 	for _, v := range genHelp {
-
 		helpText = append(helpText, v)
-
 	}
 
 	list := tview.NewList().ShowSecondaryText(false)
@@ -190,10 +193,12 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 	inputField := tview.NewInputField().
 		SetLabel("Enter a url: ").
 		SetFieldWidth(0).
-		SetAcceptanceFunc(tview.InputFieldMaxLength(50))
+		SetAcceptanceFunc(tview.InputFieldMaxLength(50)).
+		SetFieldBackgroundColor(gomu.AccentColor).
+		SetFieldTextColor(tcell.ColorBlack)
 
-	inputField.SetBackgroundColor(gomu.PopupBg).SetBorder(true).SetTitle(" Ytdl ")
-	inputField.SetFieldBackgroundColor(gomu.AccentColor).SetFieldTextColor(tcell.ColorBlack)
+	inputField.SetBackgroundColor(gomu.PopupBg).
+		SetBorder(true).SetTitle(" Ytdl ")
 
 	inputField.SetDoneFunc(func(key tcell.Key) {
 
@@ -211,7 +216,9 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 
 	})
 
-	gomu.Pages.AddPage("download-input-popup", center(inputField, 50, 4), true, true)
+	gomu.Pages.
+		AddPage("download-input-popup", center(inputField, 50, 4), true, true)
+
 	gomu.App.SetFocus(inputField)
 
 }
@@ -221,10 +228,14 @@ func CreatePlaylistPopup() {
 	inputField := tview.NewInputField().
 		SetLabel("Enter a playlist name: ").
 		SetFieldWidth(0).
-		SetAcceptanceFunc(tview.InputFieldMaxLength(50))
+		SetAcceptanceFunc(tview.InputFieldMaxLength(50)).
+		SetFieldBackgroundColor(gomu.AccentColor).
+		SetFieldTextColor(tcell.ColorBlack)
 
-	inputField.SetBackgroundColor(gomu.PopupBg).SetBorder(true).SetTitle(" New Playlist ")
-	inputField.SetFieldBackgroundColor(gomu.AccentColor).SetFieldTextColor(tcell.ColorBlack)
+	inputField.
+		SetBackgroundColor(gomu.PopupBg).
+		SetBorder(true).
+		SetTitle(" New Playlist ")
 
 	inputField.SetDoneFunc(func(key tcell.Key) {
 
@@ -247,7 +258,8 @@ func CreatePlaylistPopup() {
 
 	})
 
-	gomu.Pages.AddPage("mkdir-input-popup", center(inputField, 50, 4), true, true)
+	gomu.Pages.
+		AddPage("mkdir-input-popup", center(inputField, 50, 4), true, true)
 	gomu.App.SetFocus(inputField)
 
 }

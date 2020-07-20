@@ -25,6 +25,7 @@ func main() {
 }
 
 func init() {
+
 	tmpDir := os.TempDir()
 
 	logFile := path.Join(tmpDir, "gomu.log")
@@ -40,5 +41,3 @@ func init() {
 	log.SetOutput(file)
 	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 }
-
-

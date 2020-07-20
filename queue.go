@@ -44,7 +44,11 @@ func (q *Queue) prev() {
 
 // usually used with GetCurrentItem which can return -1 if
 // no item highlighted
-func (q *Queue) DeleteItem(index int) *AudioFile {
+func (q *Queue) DeleteItem(index int) (*AudioFile, error) {
+
+	if index > len(q.Items)-1 {
+		return nil, errors.New("Index out of range")
+	}
 
 	// deleted audio file
 	var dAudio *AudioFile
@@ -69,7 +73,7 @@ func (q *Queue) DeleteItem(index int) *AudioFile {
 
 	}
 
-	return dAudio
+	return dAudio, nil
 }
 
 // Update queue title which shows number of items and total length
@@ -94,7 +98,10 @@ func (q *Queue) PushFront(audioFile *AudioFile) {
 
 	songLength := audioFile.Length
 
-	queueItemView := fmt.Sprintf("[ %s ] %s", fmtDuration(songLength), GetName(audioFile.Name))
+	queueItemView := fmt.Sprintf(
+		"[ %s ] %s", fmtDuration(songLength), GetName(audioFile.Name),
+	)
+
 	q.InsertItem(0, queueItemView, audioFile.Path, 0, nil)
 	q.UpdateTitle()
 }
@@ -104,7 +111,7 @@ func (q *Queue) PushFront(audioFile *AudioFile) {
 func (q *Queue) Dequeue() (*AudioFile, error) {
 
 	if q.GetItemCount() == 0 {
-		return nil, errors.New("Empty list")
+		return nil, errors.New("Empty list\n")
 	}
 
 	first := q.Items[0]
@@ -115,7 +122,7 @@ func (q *Queue) Dequeue() (*AudioFile, error) {
 }
 
 // Add item to the list and returns the length of the queue
-func (q *Queue) Enqueue(audioFile *AudioFile) int {
+func (q *Queue) Enqueue(audioFile *AudioFile) (int, error) {
 
 	if !gomu.Player.IsRunning && "false" == os.Getenv("TEST") {
 
@@ -127,7 +134,7 @@ func (q *Queue) Enqueue(audioFile *AudioFile) int {
 
 		}()
 
-		return q.GetItemCount()
+		return q.GetItemCount(), nil
 
 	}
 
@@ -135,14 +142,16 @@ func (q *Queue) Enqueue(audioFile *AudioFile) int {
 	songLength, err := GetLength(audioFile.Path)
 
 	if err != nil {
-		log.Println(err)
+		return 0, WrapError("Enqueue", err)
 	}
 
-	queueItemView := fmt.Sprintf("[ %s ] %s", fmtDuration(songLength), GetName(audioFile.Name))
+	queueItemView := fmt.Sprintf(
+		"[ %s ] %s", fmtDuration(songLength), GetName(audioFile.Name),
+	)
 	q.AddItem(queueItemView, audioFile.Path, 0, nil)
 	q.UpdateTitle()
 
-	return q.GetItemCount()
+	return q.GetItemCount(), nil
 }
 
 // GetItems is used to get the secondary text
@@ -166,23 +175,18 @@ func (q *Queue) GetItems() []string {
 func (q *Queue) SaveQueue() error {
 
 	songPaths := q.GetItems()
-	songNames := make([]string, 0, len(songPaths))
 	var content string
 
 	for _, songPath := range songPaths {
 		hashed := Sha1Hex(GetName(songPath))
-		songNames = append(songNames, hashed)
-	}
-
-	for _, v := range songNames {
-		content += v + "\n"
+		content += hashed + "\n"
 	}
 
 	cachePath := expandTilde(q.SavedQueuePath)
 	err := ioutil.WriteFile(cachePath, []byte(content), 0644)
 
 	if err != nil {
-		return err
+		return WrapError("SaveQueue", err)
 	}
 
 	return nil
@@ -204,7 +208,7 @@ func (q *Queue) LoadQueue() error {
 	songs, err := q.GetSavedQueue()
 
 	if err != nil {
-		return err
+		return WrapError("LoadQueue", err)
 	}
 
 	for _, v := range songs {
@@ -222,6 +226,8 @@ func (q *Queue) LoadQueue() error {
 // Get saved queue, if not exist, create it
 func (q *Queue) GetSavedQueue() ([]string, error) {
 
+	fnName := "GetSavedQueue"
+
 	queuePath := expandTilde(q.SavedQueuePath)
 
 	if _, err := os.Stat(queuePath); os.IsNotExist(err) {
@@ -229,15 +235,13 @@ func (q *Queue) GetSavedQueue() ([]string, error) {
 		dir, _ := path.Split(queuePath)
 
 		err := os.MkdirAll(dir, 0744)
-
 		if err != nil {
-			return nil, err
+			return nil, WrapError(fnName, err)
 		}
 
 		_, err = os.Create(queuePath)
-
 		if err != nil {
-			return nil, err
+			return nil, WrapError(fnName, err)
 		}
 
 		return []string{}, nil
@@ -245,9 +249,8 @@ func (q *Queue) GetSavedQueue() ([]string, error) {
 	}
 
 	f, err := os.Open(queuePath)
-
 	if err != nil {
-		return nil, err
+		return nil, WrapError(fnName, err)
 	}
 
 	defer f.Close()
@@ -260,7 +263,7 @@ func (q *Queue) GetSavedQueue() ([]string, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return nil, WrapError(fnName, err)
 	}
 
 	return records, nil
@@ -283,7 +286,9 @@ func (q *Queue) Help() []string {
 func (q *Queue) Shuffle() {
 
 	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(q.Items), func(i, j int) { q.Items[i], q.Items[j] = q.Items[j], q.Items[i] })
+	rand.Shuffle(len(q.Items), func(i, j int) { 
+		q.Items[i], q.Items[j] = q.Items[j], q.Items[i] 
+	})
 
 	q.Clear()
 
@@ -322,7 +327,11 @@ func NewQueue() *Queue {
 		case 'D':
 			queue.ClearQueue()
 		case 'l':
-			a := queue.DeleteItem(queue.GetCurrentItem())
+			a, err := queue.DeleteItem(queue.GetCurrentItem())
+			if err != nil {
+				log.Println(err)
+			}
+
 			queue.PushFront(a)
 			gomu.Player.Skip()
 		case 'z':

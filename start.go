@@ -153,7 +153,7 @@ func start(application *tview.Application, args Args) {
 	if *args.load {
 		// load saved queue from previous
 		if err := gomu.Queue.LoadQueue(); err != nil {
-			log.Println(err)
+			log.Println(WrapError("Run", err))
 		}
 	}
 
@@ -278,7 +278,6 @@ func readConfig(args Args) {
 		viper.SetDefault("popup_timeout", "5s")
 		viper.SetDefault("volume", "50")
 
-
 		// creates gomu config dir if does not exist
 		if _, err := os.Stat(defaultPath); err != nil {
 			if err := os.MkdirAll(home+"/.config/gomu", 0755); err != nil {
@@ -308,7 +307,7 @@ func getArgs() Args {
 	ar := Args{
 		config: flag.String("config", "~/.config/gomu/config", "specify config file"),
 		load:   flag.Bool("load", true, "load previous queue"),
-		music:	flag.String("music", "~/music", "specify music directory"),
+		music:  flag.String("music", "~/music", "specify music directory"),
 	}
 
 	flag.Parse()

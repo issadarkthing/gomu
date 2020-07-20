@@ -115,42 +115,10 @@ func NewPlaylist() *Playlist {
 
 		case 'D':
 
-			var selectedDir *AudioFile
-
-			// gets the parent dir if current focused node is not a dir
-			if audioFile.IsAudioFile {
-				selectedDir = audioFile.Parent.GetReference().(*AudioFile)
-			} else {
-				selectedDir = audioFile
+			err := playlist.DeletePlaylist(audioFile)
+			if err != nil {
+				log.Println(err)
 			}
-
-			confirmationPopup(
-				"Are you sure to delete this directory?", func(_ int, buttonName string) {
-
-					if buttonName == "no" {
-						gomu.Pages.RemovePage("confirmation-popup")
-						gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
-						return
-					}
-
-					err := os.RemoveAll(selectedDir.Path)
-
-					if err != nil {
-						timedPopup(
-							" Error ",
-							"Unable to delete dir "+selectedDir.Name, getPopupTimeout(), 0, 0)
-					} else {
-						timedPopup(
-							" Success ",
-							selectedDir.Name+"\nhas been deleted successfully", getPopupTimeout(), 0, 0)
-
-						playlist.Refresh()
-					}
-
-					gomu.Pages.RemovePage("confirmation-popup")
-					gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
-
-				})
 
 		case 'd':
 
@@ -159,31 +127,10 @@ func NewPlaylist() *Playlist {
 				return e
 			}
 
-			confirmationPopup(
-				"Are you sure to delete this audio file?", func(_ int, buttonName string) {
-
-					if buttonName == "no" {
-						gomu.Pages.RemovePage("confirmation-popup")
-						gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
-						return
-					}
-
-					err := os.Remove(audioFile.Path)
-
-					if err != nil {
-						timedPopup(
-							" Error ", "Unable to delete "+audioFile.Name, getPopupTimeout(), 0, 0)
-					} else {
-						timedPopup(
-							" Success ",
-							audioFile.Name+"\nhas been deleted successfully", getPopupTimeout(), 0, 0)
-
-						playlist.Refresh()
-					}
-
-					gomu.Pages.RemovePage("confirmation-popup")
-					gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
-				})
+			err := playlist.DeleteSong(audioFile)
+			if err != nil {
+				log.Println(err)
+			}
 
 		case 'Y':
 
@@ -255,6 +202,91 @@ func NewPlaylist() *Playlist {
 
 	return playlist
 
+}
+
+func (p *Playlist) DeleteSong(audioFile *AudioFile) (err error) {
+
+	confirmationPopup(
+		"Are you sure to delete this audio file?", func(_ int, buttonName string) {
+
+			if buttonName == "no" {
+				gomu.Pages.RemovePage("confirmation-popup")
+				gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
+				return
+			}
+
+			err := os.Remove(audioFile.Path)
+
+			if err != nil {
+
+				timedPopup(" Error ", "Unable to delete "+audioFile.Name, 
+					getPopupTimeout(), 0, 0)
+
+				err = WrapError("DeleteSong", err)
+
+			} else {
+
+				timedPopup(" Success ", audioFile.Name+"\nhas been deleted successfully", 
+					getPopupTimeout(), 0, 0)
+
+				p.Refresh()
+			}
+
+			gomu.Pages.RemovePage("confirmation-popup")
+			gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
+	})
+
+	return nil
+}
+
+// Deletes playlist/dir from filesystem
+func (p *Playlist) DeletePlaylist(audioFile *AudioFile) (err error) {
+
+	var selectedDir *AudioFile
+
+	// gets the parent dir if current focused node is not a dir
+	if audioFile.IsAudioFile {
+		selectedDir = audioFile.Parent.GetReference().(*AudioFile)
+	} else {
+		selectedDir = audioFile
+	}
+
+	confirmationPopup("Are you sure to delete this directory?", 
+		func(_ int, buttonName string) {
+
+			if buttonName == "no" {
+				gomu.Pages.RemovePage("confirmation-popup")
+				gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
+				return
+			}
+
+			err := os.RemoveAll(selectedDir.Path)
+
+			if err != nil {
+
+				timedPopup(
+					" Error ",
+					"Unable to delete dir "+selectedDir.Name, 
+					getPopupTimeout(), 0, 0)
+
+				err = WrapError("DeletePlaylist", err)
+
+			} else {
+
+				timedPopup(
+					" Success ",
+					selectedDir.Name+"\nhas been deleted successfully", 
+					getPopupTimeout(), 0, 0)
+
+				p.Refresh()
+			}
+
+			gomu.Pages.RemovePage("confirmation-popup")
+			gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
+
+	})
+
+	return nil
 }
 
 // Add songs and their directories in Playlist panel
@@ -406,7 +438,9 @@ func (p *Playlist) Refresh() {
 }
 
 // Adds child while setting reference to audio file
-func (p *Playlist) AddSongToPlaylist(audioPath string, selPlaylist *tview.TreeNode) error {
+func (p *Playlist) AddSongToPlaylist(
+	audioPath string, selPlaylist *tview.TreeNode,
+) error {
 
 	f, err := os.Open(audioPath)
 
@@ -440,6 +474,7 @@ func (p *Playlist) AddSongToPlaylist(audioPath string, selPlaylist *tview.TreeNo
 
 }
 
+// Gets all audio files from music root directory
 func (p *Playlist) GetAudioFiles() []*AudioFile {
 
 	root := p.GetRoot()
@@ -537,7 +572,9 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) (error, chan error) {
 	_, err := exec.LookPath("youtube-dl")
 
 	if err != nil {
-		timedPopup(" Error ", "youtube-dl is not in your $PATH", getPopupTimeout(), 0, 0)
+		timedPopup(" Error ", "youtube-dl is not in your $PATH", 
+			getPopupTimeout(), 0, 0)
+
 		return err, nil
 	}
 
