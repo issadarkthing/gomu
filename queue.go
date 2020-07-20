@@ -13,6 +13,7 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/gdamore/tcell"
@@ -175,15 +176,15 @@ func (q *Queue) GetItems() []string {
 func (q *Queue) SaveQueue() error {
 
 	songPaths := q.GetItems()
-	var content string
+	var content strings.Builder
 
 	for _, songPath := range songPaths {
 		hashed := Sha1Hex(GetName(songPath))
-		content += hashed + "\n"
+		content.WriteString(hashed + "\n")
 	}
 
 	cachePath := expandTilde(q.SavedQueuePath)
-	err := ioutil.WriteFile(cachePath, []byte(content), 0644)
+	err := ioutil.WriteFile(cachePath, []byte(content.String()), 0644)
 
 	if err != nil {
 		return WrapError("SaveQueue", err)
