@@ -182,7 +182,7 @@ func start(application *tview.Application, args Args) {
 			}
 			confirmationPopup("Are you sure to exit?", func(_ int, label string) {
 
-				if label == "no" {
+				if label == "no" || label == "" {
 					gomu.Pages.RemovePage("confirmation-popup")
 					return
 				}
