@@ -4,13 +4,13 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+	"github.com/ztrue/tracerr"
 )
 
 type PlayingBar struct {
@@ -55,45 +55,44 @@ func NewPlayingBar() *PlayingBar {
 }
 
 // start processing progress bar
-// runs asynchronusly
-func (p *PlayingBar) Run() {
+func (p *PlayingBar) Run() error {
 
-	go func() {
-		for {
+	for {
 
-			// stop progressing if song ends or skipped
-			if p._progress > p.full || p.skip {
-				p.skip = false
-				p._progress = 0
-				break
-			}
-
-			p._progress += <-p.progress
-
-			p.text.Clear()
-
-			start, err := time.ParseDuration(strconv.Itoa(p._progress) + "s")
-
-			if err != nil {
-				log.Println(err)
-			}
-
-			end, err := time.ParseDuration(strconv.Itoa(p.full) + "s")
-
-			if err != nil {
-				log.Println(err)
-			}
-
-			x := p._progress * p.limit / p.full
-			p.text.SetText(fmt.Sprintf("%s ┃%s%s┫ %s",
-				fmtDuration(start),
-				strings.Repeat("█", x),
-				strings.Repeat("━", p.limit-x),
-				fmtDuration(end),
-			))
-
+		// stop progressing if song ends or skipped
+		if p._progress > p.full || p.skip {
+			p.skip = false
+			p._progress = 0
+			break
 		}
-	}()
+
+		p._progress += <-p.progress
+
+		p.text.Clear()
+
+		start, err := time.ParseDuration(strconv.Itoa(p._progress) + "s")
+
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+
+		end, err := time.ParseDuration(strconv.Itoa(p.full) + "s")
+
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+
+		x := p._progress * p.limit / p.full
+		p.text.SetText(fmt.Sprintf("%s ┃%s%s┫ %s",
+			fmtDuration(start),
+			strings.Repeat("█", x),
+			strings.Repeat("━", p.limit-x),
+			fmtDuration(end),
+		))
+
+	}
+
+	return nil
 }
 
 func (p *PlayingBar) SetSongTitle(title string) {

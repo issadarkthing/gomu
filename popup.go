@@ -11,6 +11,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
+	"github.com/ztrue/tracerr"
 )
 
 // this is used to make the popup unique
@@ -27,7 +28,7 @@ func getPopupTimeout() time.Duration {
 	m, err := time.ParseDuration(dur)
 
 	if err != nil {
-		log.Println(err)
+		log.Println(tracerr.SprintSource(err))
 		return time.Second * 5
 	}
 
@@ -205,7 +206,12 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 		switch key {
 		case tcell.KeyEnter:
 			url := inputField.GetText()
-			Ytdl(url, selPlaylist)
+
+			go func() {
+				if err := Ytdl(url, selPlaylist); err != nil {
+					log.Println(tracerr.SprintSource(err))
+				}
+			}()
 			gomu.Pages.RemovePage("download-input-popup")
 
 		case tcell.KeyEscape:
@@ -245,7 +251,7 @@ func CreatePlaylistPopup() {
 			err := gomu.Playlist.CreatePlaylist(playListName)
 
 			if err != nil {
-				log.Println(err)
+				log.Println(tracerr.SprintSource(err))
 			}
 
 			gomu.Pages.RemovePage("mkdir-input-popup")

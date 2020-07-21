@@ -5,7 +5,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -17,6 +16,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
+	"github.com/ztrue/tracerr"
 )
 
 type AudioFile struct {
@@ -53,7 +53,7 @@ func NewPlaylist() *Playlist {
 	rootDir, err := filepath.Abs(expandTilde(viper.GetString("music_dir")))
 
 	if err != nil {
-		log.Println(err)
+		log.Println(tracerr.SprintSource(err))
 	}
 
 	root := tview.NewTreeNode(path.Base(rootDir)).
@@ -117,7 +117,7 @@ func NewPlaylist() *Playlist {
 
 			err := playlist.DeletePlaylist(audioFile)
 			if err != nil {
-				log.Println(err)
+				log.Println(tracerr.SprintSource(err))
 			}
 
 		case 'd':
@@ -129,7 +129,7 @@ func NewPlaylist() *Playlist {
 
 			err := playlist.DeleteSong(audioFile)
 			if err != nil {
-				log.Println(err)
+				log.Println(tracerr.SprintSource(err))
 			}
 
 		case 'Y':
@@ -222,7 +222,7 @@ func (p *Playlist) DeleteSong(audioFile *AudioFile) (err error) {
 				timedPopup(" Error ", "Unable to delete "+audioFile.Name,
 					getPopupTimeout(), 0, 0)
 
-				err = WrapError("DeleteSong", err)
+				err = tracerr.Wrap(err)
 
 			} else {
 
@@ -269,7 +269,7 @@ func (p *Playlist) DeletePlaylist(audioFile *AudioFile) (err error) {
 					"Unable to delete dir "+selectedDir.Name,
 					getPopupTimeout(), 0, 0)
 
-				err = WrapError("DeletePlaylist", err)
+				err = tracerr.Wrap(err)
 
 			} else {
 
@@ -290,12 +290,12 @@ func (p *Playlist) DeletePlaylist(audioFile *AudioFile) (err error) {
 }
 
 // Add songs and their directories in Playlist panel
-func populate(root *tview.TreeNode, rootPath string) {
+func populate(root *tview.TreeNode, rootPath string) error {
 
 	files, err := ioutil.ReadDir(rootPath)
 
 	if err != nil {
-		log.Println(err)
+		return tracerr.Wrap(err)
 	}
 
 	for _, file := range files {
@@ -304,7 +304,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 		f, err := os.Open(path)
 
 		if err != nil {
-			log.Println(err)
+			log.Println(tracerr.SprintSource(err))
 			continue
 		}
 
@@ -318,7 +318,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 			filetype, err := GetFileContentType(f)
 
 			if err != nil {
-				log.Println(err)
+				log.Println(tracerr.SprintSource(err))
 				continue
 			}
 
@@ -330,7 +330,7 @@ func populate(root *tview.TreeNode, rootPath string) {
 			audioLength, err := GetLength(path)
 
 			if err != nil {
-				log.Println(err)
+				log.Println(tracerr.SprintSource(err))
 				continue
 			}
 
@@ -365,13 +365,14 @@ func populate(root *tview.TreeNode, rootPath string) {
 
 	}
 
+	return nil
+
 }
 
 // Bulk add a playlist to queue
 func (p *Playlist) AddAllToQueue(root *tview.TreeNode) {
 
 	var childrens []*tview.TreeNode
-
 	childrens = root.GetChildren()
 
 	// gets the parent if the highlighted item is a file
@@ -384,32 +385,6 @@ func (p *Playlist) AddAllToQueue(root *tview.TreeNode) {
 
 		gomu.Queue.Enqueue(currNode)
 	}
-
-}
-
-// Triggers fzf to find in current directory
-func (p *Playlist) FuzzySearch() {
-
-	_, err := exec.LookPath("fzf")
-
-	if err != nil {
-		timedPopup(" Error ", "FZF not found in your $PATH", getPopupTimeout(), 0, 0)
-		log.Println(err)
-		return
-	}
-
-	rootPath := p.GetRoot().GetReference().(*AudioFile).Path
-
-	cmd := exec.Command("fzf", "--multi")
-	stdin, err := cmd.StdinPipe()
-
-	go func(c io.WriteCloser) {
-		filepath.Walk(rootPath, func(path string, f os.FileInfo, err error) error {
-
-			io.WriteString(c, path)
-			return err
-		})
-	}(stdin)
 
 }
 
@@ -445,7 +420,7 @@ func (p *Playlist) AddSongToPlaylist(
 	f, err := os.Open(audioPath)
 
 	if err != nil {
-		return err
+		return tracerr.Wrap(err)
 	}
 
 	defer f.Close()
@@ -455,7 +430,7 @@ func (p *Playlist) AddSongToPlaylist(
 	audioLength, err := GetLength(audioPath)
 
 	if err != nil {
-		return err
+		return tracerr.Wrap(err)
 	}
 
 	audioFile := &AudioFile{
@@ -510,7 +485,7 @@ func (p *Playlist) CreatePlaylist(name string) error {
 	err := os.Mkdir(path.Join(audioFile.Path, name), 0744)
 
 	if err != nil {
-		return err
+		return tracerr.Wrap(err)
 	}
 
 	p.Refresh()
@@ -537,12 +512,12 @@ func (p *Playlist) SetHighlight(currNode *tview.TreeNode) {
 
 // Traverses the playlist and finds the AudioFile struct
 // audioName must be hashed with sha1 first
-func (p *Playlist) FindAudioFile(audioName string) *AudioFile {
+func (p *Playlist) FindAudioFile(audioName string) (*AudioFile, error) {
 
 	root := p.GetRoot()
 
 	if root == nil {
-		return nil
+		return nil, tracerr.New("no root directory")
 	}
 
 	var selNode *AudioFile
@@ -561,12 +536,15 @@ func (p *Playlist) FindAudioFile(audioName string) *AudioFile {
 		return true
 	})
 
-	return selNode
+	if selNode == nil {
+		return nil, tracerr.New("no matching audio name")
+	}
 
+	return selNode, nil
 }
 
 // download audio from youtube audio and adds the song to the selected playlist
-func Ytdl(url string, selPlaylist *tview.TreeNode) (error, chan error) {
+func Ytdl(url string, selPlaylist *tview.TreeNode) error {
 
 	// lookup if youtube-dl exists
 	_, err := exec.LookPath("youtube-dl")
@@ -575,7 +553,7 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) (error, chan error) {
 		timedPopup(" Error ", "youtube-dl is not in your $PATH",
 			getPopupTimeout(), 0, 0)
 
-		return err, nil
+		return tracerr.Wrap(err)
 	}
 
 	dir := viper.GetString("music_dir")
@@ -605,49 +583,32 @@ func Ytdl(url string, selPlaylist *tview.TreeNode) (error, chan error) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	e := make(chan error)
+	err = cmd.Run()
 
-	go func() {
+	if err != nil {
+		timedPopup(" Error ", "Error running youtube-dl", getPopupTimeout(), 0, 0)
+		return tracerr.Wrap(err)
+	}
 
-		err := cmd.Run()
+	playlistPath := path.Join(expandTilde(dir), selPlaylistName)
+	audioPath := extractFilePath(stdout.Bytes(), playlistPath)
 
-		if err != nil {
-			timedPopup(" Error ", "Error running youtube-dl", getPopupTimeout(), 0, 0)
-			log.Println(err)
-			e <- err
-			return
-		}
+	err = gomu.Playlist.AddSongToPlaylist(audioPath, selPlaylist)
 
-		playlistPath := path.Join(expandTilde(dir), selPlaylistName)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
 
-		audioPath := extractFilePath(stdout.Bytes(), playlistPath)
+	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s",
+		path.Base(audioPath))
 
-		if err != nil {
-			log.Println(err)
-			e <- err
-		}
+	timedPopup(
+		" Ytdl ",
+		downloadFinishedMessage,
+		getPopupTimeout(), 0, 0)
 
-		err = gomu.Playlist.AddSongToPlaylist(audioPath, selPlaylist)
+	gomu.App.Draw()
 
-		if err != nil {
-			log.Println(err)
-			e <- err
-		}
-
-		downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s",
-			path.Base(audioPath))
-
-		timedPopup(
-			" Ytdl ",
-			downloadFinishedMessage,
-			getPopupTimeout(), 0, 0)
-
-		gomu.App.Draw()
-
-		e <- nil
-
-	}()
-
-	return nil, e
+	return nil
 
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
 	"github.com/spf13/viper"
+	"github.com/ztrue/tracerr"
 )
 
 type Player struct {
@@ -41,19 +42,25 @@ func NewPlayer() *Player {
 	return &Player{volume: initVol}
 }
 
-func (p *Player) Run(currSong *AudioFile) {
+func (p *Player) Run(currSong *AudioFile) error {
 
 	p.isSkipped = make(chan bool, 1)
 
 	f, err := os.Open(currSong.Path)
 
 	if err != nil {
-		log.Println(err)
+		return tracerr.Wrap(err)
 	}
 
 	defer f.Close()
 
 	streamer, format, err := mp3.Decode(f)
+
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	defer streamer.Close()
 
 	// song duration
 	p.length = format.SampleRate.D(streamer.Len())
@@ -64,24 +71,13 @@ func (p *Player) Run(currSong *AudioFile) {
 			Init(format.SampleRate, format.SampleRate.N(time.Second/10))
 
 		if err != nil {
-			log.Println(err)
+			return tracerr.Wrap(err)
 		}
 
 		p.hasInit = true
 	}
 
 	p.format = &format
-
-	if err != nil {
-		log.Println(err)
-	}
-
-	defer streamer.Close()
-
-	if err != nil {
-		log.Println(err)
-	}
-
 	p.currentSong = currSong
 
 	popupMessage := fmt.Sprintf("%s\n\n[ %s ]",
@@ -90,7 +86,6 @@ func (p *Player) Run(currSong *AudioFile) {
 	timedPopup(" Current Song ", popupMessage, getPopupTimeout(), 0, 0)
 
 	done := make(chan bool, 1)
-
 	p.done = done
 
 	sstreamer := beep.Seq(streamer, beep.Callback(func() {
@@ -134,7 +129,12 @@ func (p *Player) Run(currSong *AudioFile) {
 	}
 
 	gomu.PlayingBar.NewProgress(currSong.Name, int(p.length.Seconds()), 100)
-	gomu.PlayingBar.Run()
+
+	go func() {
+		if err := gomu.PlayingBar.Run(); err != nil {
+			log.Println(tracerr.SprintSource(err))
+		}
+	}()
 
 	// is used to send progress
 	i := 0
@@ -157,7 +157,11 @@ next:
 				break next
 			}
 
-			go p.Run(nextSong)
+			go func() {
+				if err := p.Run(nextSong); err != nil {
+					log.Println(tracerr.SprintSource(err))
+				}
+			}()
 
 			break next
 
@@ -182,6 +186,7 @@ next:
 
 	}
 
+	return nil
 }
 
 func (p *Player) Pause() {
@@ -250,12 +255,10 @@ func (p *Player) ToggleLoop() bool {
 // gets the length of the song in the queue
 func GetLength(audioPath string) (time.Duration, error) {
 
-	fnName := "GetLength"
-
 	f, err := os.Open(audioPath)
 
 	if err != nil {
-		return 0, WrapError(fnName, err)
+		return 0, tracerr.Wrap(err)
 	}
 
 	defer f.Close()
@@ -263,7 +266,7 @@ func GetLength(audioPath string) (time.Duration, error) {
 	streamer, format, err := mp3.Decode(f)
 
 	if err != nil {
-		return 0, WrapError(fnName, err)
+		return 0, tracerr.Wrap(err)
 	}
 
 	defer streamer.Close()

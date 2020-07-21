@@ -11,6 +11,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
+	"github.com/ztrue/tracerr"
 )
 
 // created so we can keep track of childrens in slices
@@ -153,7 +154,7 @@ func start(application *tview.Application, args Args) {
 	if *args.load {
 		// load saved queue from previous
 		if err := gomu.Queue.LoadQueue(); err != nil {
-			log.Println(WrapError("Run", err))
+			log.Println(tracerr.SprintSource(err))
 		}
 	}
 
@@ -187,11 +188,11 @@ func start(application *tview.Application, args Args) {
 				}
 
 				if err := gomu.Queue.SaveQueue(); err != nil {
-					log.Println(err)
+					log.Println(tracerr.SprintSource(err))
 				}
 
 				if err := viper.WriteConfig(); err != nil {
-					log.Println(err)
+					log.Println(tracerr.SprintSource(err))
 				}
 
 				application.Stop()
@@ -242,7 +243,7 @@ func start(application *tview.Application, args Args) {
 
 	// main loop
 	if err := application.SetRoot(gomu.Pages, true).SetFocus(gomu.Playlist).Run(); err != nil {
-		log.Println(err)
+		log.Println(tracerr.SprintSource(err))
 	}
 }
 
@@ -254,13 +255,13 @@ func readConfig(args Args) {
 	home, err := os.UserHomeDir()
 
 	if err != nil {
-		log.Println(err)
+		log.Println(tracerr.SprintSource(err))
 	}
 
 	defaultPath := home + "/.config/gomu/config"
 
 	if err != nil {
-		log.Println(err)
+		log.Println(tracerr.SprintSource(err))
 	}
 
 	viper.SetConfigName("config")
@@ -281,14 +282,14 @@ func readConfig(args Args) {
 		// creates gomu config dir if does not exist
 		if _, err := os.Stat(defaultPath); err != nil {
 			if err := os.MkdirAll(home+"/.config/gomu", 0755); err != nil {
-				log.Println(err)
+				log.Println(tracerr.SprintSource(err))
 			}
 		}
 
 		// if config file was not found
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			if err := viper.SafeWriteConfigAs(defaultPath); err != nil {
-				log.Println(err)
+				log.Println(tracerr.SprintSource(err))
 			}
 		}
 
