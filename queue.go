@@ -6,7 +6,6 @@ import (
 	"bufio"
 	"crypto/sha1"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -18,6 +17,7 @@ import (
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+	"github.com/ztrue/tracerr"
 )
 
 type Queue struct {
@@ -48,7 +48,7 @@ func (q *Queue) prev() {
 func (q *Queue) DeleteItem(index int) (*AudioFile, error) {
 
 	if index > len(q.Items)-1 {
-		return nil, errors.New("Index out of range")
+		return nil, tracerr.New("Index out of range")
 	}
 
 	// deleted audio file
@@ -112,7 +112,7 @@ func (q *Queue) PushFront(audioFile *AudioFile) {
 func (q *Queue) Dequeue() (*AudioFile, error) {
 
 	if q.GetItemCount() == 0 {
-		return nil, errors.New("Empty list\n")
+		return nil, tracerr.New("Empty list")
 	}
 
 	first := q.Items[0]
@@ -131,7 +131,9 @@ func (q *Queue) Enqueue(audioFile *AudioFile) (int, error) {
 
 		go func() {
 
-			gomu.Player.Run(audioFile)
+			if err := gomu.Player.Run(audioFile); err != nil {
+				log.Println(tracerr.SprintSource(err))
+			}
 
 		}()
 
@@ -143,7 +145,7 @@ func (q *Queue) Enqueue(audioFile *AudioFile) (int, error) {
 	songLength, err := GetLength(audioFile.Path)
 
 	if err != nil {
-		return 0, WrapError("Enqueue", err)
+		return 0, tracerr.Wrap(err)
 	}
 
 	queueItemView := fmt.Sprintf(
@@ -187,7 +189,7 @@ func (q *Queue) SaveQueue() error {
 	err := ioutil.WriteFile(cachePath, []byte(content.String()), 0644)
 
 	if err != nil {
-		return WrapError("SaveQueue", err)
+		return tracerr.Wrap(err)
 	}
 
 	return nil
@@ -209,16 +211,19 @@ func (q *Queue) LoadQueue() error {
 	songs, err := q.GetSavedQueue()
 
 	if err != nil {
-		return WrapError("LoadQueue", err)
+		return tracerr.Wrap(err)
 	}
 
 	for _, v := range songs {
 
-		audioFile := gomu.Playlist.FindAudioFile(v)
+		audioFile, err := gomu.Playlist.FindAudioFile(v)
 
-		if audioFile != nil {
-			q.Enqueue(audioFile)
+		if err != nil {
+			log.Println(tracerr.SprintSource(err))
+			continue
 		}
+
+		q.Enqueue(audioFile)
 	}
 
 	return nil
@@ -226,8 +231,6 @@ func (q *Queue) LoadQueue() error {
 
 // Get saved queue, if not exist, create it
 func (q *Queue) GetSavedQueue() ([]string, error) {
-
-	fnName := "GetSavedQueue"
 
 	queuePath := expandTilde(q.SavedQueuePath)
 
@@ -237,12 +240,12 @@ func (q *Queue) GetSavedQueue() ([]string, error) {
 
 		err := os.MkdirAll(dir, 0744)
 		if err != nil {
-			return nil, WrapError(fnName, err)
+			return nil, tracerr.Wrap(err)
 		}
 
 		_, err = os.Create(queuePath)
 		if err != nil {
-			return nil, WrapError(fnName, err)
+			return nil, tracerr.Wrap(err)
 		}
 
 		return []string{}, nil
@@ -251,7 +254,7 @@ func (q *Queue) GetSavedQueue() ([]string, error) {
 
 	f, err := os.Open(queuePath)
 	if err != nil {
-		return nil, WrapError(fnName, err)
+		return nil, tracerr.Wrap(err)
 	}
 
 	defer f.Close()
@@ -264,7 +267,7 @@ func (q *Queue) GetSavedQueue() ([]string, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, WrapError(fnName, err)
+		return nil, tracerr.Wrap(err)
 	}
 
 	return records, nil
@@ -295,7 +298,7 @@ func (q *Queue) Shuffle() {
 
 	for _, v := range q.Items {
 		audioLen, err := GetLength(v.Path)
-		log.Println(err)
+		log.Println(tracerr.SprintSource(err))
 
 		queueText := fmt.Sprintf("[ %s ] %s", fmtDuration(audioLen), v.Name)
 		q.AddItem(queueText, v.Path, 0, nil)
@@ -330,7 +333,7 @@ func NewQueue() *Queue {
 		case 'l':
 			a, err := queue.DeleteItem(queue.GetCurrentItem())
 			if err != nil {
-				log.Println(err)
+				log.Println(tracerr.SprintSource(err))
 			}
 
 			queue.PushFront(a)

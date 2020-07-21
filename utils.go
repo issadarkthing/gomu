@@ -11,11 +11,11 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/ztrue/tracerr"
 )
 
 // Wraps error in a formatted way.
-// function name should be supplied on where the error occured
-// newly created err should have a newline
 func WrapError(fnName string, err error) error {
 	return fmt.Errorf("%s: \n%e", fnName, err)
 }
@@ -56,7 +56,7 @@ func expandTilde(_path string) string {
 	home, err := os.UserHomeDir()
 
 	if err != nil {
-		log.Println(err)
+		log.Panicln(tracerr.SprintSource(err))
 	}
 
 	return path.Join(home, strings.TrimPrefix(_path, "~"))
@@ -70,7 +70,7 @@ func GetFileContentType(out *os.File) (string, error) {
 
 	_, err := out.Read(buffer)
 	if err != nil {
-		return "", err
+		return "", tracerr.Wrap(err)
 	}
 
 	contentType := http.DetectContentType(buffer)
