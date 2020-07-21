@@ -4,6 +4,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -13,6 +14,10 @@ import (
 	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
 )
+
+const VERSION = "v1.3.1"
+
+var gomu *Gomu
 
 // created so we can keep track of childrens in slices
 type Panel interface {
@@ -122,10 +127,12 @@ func (g *Gomu) SetUnfocusPanel(panel Panel) {
 	g.PrevPanel.SetTitleColor((g.TextColor))
 }
 
-// one single instance of global variable
-var gomu *Gomu
-
 func start(application *tview.Application, args Args) {
+
+	if *args.version {
+		fmt.Printf("Gomu %s\n", VERSION)
+		return
+	}
 
 	// override default border
 	// change double line border to one line border when focused
@@ -298,17 +305,19 @@ func readConfig(args Args) {
 }
 
 type Args struct {
-	config *string
-	load   *bool
-	music  *string
+	config  *string
+	load    *bool
+	music   *string
+	version *bool
 }
 
 func getArgs() Args {
 
 	ar := Args{
-		config: flag.String("config", "~/.config/gomu/config", "specify config file"),
-		load:   flag.Bool("load", true, "load previous queue"),
-		music:  flag.String("music", "~/music", "specify music directory"),
+		config:  flag.String("config", "~/.config/gomu/config", "specify config file"),
+		load:    flag.Bool("load", true, "load previous queue"),
+		music:   flag.String("music", "~/music", "specify music directory"),
+		version: flag.Bool("version", false, "print gomu version"),
 	}
 
 	flag.Parse()
