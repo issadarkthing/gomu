@@ -225,6 +225,11 @@ func (p *Player) Volume(v float64) float64 {
 }
 
 func (p *Player) TogglePause() {
+
+	if p.ctrl == nil {
+		return
+	}
+
 	if p.ctrl.Paused {
 		p.Play()
 	} else {
