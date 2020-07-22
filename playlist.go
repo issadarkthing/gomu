@@ -24,6 +24,7 @@ type AudioFile struct {
 	Path        string
 	IsAudioFile bool
 	Length      time.Duration
+	Node        *tview.TreeNode
 	Parent      *tview.TreeNode
 }
 
@@ -67,6 +68,7 @@ func NewPlaylist() *Playlist {
 
 	rootAudioFile := &AudioFile{
 		Name: root.GetText(),
+		Node: root,
 		Path: rootDir,
 	}
 
@@ -339,6 +341,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 				Path:        path,
 				IsAudioFile: true,
 				Length:      audioLength,
+				Node:        child,
 				Parent:      root,
 			}
 
@@ -354,6 +357,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 				Path:        path,
 				IsAudioFile: false,
 				Length:      0,
+				Node:        child,
 				Parent:      root,
 			}
 			child.SetReference(audioFile)
