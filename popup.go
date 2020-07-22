@@ -4,14 +4,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
-	"github.com/ztrue/tracerr"
 )
 
 // this is used to make the popup unique
@@ -28,7 +26,7 @@ func getPopupTimeout() time.Duration {
 	m, err := time.ParseDuration(dur)
 
 	if err != nil {
-		log.Println(tracerr.SprintSource(err))
+		LogError(err)
 		return time.Second * 5
 	}
 
@@ -44,7 +42,7 @@ func confirmationPopup(
 	modal := tview.NewModal().
 		SetText(text).
 		SetBackgroundColor(gomu.PopupBg).
-		AddButtons([]string{"yes", "no"}).
+		AddButtons([]string{"no", "yes"}).
 		SetButtonBackgroundColor(gomu.PopupBg).
 		SetButtonTextColor(gomu.AccentColor).
 		SetDoneFunc(handler)
@@ -209,7 +207,7 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 
 			go func() {
 				if err := Ytdl(url, selPlaylist); err != nil {
-					log.Println(tracerr.SprintSource(err))
+					LogError(err)
 				}
 			}()
 			gomu.Pages.RemovePage("download-input-popup")
@@ -251,7 +249,7 @@ func CreatePlaylistPopup() {
 			err := gomu.Playlist.CreatePlaylist(playListName)
 
 			if err != nil {
-				log.Println(tracerr.SprintSource(err))
+				LogError(err)
 			}
 
 			gomu.Pages.RemovePage("mkdir-input-popup")

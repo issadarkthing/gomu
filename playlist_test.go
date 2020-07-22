@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -29,10 +28,8 @@ func prepareTest() *Gomu {
 
 	root := tview.NewTreeNode("music")
 	rootAudioFile := &AudioFile{
-		Name:        root.GetText(),
-		Path:        rootDir,
-		IsAudioFile: false,
-		Parent:      nil,
+		Name: root.GetText(),
+		Path: rootDir,
 	}
 
 	root.SetReference(rootAudioFile)
@@ -45,7 +42,6 @@ func prepareTest() *Gomu {
 func TestPopulate(t *testing.T) {
 
 	gomu = NewGomu()
-
 	rootDir, err := filepath.Abs("./test")
 
 	if err != nil {
@@ -53,7 +49,6 @@ func TestPopulate(t *testing.T) {
 	}
 
 	expected := 0
-
 	walkFn := func(path string, info os.FileInfo, err error) error {
 
 		if info.IsDir() {
@@ -68,14 +63,7 @@ func TestPopulate(t *testing.T) {
 
 		defer f.Close()
 
-		fileType, e := GetFileContentType(f)
-		if e != nil && e != io.EOF {
-			return e
-		}
-
-		if fileType == "mpeg" {
-			expected++
-		}
+		expected++
 
 		return nil
 	}
@@ -91,25 +79,21 @@ func TestPopulate(t *testing.T) {
 	})
 
 	populate(root, rootDir)
-
-	gotItems := 0
+	gotItems := 1
 	root.Walk(func(node, _ *tview.TreeNode) bool {
-
 		gotItems++
-
 		return true
 	})
 
-	// if gotItems != expected {
-	// 	t.Errorf("Invalid amount of file; expected %d got %d", expected, gotItems)
-	// }
+	if gotItems != expected {
+		t.Errorf("Invalid amount of file; expected %d got %d", expected, gotItems)
+	}
 
 }
 
 func TestAddAllToQueue(t *testing.T) {
 
 	gomu = prepareTest()
-
 	var songs []*tview.TreeNode
 
 	gomu.Playlist.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
