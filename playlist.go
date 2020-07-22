@@ -197,6 +197,13 @@ func NewPlaylist() *Playlist {
 
 			playlist.Refresh()
 
+		case 'f':
+
+			err := playlist.FuzzyFind()
+			if err != nil {
+				LogError(err)
+			}
+
 		}
 
 		return e
@@ -453,7 +460,7 @@ func (p *Playlist) AddSongToPlaylist(
 
 }
 
-// Gets all audio files from music root directory
+// Gets all audio files walks from music root directory
 func (p *Playlist) GetAudioFiles() []*AudioFile {
 
 	root := p.GetRoot()
@@ -545,6 +552,88 @@ func (p *Playlist) FindAudioFile(audioName string) (*AudioFile, error) {
 	}
 
 	return selNode, nil
+}
+
+// Highlight the selected node searched using fzf
+func (p *Playlist) FuzzyFind() error {
+
+	var result string
+	var err error
+
+	audioFiles := p.GetAudioFiles()
+	paths := make(map[string]*tview.TreeNode, len(audioFiles))
+	input := make([]string, 0, len(audioFiles))
+
+	for _, v := range audioFiles {
+		rootDir := audioFiles[0].Path + "/"
+		// path relative to music directory
+		shortPath := strings.TrimPrefix(v.Path, rootDir)
+		paths[shortPath] = v.Node
+		input = append(input, shortPath)
+	}
+
+	ok := gomu.App.Suspend(func() {
+		res, e := FzfFind(input)
+		if e != nil {
+			err = tracerr.Wrap(e)
+		}
+
+		result = res
+	})
+
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	if !ok {
+		return tracerr.New("App was not suspended")
+	}
+
+	if result == "" {
+		return nil
+	}
+
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	var selNode *tview.TreeNode
+
+	selNode = paths[result]
+
+	p.SetHighlight(selNode)
+
+	return nil
+
+}
+
+// Takes a list of input and suspends tview
+// returns empty string if cancelled
+func FzfFind(input []string) (string, error) {
+
+	var in strings.Builder
+	var out strings.Builder
+
+	for _, v := range input {
+		in.WriteString(v + "\n")
+	}
+
+	cmd := exec.Command("fzf")
+	cmd.Stdin = strings.NewReader(in.String())
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = &out
+
+	if err := cmd.Run(); cmd.ProcessState.ExitCode() == 130 {
+		// exit code 130 is when we cancel FZF
+		// not an error
+		return "", nil
+	} else if err != nil {
+		return "", fmt.Errorf("failed to find a file: %s", err)
+	}
+
+	f := strings.TrimSpace(out.String())
+
+	return f, nil
 }
 
 // download audio from youtube audio and adds the song to the selected playlist
