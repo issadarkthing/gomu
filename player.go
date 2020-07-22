@@ -4,7 +4,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -132,7 +131,7 @@ func (p *Player) Run(currSong *AudioFile) error {
 
 	go func() {
 		if err := gomu.PlayingBar.Run(); err != nil {
-			log.Println(tracerr.SprintSource(err))
+			LogError(err)
 		}
 	}()
 
@@ -159,7 +158,7 @@ next:
 
 			go func() {
 				if err := p.Run(nextSong); err != nil {
-					log.Println(tracerr.SprintSource(err))
+					LogError(err)
 				}
 			}()
 

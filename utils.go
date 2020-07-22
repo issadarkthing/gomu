@@ -15,6 +15,23 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
+func LogError(err error) {
+
+	tmpDir := os.TempDir()
+	logFile := path.Join(tmpDir, "gomu.log")
+	file, e := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+
+	if e != nil {
+		log.Fatalf("Error opening file %s", logFile)
+	}
+
+	defer file.Close()
+
+	log.SetOutput(file)
+	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+	log.Println(tracerr.SprintSource(err))
+}
+
 // Wraps error in a formatted way.
 func WrapError(fnName string, err error) error {
 	return fmt.Errorf("%s: \n%e", fnName, err)

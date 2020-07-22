@@ -6,11 +6,11 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gdamore/tcell"
@@ -54,7 +54,7 @@ func NewPlaylist() *Playlist {
 	rootDir, err := filepath.Abs(expandTilde(viper.GetString("music_dir")))
 
 	if err != nil {
-		log.Println(tracerr.SprintSource(err))
+		LogError(err)
 	}
 
 	root := tview.NewTreeNode(path.Base(rootDir)).
@@ -119,7 +119,7 @@ func NewPlaylist() *Playlist {
 
 			err := playlist.DeletePlaylist(audioFile)
 			if err != nil {
-				log.Println(tracerr.SprintSource(err))
+				LogError(err)
 			}
 
 		case 'd':
@@ -131,7 +131,7 @@ func NewPlaylist() *Playlist {
 
 			err := playlist.DeleteSong(audioFile)
 			if err != nil {
-				log.Println(tracerr.SprintSource(err))
+				LogError(err)
 			}
 
 		case 'Y':
@@ -218,7 +218,7 @@ func (p *Playlist) DeleteSong(audioFile *AudioFile) (err error) {
 	confirmationPopup(
 		"Are you sure to delete this audio file?", func(_ int, buttonName string) {
 
-			if buttonName == "no" {
+			if buttonName == "no" || buttonName == "" {
 				gomu.Pages.RemovePage("confirmation-popup")
 				gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 				return
@@ -263,7 +263,7 @@ func (p *Playlist) DeletePlaylist(audioFile *AudioFile) (err error) {
 	confirmationPopup("Are you sure to delete this directory?",
 		func(_ int, buttonName string) {
 
-			if buttonName == "no" {
+			if buttonName == "no" || buttonName == "" {
 				gomu.Pages.RemovePage("confirmation-popup")
 				gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 				return
@@ -313,7 +313,6 @@ func populate(root *tview.TreeNode, rootPath string) error {
 		f, err := os.Open(path)
 
 		if err != nil {
-			log.Println(tracerr.SprintSource(err))
 			continue
 		}
 
@@ -327,7 +326,6 @@ func populate(root *tview.TreeNode, rootPath string) error {
 			filetype, err := GetFileContentType(f)
 
 			if err != nil {
-				log.Println(tracerr.SprintSource(err))
 				continue
 			}
 
@@ -339,7 +337,6 @@ func populate(root *tview.TreeNode, rootPath string) error {
 			audioLength, err := GetLength(path)
 
 			if err != nil {
-				log.Println(tracerr.SprintSource(err))
 				continue
 			}
 
@@ -393,7 +390,6 @@ func (p *Playlist) AddAllToQueue(root *tview.TreeNode) {
 
 	for _, v := range childrens {
 		currNode := v.GetReference().(*AudioFile)
-
 		gomu.Queue.Enqueue(currNode)
 	}
 
@@ -526,10 +522,6 @@ func (p *Playlist) SetHighlight(currNode *tview.TreeNode) {
 func (p *Playlist) FindAudioFile(audioName string) (*AudioFile, error) {
 
 	root := p.GetRoot()
-
-	if root == nil {
-		return nil, tracerr.New("no root directory")
-	}
 
 	var selNode *AudioFile
 

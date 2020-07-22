@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"os"
 	"path"
@@ -132,7 +131,7 @@ func (q *Queue) Enqueue(audioFile *AudioFile) (int, error) {
 		go func() {
 
 			if err := gomu.Player.Run(audioFile); err != nil {
-				log.Println(tracerr.SprintSource(err))
+				LogError(err)
 			}
 
 		}()
@@ -219,7 +218,7 @@ func (q *Queue) LoadQueue() error {
 		audioFile, err := gomu.Playlist.FindAudioFile(v)
 
 		if err != nil {
-			log.Println(tracerr.SprintSource(err))
+			LogError(err)
 			continue
 		}
 
@@ -298,7 +297,9 @@ func (q *Queue) Shuffle() {
 
 	for _, v := range q.Items {
 		audioLen, err := GetLength(v.Path)
-		log.Println(tracerr.SprintSource(err))
+		if err != nil {
+			LogError(err)
+		}
 
 		queueText := fmt.Sprintf("[ %s ] %s", fmtDuration(audioLen), v.Name)
 		q.AddItem(queueText, v.Path, 0, nil)
@@ -333,7 +334,7 @@ func NewQueue() *Queue {
 		case 'l':
 			a, err := queue.DeleteItem(queue.GetCurrentItem())
 			if err != nil {
-				log.Println(tracerr.SprintSource(err))
+				LogError(err)
 			}
 
 			queue.PushFront(a)
