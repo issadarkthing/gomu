@@ -18,7 +18,7 @@ var (
 	popupCounter = 0
 )
 
-// gets popup timeout from config file
+// Gets popup timeout from config file
 func getPopupTimeout() time.Duration {
 
 	dur := viper.GetString("popup_timeout")
@@ -32,6 +32,7 @@ func getPopupTimeout() time.Duration {
 	return m
 }
 
+// Simple confirmation popup. Accepts callback
 func confirmationPopup(
 	text string,
 	handler func(buttonIndex int, buttonLabel string),
@@ -71,6 +72,7 @@ func topRight(p tview.Primitive, width, height int) tview.Primitive {
 		AddItem(nil, 0, 1, false)
 }
 
+// Width and height parameter is optional. It defaults to 70 and 7 respectively.
 func timedPopup(
 	title string, desc string, timeout time.Duration, width, height int,
 ) {
@@ -109,6 +111,7 @@ func timedPopup(
 	}()
 }
 
+// Shows popup for the current volume
 func volumePopup(volume float64) {
 	vol := int(volume*10) + 50
 
@@ -122,6 +125,8 @@ func volumePopup(volume float64) {
 	timedPopup(" Volume ", progress, getPopupTimeout(), 0, 0)
 }
 
+// Shows a list of keybind. The upper list is the local keybindings to specific
+// panel only. The lower list is the global keybindings
 func helpPopup(panel Panel) {
 
 	helpText := panel.help()
@@ -184,6 +189,7 @@ func helpPopup(panel Panel) {
 	gomu.app.SetFocus(list)
 }
 
+// Input popup. Takes video url from youtube to be downloaded
 func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 
 	inputField := tview.NewInputField().
@@ -224,6 +230,7 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 
 }
 
+// Input popup that takes the name of directory to be created
 func createPlaylistPopup() {
 
 	inputField := tview.NewInputField().

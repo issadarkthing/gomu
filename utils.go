@@ -15,6 +15,7 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
+// Logs erros to /tmp/gomu.log
 func logError(err error) {
 
 	tmpDir := os.TempDir()
@@ -37,7 +38,7 @@ func wrapError(fnName string, err error) error {
 	return fmt.Errorf("%s: \n%e", fnName, err)
 }
 
-// formats duration to my desired output mm:ss
+// Formats duration to my desired output mm:ss
 func fmtDuration(input time.Duration) string {
 
 	val := input.Round(time.Second).String()
@@ -63,7 +64,7 @@ func fmtDuration(input time.Duration) string {
 	return strings.Join(result, ":")
 }
 
-// expands tilde alias to /home/user
+// Expands tilde alias to /home/user
 func expandTilde(_path string) string {
 
 	if !strings.HasPrefix(_path, "~") {
@@ -100,8 +101,8 @@ func getName(fn string) string {
 	return strings.TrimSuffix(path.Base(fn), ".mp3")
 }
 
-// this just parsing the output from the ytdl to get the audio path
-// this is used because we need to get the song name
+// This just parsing the output from the ytdl to get the audio path
+// This is used because we need to get the song name
 // example ~/path/to/song/song.mp3
 func extractFilePath(output []byte, dir string) string {
 

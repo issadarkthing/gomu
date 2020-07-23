@@ -53,7 +53,7 @@ func (g *Gomu) initPanels(app *tview.Application) {
 	g.panels = []Panel{g.playlist, g.queue, g.playingBar}
 }
 
-// cycle between panels
+// Cycle between panels
 func (g *Gomu) cyclePanels() Panel {
 
 	var anyChildHasFocus bool
@@ -90,7 +90,7 @@ func (g *Gomu) cyclePanels() Panel {
 	return first
 }
 
-// changes title and border color when focusing panel
+// Changes title and border color when focusing panel
 // and changes color of the previous panel as well
 func (g *Gomu) setFocusPanel(panel Panel) {
 
@@ -131,7 +131,7 @@ func (g *Gomu) unsuspend() bool {
 	return true
 }
 
-// removes the color of the given panel
+// Removes the color of the given panel
 func (g *Gomu) setUnfocusPanel(panel Panel) {
 	g.prevPanel.SetBorderColor(g.textColor)
 	g.prevPanel.SetTitleColor((g.textColor))

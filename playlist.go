@@ -19,6 +19,8 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
+// Playlist and mp3 files are represented with this struct
+// if isAudioFile equals to false it is a directory
 type AudioFile struct {
 	name        string
 	path        string
@@ -28,6 +30,7 @@ type AudioFile struct {
 	parent      *tview.TreeNode
 }
 
+// Treeview of a music directory
 type Playlist struct {
 	*tview.TreeView
 	prevNode *tview.TreeNode
@@ -214,6 +217,7 @@ func newPlaylist() *Playlist {
 
 }
 
+// Deletes song from filesystem
 func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 
 	confirmationPopup(
@@ -317,7 +321,7 @@ func (p *Playlist) addAllToQueue(root *tview.TreeNode) {
 
 }
 
-// refresh the playlist and read the whole root music dir
+// Refreshes the playlist and read the whole root music dir
 func (p *Playlist) refresh() {
 
 	root := gomu.playlist.GetRoot()
@@ -695,5 +699,4 @@ func populate(root *tview.TreeNode, rootPath string) error {
 	}
 
 	return nil
-
 }

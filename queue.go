@@ -26,7 +26,7 @@ type Queue struct {
 	isLoop         bool
 }
 
-// highlight the next item in the queue
+// Highlight the next item in the queue
 func (q *Queue) next() {
 	currIndex := q.GetCurrentItem()
 	idx := currIndex + 1
@@ -36,13 +36,13 @@ func (q *Queue) next() {
 	q.SetCurrentItem(idx)
 }
 
-// highlight the previous item in the queue
+// Highlight the previous item in the queue
 func (q *Queue) prev() {
 	currIndex := q.GetCurrentItem()
 	q.SetCurrentItem(currIndex - 1)
 }
 
-// usually used with GetCurrentItem which can return -1 if
+// Usually used with GetCurrentItem which can return -1 if
 // no item highlighted
 func (q *Queue) deleteItem(index int) (*AudioFile, error) {
 
@@ -419,6 +419,7 @@ func newQueue() *Queue {
 
 }
 
+// Convert string to sha1. 
 func sha1Hex(input string) string {
 	h := sha1.New()
 	h.Write([]byte(input))

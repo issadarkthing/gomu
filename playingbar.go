@@ -139,6 +139,7 @@ func (p *PlayingBar) setDefault() {
 	p.text.SetText(text)
 }
 
+// Skips the current playing song
 func (p *PlayingBar) stop() {
 	p.skip = true
 }

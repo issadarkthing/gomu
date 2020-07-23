@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// created so we can keep track of childrens in slices
+// Created so we can keep track of childrens in slices
 type Panel interface {
 	HasFocus() bool
 	SetBorderColor(color tcell.Color) *tview.Box
