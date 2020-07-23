@@ -6,7 +6,7 @@ import (
 
 func Test_NewPlayingBar(t *testing.T) {
 
-	p := NewPlayingBar()
+	p := newPlayingBar()
 
 	if p.progress == nil {
 		t.Errorf("chan int == nil")
@@ -16,10 +16,10 @@ func Test_NewPlayingBar(t *testing.T) {
 
 func Test_NewProgress(t *testing.T) {
 
-	p := NewPlayingBar()
+	p := newPlayingBar()
 	full := 100
 	limit := 100
-	p.NewProgress("sample", full, limit)
+	p.newProgress("sample", full, limit)
 
 	if p.full != full {
 		t.Errorf("Expected %d; got %d", full, p.full)
@@ -37,9 +37,9 @@ func Test_NewProgress(t *testing.T) {
 
 func Test_Stop(t *testing.T) {
 
-	p := NewPlayingBar()
+	p := newPlayingBar()
 
-	p.Stop()
+	p.stop()
 
 	if p.skip == false {
 		t.Errorf("Expected %t; got %t", true, p.skip)

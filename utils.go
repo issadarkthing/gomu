@@ -15,7 +15,7 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-func LogError(err error) {
+func logError(err error) {
 
 	tmpDir := os.TempDir()
 	logFile := path.Join(tmpDir, "gomu.log")
@@ -33,7 +33,7 @@ func LogError(err error) {
 }
 
 // Wraps error in a formatted way.
-func WrapError(fnName string, err error) error {
+func wrapError(fnName string, err error) error {
 	return fmt.Errorf("%s: \n%e", fnName, err)
 }
 
@@ -80,8 +80,8 @@ func expandTilde(_path string) string {
 
 }
 
-// detects the filetype of file
-func GetFileContentType(out *os.File) (string, error) {
+// Detects the filetype of file
+func getFileContentType(out *os.File) (string, error) {
 
 	buffer := make([]byte, 512)
 
@@ -95,8 +95,8 @@ func GetFileContentType(out *os.File) (string, error) {
 	return strings.SplitAfter(contentType, "/")[1], nil
 }
 
-// gets the file name by removing extension and path
-func GetName(fn string) string {
+// Gets the file name by removing extension and path
+func getName(fn string) string {
 	return strings.TrimSuffix(path.Base(fn), ".mp3")
 }
 

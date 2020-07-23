@@ -12,14 +12,14 @@ import (
 // Prepares for test
 func prepareTest() *Gomu {
 
-	gomu := NewGomu()
-	gomu.Player = &Player{}
-	gomu.Queue = NewQueue()
-	gomu.Playlist = &Playlist{
+	gomu := newGomu()
+	gomu.player = &Player{}
+	gomu.queue = newQueue()
+	gomu.playlist = &Playlist{
 		tview.NewTreeView(),
 		nil,
 	}
-	gomu.App = tview.NewApplication()
+	gomu.app = tview.NewApplication()
 
 	rootDir, err := filepath.Abs("./test")
 	if err != nil {
@@ -28,20 +28,20 @@ func prepareTest() *Gomu {
 
 	root := tview.NewTreeNode("music")
 	rootAudioFile := &AudioFile{
-		Name: root.GetText(),
-		Path: rootDir,
+		name: root.GetText(),
+		path: rootDir,
 	}
 
 	root.SetReference(rootAudioFile)
 	populate(root, rootDir)
-	gomu.Playlist.SetRoot(root)
+	gomu.playlist.SetRoot(root)
 
 	return gomu
 }
 
 func TestPopulate(t *testing.T) {
 
-	gomu = NewGomu()
+	gomu = newGomu()
 	rootDir, err := filepath.Abs("./test")
 
 	if err != nil {
@@ -74,8 +74,8 @@ func TestPopulate(t *testing.T) {
 	root := tview.NewTreeNode(path.Base(rootDir))
 
 	root.SetReference(&AudioFile{
-		Name:        "Music",
-		IsAudioFile: false,
+		name:        "Music",
+		isAudioFile: false,
 	})
 
 	populate(root, rootDir)
@@ -96,16 +96,16 @@ func TestAddAllToQueue(t *testing.T) {
 	gomu = prepareTest()
 	var songs []*tview.TreeNode
 
-	gomu.Playlist.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
+	gomu.playlist.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
 
-		if node.GetReference().(*AudioFile).Name == "rap" {
-			gomu.Playlist.AddAllToQueue(node)
+		if node.GetReference().(*AudioFile).name == "rap" {
+			gomu.playlist.addAllToQueue(node)
 		}
 
 		return true
 	})
 
-	queue := gomu.Queue.GetItems()
+	queue := gomu.queue.getItems()
 
 	for i, song := range songs {
 
@@ -114,8 +114,8 @@ func TestAddAllToQueue(t *testing.T) {
 		// strips the path of the song in the queue
 		s := filepath.Base(queue[i])
 
-		if audioFile.Name != s {
-			t.Errorf("Expected \"%s\", got \"%s\"", audioFile.Name, s)
+		if audioFile.name != s {
+			t.Errorf("Expected \"%s\", got \"%s\"", audioFile.name, s)
 		}
 
 	}

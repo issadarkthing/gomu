@@ -7,16 +7,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
 )
-
-const VERSION = "v1.3.1"
-
-var gomu *Gomu
 
 // created so we can keep track of childrens in slices
 type Panel interface {
@@ -25,260 +20,7 @@ type Panel interface {
 	SetTitleColor(color tcell.Color) *tview.Box
 	SetTitle(s string) *tview.Box
 	GetTitle() string
-	Help() []string
-}
-
-type Gomu struct {
-	App         *tview.Application
-	PlayingBar  *PlayingBar
-	Queue       *Queue
-	Playlist    *Playlist
-	Player      *Player
-	Pages       *tview.Pages
-	Popups      []tview.Primitive
-	PrevPanel   Panel
-	PopupBg     tcell.Color
-	TextColor   tcell.Color
-	AccentColor tcell.Color
-	Panels      []Panel
-	IsSuspend   bool
-	Mu          sync.Mutex
-}
-
-// Creates new instance of gomu with default values
-func NewGomu() *Gomu {
-
-	gomu := &Gomu{
-		PopupBg:     tcell.GetColor("#0A0F14"),
-		TextColor:   tcell.ColorWhite,
-		AccentColor: tcell.ColorDarkCyan,
-	}
-
-	return gomu
-}
-
-// Initialize childrens/panels this is seperated from
-// constructor function `NewGomu` so that we can
-// test independently
-func (g *Gomu) InitPanels(app *tview.Application) {
-	g.App = app
-	g.PlayingBar = NewPlayingBar()
-	g.Queue = NewQueue()
-	g.Playlist = NewPlaylist()
-	g.Player = NewPlayer()
-	g.Pages = tview.NewPages()
-	g.Panels = []Panel{g.Playlist, g.Queue, g.PlayingBar}
-}
-
-// cycle between panels
-func (g *Gomu) CyclePanels() Panel {
-
-	var anyChildHasFocus bool
-
-	for i, child := range g.Panels {
-
-		if child.HasFocus() {
-
-			anyChildHasFocus = true
-
-			var nextChild Panel
-
-			// if its the last element set the child back to one
-			if i == len(g.Panels)-1 {
-				nextChild = g.Panels[0]
-			} else {
-				nextChild = g.Panels[i+1]
-			}
-
-			g.SetFocusPanel(nextChild)
-
-			g.PrevPanel = nextChild
-			return nextChild
-		}
-	}
-
-	first := g.Panels[0]
-
-	if !anyChildHasFocus {
-		g.SetFocusPanel(first)
-	}
-
-	g.PrevPanel = first
-	return first
-}
-
-// changes title and border color when focusing panel
-// and changes color of the previous panel as well
-func (g *Gomu) SetFocusPanel(panel Panel) {
-
-	g.App.SetFocus(panel.(tview.Primitive))
-	panel.SetBorderColor(g.AccentColor)
-	panel.SetTitleColor(g.AccentColor)
-
-	if g.PrevPanel == nil {
-		return
-	}
-
-	g.SetUnfocusPanel(g.PrevPanel)
-}
-
-// Safely write the IsSuspend state, IsSuspend is used to indicate if we
-// are going to suspend the app. This should be used to widgets or
-// texts that keeps rendering continuosly or possible to render when the app
-// is going to suspend.
-// Returns true if app is not in suspend
-func (g *Gomu) Suspend() bool {
-	g.Mu.Lock()
-	defer g.Mu.Unlock()
-	if g.IsSuspend {
-		return false
-	}
-	g.IsSuspend = true
-	return true
-}
-
-// The opposite of Suspend. Returns true if app is in suspend
-func (g *Gomu) Unsuspend() bool {
-	g.Mu.Lock()
-	defer g.Mu.Unlock()
-	if !g.IsSuspend {
-		return false
-	}
-	g.IsSuspend = false
-	return true
-}
-
-// removes the color of the given panel
-func (g *Gomu) SetUnfocusPanel(panel Panel) {
-	g.PrevPanel.SetBorderColor(g.TextColor)
-	g.PrevPanel.SetTitleColor((g.TextColor))
-}
-
-func start(application *tview.Application, args Args) {
-
-	if *args.version {
-		fmt.Printf("Gomu %s\n", VERSION)
-		return
-	}
-
-	// override default border
-	// change double line border to one line border when focused
-	tview.Borders.HorizontalFocus = tview.Borders.Horizontal
-	tview.Borders.VerticalFocus = tview.Borders.Vertical
-	tview.Borders.TopLeftFocus = tview.Borders.TopLeft
-	tview.Borders.TopRightFocus = tview.Borders.TopRight
-	tview.Borders.BottomLeftFocus = tview.Borders.BottomLeft
-	tview.Borders.BottomRightFocus = tview.Borders.BottomRight
-	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
-	tview.Styles.BorderColor = tcell.ColorWhite
-
-	gomu = NewGomu()
-	gomu.InitPanels(application)
-
-	LogError(fmt.Errorf("App start"))
-
-	flex := Layout(gomu)
-	gomu.Pages.AddPage("main", flex, true, true)
-
-	// sets the first focused panel
-	gomu.Playlist.SetBorderColor(gomu.AccentColor)
-	gomu.Playlist.SetTitleColor(gomu.AccentColor)
-	gomu.PrevPanel = gomu.Playlist
-
-	if *args.load {
-		// load saved queue from previous
-		if err := gomu.Queue.LoadQueue(); err != nil {
-			LogError(err)
-		}
-	}
-
-	application.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-
-		switch event.Key() {
-		// cycle through each section
-		case tcell.KeyTAB:
-			gomu.CyclePanels()
-
-		}
-
-		name, _ := gomu.Pages.GetFrontPage()
-
-		// disables keybindings when writing in input fields
-		if strings.Contains(name, "-input-") {
-			return event
-		}
-
-		switch event.Rune() {
-		case 'q':
-
-			if !viper.GetBool("confirm_on_exit") {
-				application.Stop()
-			}
-			confirmationPopup("Are you sure to exit?", func(_ int, label string) {
-
-				if label == "no" || label == "" {
-					gomu.Pages.RemovePage("confirmation-popup")
-					return
-				}
-
-				if err := gomu.Queue.SaveQueue(); err != nil {
-					LogError(err)
-				}
-
-				if err := viper.WriteConfig(); err != nil {
-					LogError(err)
-				}
-
-				application.Stop()
-
-			})
-
-		case ' ':
-			gomu.Player.TogglePause()
-
-		case '+':
-			v := int(gomu.Player.volume*10) + 50
-			if v < 50 {
-				vol := gomu.Player.Volume(0.5)
-				volumePopup(vol)
-			}
-
-		case '-':
-			v := int(gomu.Player.volume*10) + 50
-			if v > 0 {
-				vol := gomu.Player.Volume(-0.5)
-				volumePopup(vol)
-			}
-
-		case 'n':
-			gomu.Player.Skip()
-
-		case '?':
-
-			name, _ := gomu.Pages.GetFrontPage()
-
-			if name == "help-page" {
-				gomu.Pages.RemovePage(name)
-				gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
-			} else {
-				helpPopup(gomu.PrevPanel)
-			}
-
-		}
-
-		return event
-	})
-
-	// fix transparent background issue
-	application.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
-		screen.Clear()
-		return false
-	})
-
-	// main loop
-	if err := application.SetRoot(gomu.Pages, true).SetFocus(gomu.Playlist).Run(); err != nil {
-		LogError(err)
-	}
+	help() []string
 }
 
 func readConfig(args Args) {
@@ -289,13 +31,13 @@ func readConfig(args Args) {
 	home, err := os.UserHomeDir()
 
 	if err != nil {
-		LogError(err)
+		logError(err)
 	}
 
 	defaultPath := home + "/.config/gomu/config"
 
 	if err != nil {
-		LogError(err)
+		logError(err)
 	}
 
 	viper.SetConfigName("config")
@@ -316,14 +58,14 @@ func readConfig(args Args) {
 		// creates gomu config dir if does not exist
 		if _, err := os.Stat(defaultPath); err != nil {
 			if err := os.MkdirAll(home+"/.config/gomu", 0755); err != nil {
-				LogError(err)
+				logError(err)
 			}
 		}
 
 		// if config file was not found
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			if err := viper.SafeWriteConfigAs(defaultPath); err != nil {
-				LogError(err)
+				logError(err)
 			}
 		}
 
@@ -339,28 +81,152 @@ type Args struct {
 }
 
 func getArgs() Args {
-
 	ar := Args{
 		config:  flag.String("config", "~/.config/gomu/config", "specify config file"),
 		load:    flag.Bool("load", true, "load previous queue"),
 		music:   flag.String("music", "~/music", "specify music directory"),
 		version: flag.Bool("version", false, "print gomu version"),
 	}
-
 	flag.Parse()
-
 	return ar
 }
 
-// layout is used to organize the panels
-func Layout(gomu *Gomu) *tview.Flex {
-
+// Sets the layout of the application
+func layout(gomu *Gomu) *tview.Flex {
 	flex := tview.NewFlex().
-		AddItem(gomu.Playlist, 0, 1, false).
+		AddItem(gomu.playlist, 0, 1, false).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-			AddItem(gomu.Queue, 0, 5, false).
-			AddItem(gomu.PlayingBar, 0, 1, false), 0, 3, false)
+			AddItem(gomu.queue, 0, 5, false).
+			AddItem(gomu.playingBar, 0, 1, false), 0, 3, false)
 
 	return flex
+}
 
+// Initialize
+func start(application *tview.Application, args Args) {
+
+	// Print version and exit
+	if *args.version {
+		fmt.Printf("Gomu %s\n", VERSION)
+		return
+	}
+
+	// override default border
+	// change double line border to one line border when focused
+	tview.Borders.HorizontalFocus = tview.Borders.Horizontal
+	tview.Borders.VerticalFocus = tview.Borders.Vertical
+	tview.Borders.TopLeftFocus = tview.Borders.TopLeft
+	tview.Borders.TopRightFocus = tview.Borders.TopRight
+	tview.Borders.BottomLeftFocus = tview.Borders.BottomLeft
+	tview.Borders.BottomRightFocus = tview.Borders.BottomRight
+	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
+	tview.Styles.BorderColor = tcell.ColorWhite
+
+	// Assigning to global variable gomu
+	gomu = newGomu()
+	gomu.initPanels(application)
+
+	logError(fmt.Errorf("App start"))
+
+	flex := layout(gomu)
+	gomu.pages.AddPage("main", flex, true, true)
+
+	// sets the first focused panel
+	gomu.setFocusPanel(gomu.playlist)
+	gomu.prevPanel = gomu.playlist
+
+	if *args.load {
+		// load saved queue from previous
+		if err := gomu.queue.loadQueue(); err != nil {
+			logError(err)
+		}
+	}
+
+	application.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+
+		switch event.Key() {
+		// cycle through each section
+		case tcell.KeyTAB:
+			gomu.cyclePanels()
+
+		}
+
+		name, _ := gomu.pages.GetFrontPage()
+
+		// disables keybindings when writing in input fields
+		if strings.Contains(name, "-input-") {
+			return event
+		}
+
+		switch event.Rune() {
+		case 'q':
+
+			if !viper.GetBool("confirm_on_exit") {
+				application.Stop()
+			}
+			confirmationPopup("Are you sure to exit?", func(_ int, label string) {
+
+				if label == "no" || label == "" {
+					gomu.pages.RemovePage("confirmation-popup")
+					return
+				}
+
+				if err := gomu.queue.saveQueue(); err != nil {
+					logError(err)
+				}
+
+				if err := viper.WriteConfig(); err != nil {
+					logError(err)
+				}
+
+				application.Stop()
+
+			})
+
+		case ' ':
+			gomu.player.togglePause()
+
+		case '+':
+			v := int(gomu.player.volume*10) + 50
+			if v < 50 {
+				vol := gomu.player.setVolume(0.5)
+				volumePopup(vol)
+			}
+
+		case '-':
+			v := int(gomu.player.volume*10) + 50
+			if v > 0 {
+				vol := gomu.player.setVolume(-0.5)
+				volumePopup(vol)
+			}
+
+		case 'n':
+			gomu.player.skip()
+
+		case '?':
+
+			name, _ := gomu.pages.GetFrontPage()
+
+			if name == "help-page" {
+				gomu.pages.RemovePage(name)
+				gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+			} else {
+				helpPopup(gomu.prevPanel)
+			}
+
+		}
+
+		return event
+	})
+
+	// fix transparent background issue
+	application.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
+		screen.Clear()
+		return false
+	})
+
+	// main loop
+	if err := application.SetRoot(gomu.pages, true).SetFocus(gomu.playlist).Run(); err != nil {
+		logError(err)
+	}
 }

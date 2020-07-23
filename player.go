@@ -16,10 +16,10 @@ import (
 )
 
 type Player struct {
-	IsRunning bool
 	hasInit   bool
 	format    *beep.Format
 	isLoop    bool
+	isRunning bool
 	isSkipped chan bool
 	done      chan bool
 
@@ -33,19 +33,18 @@ type Player struct {
 	currentSong *AudioFile
 }
 
-func NewPlayer() *Player {
-
+func newPlayer() *Player {
 	// Read initial volume from config
 	var initVol float64 = (viper.GetFloat64("volume") - 50.0) / 10.0
 
 	return &Player{volume: initVol}
 }
 
-func (p *Player) Run(currSong *AudioFile) error {
+func (p *Player) run(currSong *AudioFile) error {
 
 	p.isSkipped = make(chan bool, 1)
 
-	f, err := os.Open(currSong.Path)
+	f, err := os.Open(currSong.path)
 
 	if err != nil {
 		return tracerr.Wrap(err)
@@ -80,7 +79,7 @@ func (p *Player) Run(currSong *AudioFile) error {
 	p.currentSong = currSong
 
 	popupMessage := fmt.Sprintf("%s\n\n[ %s ]",
-		currSong.Name, fmtDuration(p.length))
+		currSong.name, fmtDuration(p.length))
 
 	timedPopup(" Current Song ", popupMessage, getPopupTimeout(), 0, 0)
 
@@ -120,18 +119,18 @@ func (p *Player) Run(currSong *AudioFile) error {
 	}
 
 	p.position = position()
-	p.IsRunning = true
+	p.isRunning = true
 
 	if p.isLoop {
-		gomu.Queue.Enqueue(currSong)
-		gomu.App.Draw()
+		gomu.queue.enqueue(currSong)
+		gomu.app.Draw()
 	}
 
-	gomu.PlayingBar.NewProgress(currSong.Name, int(p.length.Seconds()), 100)
+	gomu.playingBar.newProgress(currSong.name, int(p.length.Seconds()), 100)
 
 	go func() {
-		if err := gomu.PlayingBar.Run(); err != nil {
-			LogError(err)
+		if err := gomu.playingBar.run(); err != nil {
+			logError(err)
 		}
 	}()
 
@@ -145,20 +144,20 @@ next:
 		case <-done:
 			close(done)
 			p.position = 0
-			p.IsRunning = false
+			p.isRunning = false
 			p.format = nil
-			gomu.PlayingBar.Stop()
+			gomu.playingBar.stop()
 
-			nextSong, err := gomu.Queue.Dequeue()
-			gomu.App.Draw()
+			nextSong, err := gomu.queue.dequeue()
+			gomu.app.Draw()
 
 			if err != nil {
 				break next
 			}
 
 			go func() {
-				if err := p.Run(nextSong); err != nil {
-					LogError(err)
+				if err := p.run(nextSong); err != nil {
+					logError(err)
 				}
 			}()
 
@@ -166,18 +165,18 @@ next:
 
 		case <-time.After(time.Second):
 			// stop progress bar from progressing when paused
-			if !p.IsRunning {
+			if !p.isRunning {
 				continue
 			}
 
 			i++
-			gomu.PlayingBar.progress <- 1
+			gomu.playingBar.progress <- 1
 
 			speaker.Lock()
 			p.position = position()
 			speaker.Unlock()
 
-			if i > gomu.PlayingBar.full {
+			if i > gomu.playingBar.full {
 				break next
 			}
 
@@ -188,22 +187,22 @@ next:
 	return nil
 }
 
-func (p *Player) Pause() {
+func (p *Player) pause() {
 	speaker.Lock()
 	p.ctrl.Paused = true
-	p.IsRunning = false
+	p.isRunning = false
 	speaker.Unlock()
 }
 
-func (p *Player) Play() {
+func (p *Player) play() {
 	speaker.Lock()
 	p.ctrl.Paused = false
-	p.IsRunning = true
+	p.isRunning = true
 	speaker.Unlock()
 }
 
 // volume up and volume down using -0.5 or +0.5
-func (p *Player) Volume(v float64) float64 {
+func (p *Player) setVolume(v float64) float64 {
 
 	// check if no songs playing currently
 	if p._volume == nil {
@@ -224,23 +223,23 @@ func (p *Player) Volume(v float64) float64 {
 	return p.volume
 }
 
-func (p *Player) TogglePause() {
+func (p *Player) togglePause() {
 
 	if p.ctrl == nil {
 		return
 	}
 
 	if p.ctrl.Paused {
-		p.Play()
+		p.play()
 	} else {
-		p.Pause()
+		p.pause()
 	}
 }
 
 // skips current song
-func (p *Player) Skip() {
+func (p *Player) skip() {
 
-	if gomu.Queue.GetItemCount() < 1 {
+	if gomu.queue.GetItemCount() < 1 {
 		return
 	}
 
@@ -251,13 +250,13 @@ func (p *Player) Skip() {
 // Toggles the queue to loop
 // dequeued item will be enqueued back
 // function returns loop state
-func (p *Player) ToggleLoop() bool {
+func (p *Player) toggleLoop() bool {
 	p.isLoop = !p.isLoop
 	return p.isLoop
 }
 
 // gets the length of the song in the queue
-func GetLength(audioPath string) (time.Duration, error) {
+func getLength(audioPath string) (time.Duration, error) {
 
 	f, err := os.Open(audioPath)
 

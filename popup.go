@@ -25,7 +25,7 @@ func getPopupTimeout() time.Duration {
 	m, err := time.ParseDuration(dur)
 
 	if err != nil {
-		LogError(err)
+		logError(err)
 		return time.Second * 5
 	}
 
@@ -39,15 +39,15 @@ func confirmationPopup(
 
 	modal := tview.NewModal().
 		SetText(text).
-		SetBackgroundColor(gomu.PopupBg).
+		SetBackgroundColor(gomu.popupBg).
 		AddButtons([]string{"no", "yes"}).
-		SetButtonBackgroundColor(gomu.PopupBg).
-		SetButtonTextColor(gomu.AccentColor).
+		SetButtonBackgroundColor(gomu.popupBg).
+		SetButtonTextColor(gomu.accentColor).
 		SetDoneFunc(handler)
 
-	gomu.Pages.
+	gomu.pages.
 		AddPage("confirmation-popup", center(modal, 40, 10), true, true)
-	gomu.App.SetFocus(modal)
+	gomu.app.SetFocus(modal)
 
 }
 
@@ -77,7 +77,7 @@ func timedPopup(
 
 	// Wait until app is not suspended
 	for {
-		if !gomu.IsSuspend {
+		if !gomu.isSuspend {
 			break
 		}
 	}
@@ -89,28 +89,27 @@ func timedPopup(
 
 	textView := tview.NewTextView().
 		SetText(desc).
-		SetTextColor(gomu.AccentColor)
+		SetTextColor(gomu.accentColor)
 
-	textView.SetTextAlign(tview.AlignCenter).SetBackgroundColor(gomu.PopupBg)
+	textView.SetTextAlign(tview.AlignCenter).SetBackgroundColor(gomu.popupBg)
 
 	box := tview.NewFrame(textView).SetBorders(1, 0, 0, 0, 0, 0)
-	box.SetTitle(title).SetBorder(true).SetBackgroundColor(gomu.PopupBg)
+	box.SetTitle(title).SetBorder(true).SetBackgroundColor(gomu.popupBg)
 	popupId := fmt.Sprintf("%s %d", "timeout-popup", popupCounter)
 
 	popupCounter++
-	gomu.Pages.AddPage(popupId, topRight(box, width, height), true, true)
-	gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
+	gomu.pages.AddPage(popupId, topRight(box, width, height), true, true)
+	gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 
 	go func() {
 		time.Sleep(timeout)
-		gomu.Pages.RemovePage(popupId)
-		gomu.App.Draw()
-		gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
+		gomu.pages.RemovePage(popupId)
+		gomu.app.Draw()
+		gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 	}()
 }
 
 func volumePopup(volume float64) {
-
 	vol := int(volume*10) + 50
 
 	progress := fmt.Sprintf("\n%d |%s%s| %s",
@@ -121,12 +120,11 @@ func volumePopup(volume float64) {
 	)
 
 	timedPopup(" Volume ", progress, getPopupTimeout(), 0, 0)
-
 }
 
 func helpPopup(panel Panel) {
 
-	helpText := panel.Help()
+	helpText := panel.help()
 
 	genHelp := []string{
 		" ",
@@ -140,18 +138,13 @@ func helpPopup(panel Panel) {
 		"?      toggle help",
 	}
 
-	// add help text from the panel
-	for _, v := range genHelp {
-		helpText = append(helpText, v)
-	}
-
 	list := tview.NewList().ShowSecondaryText(false)
-	list.SetBackgroundColor(gomu.PopupBg).SetTitle(" Help ").
+	list.SetBackgroundColor(gomu.popupBg).SetTitle(" Help ").
 		SetBorder(true)
-	list.SetSelectedBackgroundColor(gomu.PopupBg).
-		SetSelectedTextColor(gomu.AccentColor)
+	list.SetSelectedBackgroundColor(gomu.popupBg).
+		SetSelectedTextColor(gomu.accentColor)
 
-	for _, v := range helpText {
+	for _, v := range append(helpText, genHelp...) {
 		list.AddItem(v, "", 0, nil)
 	}
 
@@ -180,15 +173,15 @@ func helpPopup(panel Panel) {
 
 		switch e.Key() {
 		case tcell.KeyEsc:
-			gomu.Pages.RemovePage("help-page")
-			gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
+			gomu.pages.RemovePage("help-page")
+			gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 		}
 
 		return nil
 	})
 
-	gomu.Pages.AddPage("help-page", center(list, 50, 30), true, true)
-	gomu.App.SetFocus(list)
+	gomu.pages.AddPage("help-page", center(list, 50, 30), true, true)
+	gomu.app.SetFocus(list)
 }
 
 func downloadMusicPopup(selPlaylist *tview.TreeNode) {
@@ -197,10 +190,10 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 		SetLabel("Enter a url: ").
 		SetFieldWidth(0).
 		SetAcceptanceFunc(tview.InputFieldMaxLength(50)).
-		SetFieldBackgroundColor(gomu.AccentColor).
+		SetFieldBackgroundColor(gomu.accentColor).
 		SetFieldTextColor(tcell.ColorBlack)
 
-	inputField.SetBackgroundColor(gomu.PopupBg).
+	inputField.SetBackgroundColor(gomu.popupBg).
 		SetBorder(true).SetTitle(" Ytdl ")
 
 	inputField.SetDoneFunc(func(key tcell.Key) {
@@ -210,38 +203,38 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 			url := inputField.GetText()
 
 			go func() {
-				if err := Ytdl(url, selPlaylist); err != nil {
-					LogError(err)
+				if err := ytdl(url, selPlaylist); err != nil {
+					logError(err)
 				}
 			}()
-			gomu.Pages.RemovePage("download-input-popup")
+			gomu.pages.RemovePage("download-input-popup")
 
 		case tcell.KeyEscape:
-			gomu.Pages.RemovePage("download-input-popup")
+			gomu.pages.RemovePage("download-input-popup")
 		}
 
-		gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
+		gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 
 	})
 
-	gomu.Pages.
+	gomu.pages.
 		AddPage("download-input-popup", center(inputField, 50, 4), true, true)
 
-	gomu.App.SetFocus(inputField)
+	gomu.app.SetFocus(inputField)
 
 }
 
-func CreatePlaylistPopup() {
+func createPlaylistPopup() {
 
 	inputField := tview.NewInputField().
 		SetLabel("Enter a playlist name: ").
 		SetFieldWidth(0).
 		SetAcceptanceFunc(tview.InputFieldMaxLength(50)).
-		SetFieldBackgroundColor(gomu.AccentColor).
+		SetFieldBackgroundColor(gomu.accentColor).
 		SetFieldTextColor(tcell.ColorBlack)
 
 	inputField.
-		SetBackgroundColor(gomu.PopupBg).
+		SetBackgroundColor(gomu.popupBg).
 		SetBorder(true).
 		SetTitle(" New Playlist ")
 
@@ -250,24 +243,24 @@ func CreatePlaylistPopup() {
 		switch key {
 		case tcell.KeyEnter:
 			playListName := inputField.GetText()
-			err := gomu.Playlist.CreatePlaylist(playListName)
+			err := gomu.playlist.createPlaylist(playListName)
 
 			if err != nil {
-				LogError(err)
+				logError(err)
 			}
 
-			gomu.Pages.RemovePage("mkdir-input-popup")
-			gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
+			gomu.pages.RemovePage("mkdir-input-popup")
+			gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 
 		case tcell.KeyEsc:
-			gomu.Pages.RemovePage("mkdir-input-popup")
-			gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
+			gomu.pages.RemovePage("mkdir-input-popup")
+			gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 		}
 
 	})
 
-	gomu.Pages.
+	gomu.pages.
 		AddPage("mkdir-input-popup", center(inputField, 50, 4), true, true)
-	gomu.App.SetFocus(inputField)
+	gomu.app.SetFocus(inputField)
 
 }
