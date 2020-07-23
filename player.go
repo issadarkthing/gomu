@@ -255,7 +255,7 @@ func (p *Player) toggleLoop() bool {
 	return p.isLoop
 }
 
-// gets the length of the song in the queue
+// Gets the length of the song in the queue
 func getLength(audioPath string) (time.Duration, error) {
 
 	f, err := os.Open(audioPath)
