@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
@@ -40,6 +41,8 @@ type Gomu struct {
 	TextColor   tcell.Color
 	AccentColor tcell.Color
 	Panels      []Panel
+	IsSuspend   bool
+	Mu          sync.Mutex
 }
 
 // Creates new instance of gomu with default values
@@ -117,6 +120,32 @@ func (g *Gomu) SetFocusPanel(panel Panel) {
 	}
 
 	g.SetUnfocusPanel(g.PrevPanel)
+}
+
+// Safely write the IsSuspend state, IsSuspend is used to indicate if we
+// are going to suspend the app. This should be used to widgets or
+// texts that keeps rendering continuosly or possible to render when the app
+// is going to suspend.
+// Returns true if app is not in suspend
+func (g *Gomu) Suspend() bool {
+	g.Mu.Lock()
+	defer g.Mu.Unlock()
+	if g.IsSuspend {
+		return false
+	}
+	g.IsSuspend = true
+	return true
+}
+
+// The opposite of Suspend. Returns true if app is in suspend
+func (g *Gomu) Unsuspend() bool {
+	g.Mu.Lock()
+	defer g.Mu.Unlock()
+	if !g.IsSuspend {
+		return false
+	}
+	g.IsSuspend = false
+	return true
 }
 
 // removes the color of the given panel

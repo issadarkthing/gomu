@@ -54,8 +54,14 @@ func NewPlayingBar() *PlayingBar {
 	return p
 }
 
-// start processing progress bar
+// Start processing progress bar
 func (p *PlayingBar) Run() error {
+
+	// When app is suspending, we want the progress bar to stop progressing
+	// because it causes screen to hang-up when app starts to stop suspending
+	// accumulate when app is suspending
+	acc := 0
+	wasSuspended := false
 
 	for {
 
@@ -66,10 +72,24 @@ func (p *PlayingBar) Run() error {
 			break
 		}
 
-		p._progress += <-p.progress
+		if gomu.IsSuspend {
+			// channel the progress to acc
+			acc += <-p.progress
+			wasSuspended = true
+			continue
+		} else {
+			// normal progressing
+			p._progress += <-p.progress
+		}
+
+		if wasSuspended {
+			// add back so that we dont lose track in progress bar
+			p._progress += acc
+			wasSuspended = false
+			acc = 0
+		}
 
 		p.text.Clear()
-
 		start, err := time.ParseDuration(strconv.Itoa(p._progress) + "s")
 
 		if err != nil {
@@ -83,6 +103,7 @@ func (p *PlayingBar) Run() error {
 		}
 
 		x := p._progress * p.limit / p.full
+		// our progress bar
 		p.text.SetText(fmt.Sprintf("%s ┃%s%s┫ %s",
 			fmtDuration(start),
 			strings.Repeat("█", x),
@@ -95,11 +116,13 @@ func (p *PlayingBar) Run() error {
 	return nil
 }
 
+// Updates song title
 func (p *PlayingBar) SetSongTitle(title string) {
 	p.Clear()
 	p.AddText(title, true, tview.AlignCenter, tcell.ColorGreen)
 }
 
+// Resets progress bar, ready for execution
 func (p *PlayingBar) NewProgress(songTitle string, full, limit int) {
 	p.full = full
 	p.limit = limit
@@ -107,7 +130,7 @@ func (p *PlayingBar) NewProgress(songTitle string, full, limit int) {
 	p.SetSongTitle(songTitle)
 }
 
-// sets default title and progress bar
+// Sets default title and progress bar
 func (p *PlayingBar) SetDefault() {
 	p.SetSongTitle("---------:---------")
 	text := fmt.Sprintf(

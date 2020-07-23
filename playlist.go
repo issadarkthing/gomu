@@ -45,6 +45,7 @@ func (p *Playlist) Help() []string {
 		"D      delete playlist from filesystem",
 		"Y      download audio",
 		"r      refresh",
+		"f      find in playlist",
 	}
 
 }
@@ -564,14 +565,15 @@ func (p *Playlist) FuzzyFind() error {
 		input = append(input, shortPath)
 	}
 
+	gomu.Suspend()
 	ok := gomu.App.Suspend(func() {
 		res, e := FzfFind(input)
 		if e != nil {
 			err = tracerr.Wrap(e)
 		}
-
 		result = res
 	})
+	gomu.Unsuspend()
 
 	if err != nil {
 		return tracerr.Wrap(err)
@@ -590,9 +592,7 @@ func (p *Playlist) FuzzyFind() error {
 	}
 
 	var selNode *tview.TreeNode
-
 	selNode = paths[result]
-
 	p.SetHighlight(selNode)
 
 	return nil

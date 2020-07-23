@@ -236,7 +236,6 @@ func (q *Queue) GetSavedQueue() ([]string, error) {
 	if _, err := os.Stat(queuePath); os.IsNotExist(err) {
 
 		dir, _ := path.Split(queuePath)
-
 		err := os.MkdirAll(dir, 0744)
 		if err != nil {
 			return nil, tracerr.Wrap(err)
@@ -272,6 +271,47 @@ func (q *Queue) GetSavedQueue() ([]string, error) {
 	return records, nil
 }
 
+// Fuzzy find queue
+func (q *Queue) FuzzyFind() error {
+
+	var result string
+	var err error
+
+	audioFiles := q.Items
+	input := make([]string, 0, len(audioFiles))
+
+	for _, v := range q.Items {
+		input = append(input, v.Name)
+	}
+
+	ok := gomu.App.Suspend(func() {
+		result, err = FzfFind(input)
+	})
+
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	if !ok {
+		return tracerr.New("Fzf not executed")
+	}
+
+	var index int
+	for i, v := range q.Items {
+		if v.Name == result {
+			index = i
+		}
+	}
+
+	if result == "" {
+		return nil
+	}
+
+	q.SetCurrentItem(index)
+
+	return nil
+}
+
 func (q *Queue) Help() []string {
 
 	return []string{
@@ -282,10 +322,12 @@ func (q *Queue) Help() []string {
 		"D      clear queue",
 		"z      toggle loop",
 		"s      shuffle",
+		"f      find in queue",
 	}
 
 }
 
+// Shuffles the queue
 func (q *Queue) Shuffle() {
 
 	rand.Seed(time.Now().UnixNano())
@@ -352,6 +394,15 @@ func NewQueue() *Queue {
 			timedPopup("Loop", msg, getPopupTimeout(), 30, 5)
 		case 's':
 			queue.Shuffle()
+
+		case 'f':
+
+			gomu.Suspend()
+			if err := queue.FuzzyFind(); err != nil {
+				LogError(err)
+			}
+			gomu.Unsuspend()
+
 		}
 
 		return nil
