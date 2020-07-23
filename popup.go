@@ -22,7 +22,6 @@ var (
 func getPopupTimeout() time.Duration {
 
 	dur := viper.GetString("popup_timeout")
-
 	m, err := time.ParseDuration(dur)
 
 	if err != nil {
@@ -31,7 +30,6 @@ func getPopupTimeout() time.Duration {
 	}
 
 	return m
-
 }
 
 func confirmationPopup(
@@ -77,6 +75,13 @@ func timedPopup(
 	title string, desc string, timeout time.Duration, width, height int,
 ) {
 
+	// Wait until app is not suspended
+	for {
+		if !gomu.IsSuspend {
+			break
+		}
+	}
+
 	if width == 0 && height == 0 {
 		width = 70
 		height = 7
@@ -90,10 +95,9 @@ func timedPopup(
 
 	box := tview.NewFrame(textView).SetBorders(1, 0, 0, 0, 0, 0)
 	box.SetTitle(title).SetBorder(true).SetBackgroundColor(gomu.PopupBg)
-
 	popupId := fmt.Sprintf("%s %d", "timeout-popup", popupCounter)
-	popupCounter++
 
+	popupCounter++
 	gomu.Pages.AddPage(popupId, topRight(box, width, height), true, true)
 	gomu.App.SetFocus(gomu.PrevPanel.(tview.Primitive))
 
