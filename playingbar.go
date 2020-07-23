@@ -23,12 +23,12 @@ type PlayingBar struct {
 	text      *tview.TextView
 }
 
-func (p *PlayingBar) Help() []string {
+func (p *PlayingBar) help() []string {
 	return []string{}
 }
 
 // Playing bar shows progress of the song and the title of the song
-func NewPlayingBar() *PlayingBar {
+func newPlayingBar() *PlayingBar {
 
 	textView := tview.NewTextView().SetTextAlign(tview.AlignCenter)
 
@@ -41,13 +41,13 @@ func NewPlayingBar() *PlayingBar {
 		progress: make(chan int),
 	}
 
-	p.SetDefault()
+	p.setDefault()
 
 	textView.SetChangedFunc(func() {
-		gomu.App.Draw()
+		gomu.app.Draw()
 
-		if !gomu.Player.IsRunning {
-			p.SetDefault()
+		if !gomu.player.isRunning {
+			p.setDefault()
 		}
 	})
 
@@ -55,7 +55,7 @@ func NewPlayingBar() *PlayingBar {
 }
 
 // Start processing progress bar
-func (p *PlayingBar) Run() error {
+func (p *PlayingBar) run() error {
 
 	// When app is suspending, we want the progress bar to stop progressing
 	// because it causes screen to hang-up when app starts to stop suspending
@@ -72,7 +72,7 @@ func (p *PlayingBar) Run() error {
 			break
 		}
 
-		if gomu.IsSuspend {
+		if gomu.isSuspend {
 			// channel the progress to acc
 			acc += <-p.progress
 			wasSuspended = true
@@ -117,28 +117,28 @@ func (p *PlayingBar) Run() error {
 }
 
 // Updates song title
-func (p *PlayingBar) SetSongTitle(title string) {
+func (p *PlayingBar) setSongTitle(title string) {
 	p.Clear()
 	p.AddText(title, true, tview.AlignCenter, tcell.ColorGreen)
 }
 
 // Resets progress bar, ready for execution
-func (p *PlayingBar) NewProgress(songTitle string, full, limit int) {
+func (p *PlayingBar) newProgress(songTitle string, full, limit int) {
 	p.full = full
 	p.limit = limit
 	p._progress = 0
-	p.SetSongTitle(songTitle)
+	p.setSongTitle(songTitle)
 }
 
 // Sets default title and progress bar
-func (p *PlayingBar) SetDefault() {
-	p.SetSongTitle("---------:---------")
+func (p *PlayingBar) setDefault() {
+	p.setSongTitle("---------:---------")
 	text := fmt.Sprintf(
 		"%s ┣%s┫ %s", "00:00", strings.Repeat("━", 100), "00:00",
 	)
 	p.text.SetText(text)
 }
 
-func (p *PlayingBar) Stop() {
+func (p *PlayingBar) stop() {
 	p.skip = true
 }

@@ -38,7 +38,7 @@ func TestGetName(t *testing.T) {
 
 	for k, v := range samples {
 
-		got := GetName(k)
+		got := getName(k)
 
 		if got != v {
 			t.Errorf("GetName(%s); Expected %s got %s", k, v, got)

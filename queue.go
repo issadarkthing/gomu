@@ -21,9 +21,9 @@ import (
 
 type Queue struct {
 	*tview.List
-	SavedQueuePath string
-	Items          []*AudioFile
-	IsLoop         bool
+	savedQueuePath string
+	items          []*AudioFile
+	isLoop         bool
 }
 
 // highlight the next item in the queue
@@ -44,9 +44,9 @@ func (q *Queue) prev() {
 
 // usually used with GetCurrentItem which can return -1 if
 // no item highlighted
-func (q *Queue) DeleteItem(index int) (*AudioFile, error) {
+func (q *Queue) deleteItem(index int) (*AudioFile, error) {
 
-	if index > len(q.Items)-1 {
+	if index > len(q.items)-1 {
 		return nil, tracerr.New("Index out of range")
 	}
 
@@ -58,7 +58,7 @@ func (q *Queue) DeleteItem(index int) (*AudioFile, error) {
 
 		var nItems []*AudioFile
 
-		for i, v := range q.Items {
+		for i, v := range q.items {
 
 			if i == index {
 				dAudio = v
@@ -68,8 +68,8 @@ func (q *Queue) DeleteItem(index int) (*AudioFile, error) {
 			nItems = append(nItems, v)
 		}
 
-		q.Items = nItems
-		q.UpdateTitle()
+		q.items = nItems
+		q.updateTitle()
 
 	}
 
@@ -77,61 +77,61 @@ func (q *Queue) DeleteItem(index int) (*AudioFile, error) {
 }
 
 // Update queue title which shows number of items and total length
-func (q *Queue) UpdateTitle() {
+func (q *Queue) updateTitle() {
 
 	var totalLength time.Duration
 
-	for _, v := range q.Items {
-		totalLength += v.Length
+	for _, v := range q.items {
+		totalLength += v.length
 	}
 
 	fmtTime := fmtDuration(totalLength)
 
-	q.SetTitle(fmt.Sprintf("┤ Queue ├──┤%d|%s├", len(q.Items), fmtTime))
+	q.SetTitle(fmt.Sprintf("┤ Queue ├──┤%d|%s├", len(q.items), fmtTime))
 
 }
 
 // Add item to the front of the queue
-func (q *Queue) PushFront(audioFile *AudioFile) {
+func (q *Queue) pushFront(audioFile *AudioFile) {
 
-	q.Items = append([]*AudioFile{audioFile}, q.Items...)
+	q.items = append([]*AudioFile{audioFile}, q.items...)
 
-	songLength := audioFile.Length
+	songLength := audioFile.length
 
 	queueItemView := fmt.Sprintf(
-		"[ %s ] %s", fmtDuration(songLength), GetName(audioFile.Name),
+		"[ %s ] %s", fmtDuration(songLength), getName(audioFile.name),
 	)
 
-	q.InsertItem(0, queueItemView, audioFile.Path, 0, nil)
-	q.UpdateTitle()
+	q.InsertItem(0, queueItemView, audioFile.path, 0, nil)
+	q.updateTitle()
 }
 
 // gets the first item and remove it from the queue
 // app.Draw() must be called after calling this function
-func (q *Queue) Dequeue() (*AudioFile, error) {
+func (q *Queue) dequeue() (*AudioFile, error) {
 
 	if q.GetItemCount() == 0 {
 		return nil, tracerr.New("Empty list")
 	}
 
-	first := q.Items[0]
-	q.DeleteItem(0)
-	q.UpdateTitle()
+	first := q.items[0]
+	q.deleteItem(0)
+	q.updateTitle()
 
 	return first, nil
 }
 
 // Add item to the list and returns the length of the queue
-func (q *Queue) Enqueue(audioFile *AudioFile) (int, error) {
+func (q *Queue) enqueue(audioFile *AudioFile) (int, error) {
 
-	if !gomu.Player.IsRunning && "false" == os.Getenv("TEST") {
+	if !gomu.player.isRunning && "false" == os.Getenv("TEST") {
 
-		gomu.Player.IsRunning = true
+		gomu.player.isRunning = true
 
 		go func() {
 
-			if err := gomu.Player.Run(audioFile); err != nil {
-				LogError(err)
+			if err := gomu.player.run(audioFile); err != nil {
+				logError(err)
 			}
 
 		}()
@@ -140,26 +140,26 @@ func (q *Queue) Enqueue(audioFile *AudioFile) (int, error) {
 
 	}
 
-	q.Items = append(q.Items, audioFile)
-	songLength, err := GetLength(audioFile.Path)
+	q.items = append(q.items, audioFile)
+	songLength, err := getLength(audioFile.path)
 
 	if err != nil {
 		return 0, tracerr.Wrap(err)
 	}
 
 	queueItemView := fmt.Sprintf(
-		"[ %s ] %s", fmtDuration(songLength), GetName(audioFile.Name),
+		"[ %s ] %s", fmtDuration(songLength), getName(audioFile.name),
 	)
-	q.AddItem(queueItemView, audioFile.Path, 0, nil)
-	q.UpdateTitle()
+	q.AddItem(queueItemView, audioFile.path, 0, nil)
+	q.updateTitle()
 
 	return q.GetItemCount(), nil
 }
 
-// GetItems is used to get the secondary text
+// getItems is used to get the secondary text
 // which is used to store the path of the audio file
 // this is for the sake of convenience
-func (q *Queue) GetItems() []string {
+func (q *Queue) getItems() []string {
 
 	items := []string{}
 
@@ -174,17 +174,17 @@ func (q *Queue) GetItems() []string {
 }
 
 // Save the current queue in a csv file
-func (q *Queue) SaveQueue() error {
+func (q *Queue) saveQueue() error {
 
-	songPaths := q.GetItems()
+	songPaths := q.getItems()
 	var content strings.Builder
 
 	for _, songPath := range songPaths {
-		hashed := Sha1Hex(GetName(songPath))
+		hashed := sha1Hex(getName(songPath))
 		content.WriteString(hashed + "\n")
 	}
 
-	cachePath := expandTilde(q.SavedQueuePath)
+	cachePath := expandTilde(q.savedQueuePath)
 	err := ioutil.WriteFile(cachePath, []byte(content.String()), 0644)
 
 	if err != nil {
@@ -196,18 +196,18 @@ func (q *Queue) SaveQueue() error {
 }
 
 // Clears current queue
-func (q *Queue) ClearQueue() {
+func (q *Queue) clearQueue() {
 
-	q.Items = []*AudioFile{}
+	q.items = []*AudioFile{}
 	q.Clear()
-	q.UpdateTitle()
+	q.updateTitle()
 
 }
 
 // Loads previously saved list
-func (q *Queue) LoadQueue() error {
+func (q *Queue) loadQueue() error {
 
-	songs, err := q.GetSavedQueue()
+	songs, err := q.getSavedQueue()
 
 	if err != nil {
 		return tracerr.Wrap(err)
@@ -215,23 +215,23 @@ func (q *Queue) LoadQueue() error {
 
 	for _, v := range songs {
 
-		audioFile, err := gomu.Playlist.FindAudioFile(v)
+		audioFile, err := gomu.playlist.findAudioFile(v)
 
 		if err != nil {
-			LogError(err)
+			logError(err)
 			continue
 		}
 
-		q.Enqueue(audioFile)
+		q.enqueue(audioFile)
 	}
 
 	return nil
 }
 
 // Get saved queue, if not exist, create it
-func (q *Queue) GetSavedQueue() ([]string, error) {
+func (q *Queue) getSavedQueue() ([]string, error) {
 
-	queuePath := expandTilde(q.SavedQueuePath)
+	queuePath := expandTilde(q.savedQueuePath)
 
 	if _, err := os.Stat(queuePath); os.IsNotExist(err) {
 
@@ -272,20 +272,20 @@ func (q *Queue) GetSavedQueue() ([]string, error) {
 }
 
 // Fuzzy find queue
-func (q *Queue) FuzzyFind() error {
+func (q *Queue) fuzzyFind() error {
 
 	var result string
 	var err error
 
-	audioFiles := q.Items
+	audioFiles := q.items
 	input := make([]string, 0, len(audioFiles))
 
-	for _, v := range q.Items {
-		input = append(input, v.Name)
+	for _, v := range q.items {
+		input = append(input, v.name)
 	}
 
-	ok := gomu.App.Suspend(func() {
-		result, err = FzfFind(input)
+	ok := gomu.app.Suspend(func() {
+		result, err = fzfFind(input)
 	})
 
 	if err != nil {
@@ -297,8 +297,8 @@ func (q *Queue) FuzzyFind() error {
 	}
 
 	var index int
-	for i, v := range q.Items {
-		if v.Name == result {
+	for i, v := range q.items {
+		if v.name == result {
 			index = i
 		}
 	}
@@ -312,7 +312,7 @@ func (q *Queue) FuzzyFind() error {
 	return nil
 }
 
-func (q *Queue) Help() []string {
+func (q *Queue) help() []string {
 
 	return []string{
 		"j      down",
@@ -328,38 +328,38 @@ func (q *Queue) Help() []string {
 }
 
 // Shuffles the queue
-func (q *Queue) Shuffle() {
+func (q *Queue) shuffle() {
 
 	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(q.Items), func(i, j int) {
-		q.Items[i], q.Items[j] = q.Items[j], q.Items[i]
+	rand.Shuffle(len(q.items), func(i, j int) {
+		q.items[i], q.items[j] = q.items[j], q.items[i]
 	})
 
 	q.Clear()
 
-	for _, v := range q.Items {
-		audioLen, err := GetLength(v.Path)
+	for _, v := range q.items {
+		audioLen, err := getLength(v.path)
 		if err != nil {
-			LogError(err)
+			logError(err)
 		}
 
-		queueText := fmt.Sprintf("[ %s ] %s", fmtDuration(audioLen), v.Name)
-		q.AddItem(queueText, v.Path, 0, nil)
+		queueText := fmt.Sprintf("[ %s ] %s", fmtDuration(audioLen), v.name)
+		q.AddItem(queueText, v.path, 0, nil)
 	}
 
-	q.UpdateTitle()
+	q.updateTitle()
 
 }
 
 // Initiliaze new queue with default values
-func NewQueue() *Queue {
+func newQueue() *Queue {
 
 	list := tview.NewList().
 		ShowSecondaryText(false)
 
 	queue := &Queue{
 		List:           list,
-		SavedQueuePath: "~/.local/share/gomu/queue.cache",
+		savedQueuePath: "~/.local/share/gomu/queue.cache",
 	}
 
 	queue.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
@@ -370,19 +370,19 @@ func NewQueue() *Queue {
 		case 'k':
 			queue.prev()
 		case 'd':
-			queue.DeleteItem(queue.GetCurrentItem())
+			queue.deleteItem(queue.GetCurrentItem())
 		case 'D':
-			queue.ClearQueue()
+			queue.clearQueue()
 		case 'l':
-			a, err := queue.DeleteItem(queue.GetCurrentItem())
+			a, err := queue.deleteItem(queue.GetCurrentItem())
 			if err != nil {
-				LogError(err)
+				logError(err)
 			}
 
-			queue.PushFront(a)
-			gomu.Player.Skip()
+			queue.pushFront(a)
+			gomu.player.skip()
 		case 'z':
-			isLoop := gomu.Player.ToggleLoop()
+			isLoop := gomu.player.toggleLoop()
 			var msg string
 
 			if isLoop {
@@ -393,22 +393,22 @@ func NewQueue() *Queue {
 
 			timedPopup("Loop", msg, getPopupTimeout(), 30, 5)
 		case 's':
-			queue.Shuffle()
+			queue.shuffle()
 
 		case 'f':
 
-			gomu.Suspend()
-			if err := queue.FuzzyFind(); err != nil {
-				LogError(err)
+			gomu.suspend()
+			if err := queue.fuzzyFind(); err != nil {
+				logError(err)
 			}
-			gomu.Unsuspend()
+			gomu.unsuspend()
 
 		}
 
 		return nil
 	})
 
-	queue.UpdateTitle()
+	queue.updateTitle()
 	queue.SetBorder(true).SetTitleAlign(tview.AlignLeft)
 	queue.
 		SetSelectedBackgroundColor(tcell.ColorDarkCyan).
@@ -419,7 +419,7 @@ func NewQueue() *Queue {
 
 }
 
-func Sha1Hex(input string) string {
+func sha1Hex(input string) string {
 	h := sha1.New()
 	h.Write([]byte(input))
 	return hex.EncodeToString(h.Sum(nil))
