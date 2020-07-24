@@ -90,7 +90,7 @@ func fmtDurationH(input time.Duration) string {
 	// remove seconds
 	result := re.ReplaceAllString(val, "")
 	result = strings.Replace(result, "h", " hr ", 1)
-	result = strings.Replace(result, "m", " min ", 1)
+	result = strings.Replace(result, "m", " min", 1)
 
 	return result
 }
@@ -150,4 +150,17 @@ func extractFilePath(output []byte, dir string) string {
 
 func escapeBackSlash(input string) string {
 	return strings.ReplaceAll(input, "/", `\/`)
+}
+
+// progresStr creates a simple progress bar
+// example: =====-----
+func progresStr(progress, maxProgress, maxLength int,
+	fill, empty string) string {
+
+	currLength := maxLength * progress / maxProgress
+
+	return fmt.Sprintf("%s%s",
+		strings.Repeat(fill, currLength),
+		strings.Repeat(empty, maxLength-currLength),
+	)
 }

@@ -4,7 +4,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/gdamore/tcell"
@@ -166,13 +165,18 @@ func timedPopup(
 
 // Shows popup for the current volume
 func volumePopup(volume float64) {
-	vol := int(volume*10) + 100
 
-	progress := fmt.Sprintf("\n%d |%s%s| %s",
-		vol,
-		strings.Repeat("█", vol),
-		strings.Repeat("-", 100-vol),
-		"100",
+	currVol := volToHuman(volume)
+	maxVol := 100
+	// max progress bar length
+	maxLength := 50
+
+	progressBar := progresStr(currVol, maxVol, maxLength, "█", "-")
+
+	progress := fmt.Sprintf("\n%d |%s| %d",
+		currVol,
+		progressBar,
+		maxVol,
 	)
 
 	timedPopup(" Volume ", progress, getPopupTimeout(), 0, 0)
