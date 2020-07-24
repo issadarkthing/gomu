@@ -33,6 +33,23 @@ func logError(err error) {
 	log.Println(tracerr.SprintSource(err))
 }
 
+func debugLog(val ...interface{}) {
+
+	tmpDir := os.TempDir()
+	logFile := path.Join(tmpDir, "gomu.log")
+	file, e := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+
+	if e != nil {
+		log.Fatalf("Error opening file %s", logFile)
+	}
+
+	defer file.Close()
+
+	log.SetOutput(file)
+	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+	log.Println(val...)
+}
+
 // Wraps error in a formatted way.
 func wrapError(fnName string, err error) error {
 	return fmt.Errorf("%s: \n%e", fnName, err)
