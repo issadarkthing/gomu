@@ -27,7 +27,6 @@ func readConfig(args Args) {
 
 	configPath := *args.config
 	musicDir := *args.music
-
 	home, err := os.UserHomeDir()
 
 	if err != nil {
@@ -126,7 +125,7 @@ func start(application *tview.Application, args Args) {
 	gomu = newGomu()
 	gomu.initPanels(application)
 
-	logError(fmt.Errorf("App start"))
+	debugLog("App start")
 
 	flex := layout(gomu)
 	gomu.pages.AddPage("main", flex, true, true)
