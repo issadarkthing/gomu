@@ -18,7 +18,7 @@ type Gomu struct {
 	playlist    *Playlist
 	player      *Player
 	pages       *tview.Pages
-	popups      []tview.Primitive
+	popups      Stack
 	prevPanel   Panel
 	popupBg     tcell.Color
 	textColor   tcell.Color
