@@ -35,7 +35,14 @@ type Player struct {
 
 func newPlayer() *Player {
 	// Read initial volume from config
-	var initVol float64 = (viper.GetFloat64("volume") - 50.0) / 10.0
+	initVol := absVolume(viper.GetInt("volume"))
+
+	// making sure user does not give invalid volume
+	if initVol > 100 {
+		initVol = 100
+	} else if initVol < 1 {
+		initVol = 0
+	}
 
 	return &Player{volume: initVol}
 }
@@ -209,7 +216,7 @@ func (p *Player) setVolume(v float64) float64 {
 
 	defer func() {
 		// saves the volume
-		volume := int(p.volume*10) + 100
+		volume := volToHuman(p.volume)
 		viper.Set("volume", volume)
 	}()
 
@@ -254,7 +261,6 @@ func (p *Player) toggleLoop() bool {
 
 // Gets the length of the song in the queue
 func getLength(audioPath string) (time.Duration, error) {
-
 	f, err := os.Open(audioPath)
 
 	if err != nil {
@@ -270,6 +276,17 @@ func getLength(audioPath string) (time.Duration, error) {
 	}
 
 	defer streamer.Close()
-
 	return format.SampleRate.D(streamer.Len()), nil
+}
+
+// volToHuman converts float64 volume that is used by audio library to human
+// readable form (0 - 100)
+func volToHuman(volume float64) int {
+	return int(volume*10) + 100
+}
+
+// absVolume converts human readable form volume (0 - 100) to float64 volume
+// that is used by the audio library
+func absVolume(volume int) float64 {
+	return (float64(volume) - 100) / 10
 }
