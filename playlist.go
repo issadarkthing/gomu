@@ -16,6 +16,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
+	spin "github.com/tj/go-spin"
 	"github.com/ztrue/tracerr"
 )
 
@@ -33,7 +34,11 @@ type AudioFile struct {
 // Treeview of a music directory
 type Playlist struct {
 	*tview.TreeView
-	prevNode *tview.TreeNode
+	prevNode     *tview.TreeNode
+	defaultTitle string
+	// number of downloads
+	download int
+	done     chan struct{}
 }
 
 func (p *Playlist) help() []string {
@@ -53,6 +58,8 @@ func (p *Playlist) help() []string {
 
 }
 
+// newPlaylist returns new instance of playlist and runs populate function
+// on root music directory.
 func newPlaylist() *Playlist {
 
 	rootDir, err := filepath.Abs(expandTilde(viper.GetString("music_dir")))
@@ -67,7 +74,9 @@ func newPlaylist() *Playlist {
 	tree := tview.NewTreeView().SetRoot(root)
 
 	playlist := &Playlist{
-		TreeView: tree,
+		TreeView:     tree,
+		defaultTitle: "─ Playlist ──┤ 0 downloads ├",
+		done:         make(chan struct{}),
 	}
 
 	rootAudioFile := &AudioFile{
@@ -79,7 +88,7 @@ func newPlaylist() *Playlist {
 	root.SetReference(rootAudioFile)
 
 	playlist.
-		SetTitle(" Playlist ").
+		SetTitle(playlist.defaultTitle).
 		SetBorder(true).
 		SetTitleAlign(tview.AlignLeft)
 
@@ -194,9 +203,6 @@ func newPlaylist() *Playlist {
 						playlist.addAllToQueue(playlist.GetCurrentNode())
 					}
 
-					gomu.pages.RemovePage("confirmation-popup")
-					gomu.app.SetFocus(playlist)
-
 				})
 
 		case 'r':
@@ -226,8 +232,6 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 		"Are you sure to delete this audio file?", func(_ int, buttonName string) {
 
 			if buttonName == "no" || buttonName == "" {
-				gomu.pages.RemovePage("confirmation-popup")
-				gomu.popups.pop()
 				return
 			}
 
@@ -248,8 +252,6 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 				p.refresh()
 			}
 
-			gomu.pages.RemovePage("confirmation-popup")
-			gomu.popups.pop()
 		})
 
 	return nil
@@ -271,8 +273,6 @@ func (p *Playlist) deletePlaylist(audioFile *AudioFile) (err error) {
 		func(_ int, buttonName string) {
 
 			if buttonName == "no" || buttonName == "" {
-				gomu.pages.RemovePage("confirmation-popup")
-				gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 				return
 			}
 
@@ -296,9 +296,6 @@ func (p *Playlist) deletePlaylist(audioFile *AudioFile) (err error) {
 
 				p.refresh()
 			}
-
-			gomu.pages.RemovePage("confirmation-popup")
-			gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 
 		})
 
@@ -526,6 +523,34 @@ func (p *Playlist) fuzzyFind() error {
 
 }
 
+func (p *Playlist) updateTitle() {
+
+	if p.download == 0 {
+		p.SetTitle(p.defaultTitle)
+		return
+	}
+
+	s := spin.New()
+
+Download:
+	for {
+		select {
+		case <-p.done:
+			p.download -= 1
+			if p.download == 0 {
+				p.SetTitle(p.defaultTitle)
+				break Download
+			}
+		case <-time.After(time.Millisecond * 100):
+			title := fmt.Sprintf("─ Playlist ──┤ %d downloads %s ├",
+				p.download, s.Next())
+			p.SetTitle(title)
+			gomu.app.Draw()
+		}
+	}
+
+}
+
 // Takes a list of input and suspends tview
 // returns empty string if cancelled
 func fzfFind(input []string) (string, error) {
@@ -595,7 +620,12 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
+	gomu.playlist.download++
+	go gomu.playlist.updateTitle()
+
 	err = cmd.Run()
+
+	gomu.playlist.done <- struct{}{}
 
 	if err != nil {
 		timedPopup(" Error ", "Error running youtube-dl", getPopupTimeout(), 0, 0)

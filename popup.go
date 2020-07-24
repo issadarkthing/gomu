@@ -86,7 +86,11 @@ func confirmationPopup(
 		AddButtons([]string{"no", "yes"}).
 		SetButtonBackgroundColor(gomu.popupBg).
 		SetButtonTextColor(gomu.accentColor).
-		SetDoneFunc(handler)
+		SetDoneFunc(func(indx int, label string) {
+			handler(indx, label)
+			gomu.pages.RemovePage("confirmation-popup")
+			gomu.popups.pop()
+		})
 
 	gomu.pages.
 		AddPage("confirmation-popup", center(modal, 40, 10), true, true)
@@ -236,7 +240,7 @@ func helpPopup(panel Panel) {
 		switch e.Key() {
 		case tcell.KeyEsc:
 			gomu.pages.RemovePage("help-page")
-			gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+			gomu.popups.pop()
 		}
 
 		return nil
@@ -271,9 +275,11 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 				}
 			}()
 			gomu.pages.RemovePage("download-input-popup")
+			gomu.popups.pop()
 
 		case tcell.KeyEscape:
 			gomu.pages.RemovePage("download-input-popup")
+			gomu.popups.pop()
 		}
 
 		gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
@@ -335,8 +341,6 @@ func exitConfirmation() {
 	confirmationPopup("Are you sure to exit?", func(_ int, label string) {
 
 		if label == "no" || label == "" {
-			gomu.pages.RemovePage("confirmation-popup")
-			gomu.popups.pop()
 			return
 		}
 
