@@ -164,24 +164,8 @@ func start(application *tview.Application, args Args) {
 			if !viper.GetBool("confirm_on_exit") {
 				application.Stop()
 			}
-			confirmationPopup("Are you sure to exit?", func(_ int, label string) {
 
-				if label == "no" || label == "" {
-					gomu.pages.RemovePage("confirmation-popup")
-					return
-				}
-
-				if err := gomu.queue.saveQueue(); err != nil {
-					logError(err)
-				}
-
-				if err := viper.WriteConfig(); err != nil {
-					logError(err)
-				}
-
-				application.Stop()
-
-			})
+			exitConfirmation()
 
 		case ' ':
 			gomu.player.togglePause()
