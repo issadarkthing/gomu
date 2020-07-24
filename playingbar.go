@@ -102,12 +102,11 @@ func (p *PlayingBar) run() error {
 			return tracerr.Wrap(err)
 		}
 
-		x := p._progress * p.limit / p.full
+		progressBar := progresStr(p._progress, p.full, p.limit, "█", "━")
 		// our progress bar
-		p.text.SetText(fmt.Sprintf("%s ┃%s%s┫ %s",
+		p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s",
 			fmtDuration(start),
-			strings.Repeat("█", x),
-			strings.Repeat("━", p.limit-x),
+			progressBar,
 			fmtDuration(end),
 		))
 
