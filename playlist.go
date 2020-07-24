@@ -106,7 +106,6 @@ func newPlaylist() *Playlist {
 	playlist.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 		currNode := playlist.GetCurrentNode()
-
 		audioFile := currNode.GetReference().(*AudioFile)
 
 		switch e.Rune() {
@@ -685,12 +684,10 @@ func populate(root *tview.TreeNode, rootPath string) error {
 		if file.IsDir() {
 
 			audioFile := &AudioFile{
-				name:        songName,
-				path:        path,
-				isAudioFile: false,
-				length:      0,
-				node:        child,
-				parent:      root,
+				name:   songName,
+				path:   path,
+				node:   child,
+				parent: root,
 			}
 			child.SetReference(audioFile)
 			child.SetColor(gomu.accentColor)
