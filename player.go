@@ -43,7 +43,6 @@ func newPlayer() *Player {
 func (p *Player) run(currSong *AudioFile) error {
 
 	p.isSkipped = make(chan bool, 1)
-
 	f, err := os.Open(currSong.path)
 
 	if err != nil {
@@ -109,9 +108,7 @@ func (p *Player) run(currSong *AudioFile) error {
 
 	// sets the volume of previous player
 	volume.Volume += p.volume
-
 	p._volume = volume
-
 	speaker.Play(p._volume)
 
 	position := func() time.Duration {
@@ -212,7 +209,7 @@ func (p *Player) setVolume(v float64) float64 {
 
 	defer func() {
 		// saves the volume
-		volume := int(p.volume*10) + 50
+		volume := int(p.volume*10) + 100
 		viper.Set("volume", volume)
 	}()
 

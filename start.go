@@ -176,14 +176,14 @@ func start(application *tview.Application, args Args) {
 			gomu.player.togglePause()
 
 		case '+':
-			v := int(gomu.player.volume*10) + 50
-			if v < 50 {
+			v := int(gomu.player.volume*10) + 100
+			if v < 100 {
 				vol := gomu.player.setVolume(0.5)
 				volumePopup(vol)
 			}
 
 		case '-':
-			v := int(gomu.player.volume*10) + 50
+			v := int(gomu.player.volume*10) + 100
 			if v > 0 {
 				vol := gomu.player.setVolume(-0.5)
 				volumePopup(vol)
