@@ -325,3 +325,26 @@ func createPlaylistPopup() {
 	gomu.popups.push(inputField)
 
 }
+
+func exitConfirmation() {
+
+	confirmationPopup("Are you sure to exit?", func(_ int, label string) {
+
+		if label == "no" || label == "" {
+			gomu.pages.RemovePage("confirmation-popup")
+			gomu.popups.pop()
+			return
+		}
+
+		if err := gomu.queue.saveQueue(); err != nil {
+			logError(err)
+		}
+
+		if err := viper.WriteConfig(); err != nil {
+			logError(err)
+		}
+
+		gomu.app.Stop()
+
+	})
+}
