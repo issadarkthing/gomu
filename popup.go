@@ -166,13 +166,13 @@ func timedPopup(
 
 // Shows popup for the current volume
 func volumePopup(volume float64) {
-	vol := int(volume*10) + 50
+	vol := int(volume*10) + 100
 
 	progress := fmt.Sprintf("\n%d |%s%s| %s",
 		vol,
 		strings.Repeat("█", vol),
-		strings.Repeat("-", 50-vol),
-		"50",
+		strings.Repeat("-", 100-vol),
+		"100",
 	)
 
 	timedPopup(" Volume ", progress, getPopupTimeout(), 0, 0)
