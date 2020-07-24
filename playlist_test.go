@@ -16,8 +16,7 @@ func prepareTest() *Gomu {
 	gomu.player = &Player{}
 	gomu.queue = newQueue()
 	gomu.playlist = &Playlist{
-		tview.NewTreeView(),
-		nil,
+		TreeView: tview.NewTreeView(),
 	}
 	gomu.app = tview.NewApplication()
 
