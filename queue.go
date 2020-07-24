@@ -85,9 +85,18 @@ func (q *Queue) updateTitle() {
 		totalLength += v.length
 	}
 
-	fmtTime := fmtDuration(totalLength)
+	fmtTime := fmtDurationH(totalLength)
 
-	q.SetTitle(fmt.Sprintf("┤ Queue ├──┤%d|%s├", len(q.items), fmtTime))
+	var count string
+
+	if len(q.items) > 1 {
+		count = "songs"
+	} else {
+		count = "song"
+	}
+
+	q.SetTitle(fmt.Sprintf("─ Queue ───┤ %d %s | %s ├",
+		len(q.items), count, fmtTime))
 
 }
 
@@ -419,7 +428,7 @@ func newQueue() *Queue {
 
 }
 
-// Convert string to sha1. 
+// Convert string to sha1.
 func sha1Hex(input string) string {
 	h := sha1.New()
 	h.Write([]byte(input))

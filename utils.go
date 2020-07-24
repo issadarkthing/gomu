@@ -64,6 +64,20 @@ func fmtDuration(input time.Duration) string {
 	return strings.Join(result, ":")
 }
 
+// fmtDurationH returns the formatted duration `x hr x min`
+func fmtDurationH(input time.Duration) string {
+
+	re := regexp.MustCompile(`\d+s`)
+	val := input.Round(time.Second).String()
+
+	// remove seconds
+	result := re.ReplaceAllString(val, "")
+	result = strings.Replace(result, "h", " hr ", 1)
+	result = strings.Replace(result, "m", " min ", 1)
+
+	return result
+}
+
 // Expands tilde alias to /home/user
 func expandTilde(_path string) string {
 
