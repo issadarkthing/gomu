@@ -404,7 +404,7 @@ func newQueue() *Queue {
 		case 's':
 			queue.shuffle()
 
-		case 'f':
+		case '/':
 
 			gomu.suspend()
 			if err := queue.fuzzyFind(); err != nil {

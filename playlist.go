@@ -53,7 +53,7 @@ func (p *Playlist) help() []string {
 		"D      delete playlist from filesystem",
 		"Y      download audio",
 		"r      refresh",
-		"f      find in playlist",
+		"/      find in playlist",
 	}
 
 }
@@ -189,7 +189,6 @@ func newPlaylist() *Playlist {
 			currNode.Collapse()
 
 		case 'L':
-
 			if !viper.GetBool("confirm_bulk_add") {
 				playlist.addAllToQueue(playlist.GetCurrentNode())
 				return e
@@ -206,10 +205,9 @@ func newPlaylist() *Playlist {
 				})
 
 		case 'r':
-
 			playlist.refresh()
 
-		case 'f':
+		case '/':
 
 			err := playlist.fuzzyFind()
 			if err != nil {
@@ -534,6 +532,11 @@ func (p *Playlist) updateTitle() {
 
 Download:
 	for {
+		// prevent from calling tview API when suspending
+		if gomu.isSuspend {
+			continue
+		}
+
 		select {
 		case <-p.done:
 			p.download -= 1
