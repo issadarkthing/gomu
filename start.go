@@ -144,23 +144,23 @@ func start(application *tview.Application, args Args) {
 
 	application.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 
+		popupName, _ := gomu.pages.GetFrontPage()
+
+		// disables keybindings when writing in input fields
+		if strings.Contains(popupName, "-input-") {
+			return event
+		}
+
 		switch event.Key() {
 		// cycle through each section
 		case tcell.KeyTAB:
 
-			if gomu.pages.GetPageCount() > 1 {
+			if strings.Contains(popupName, "confirmation-") {
 				return event
 			}
 
 			gomu.cyclePanels()
 
-		}
-
-		name, _ := gomu.pages.GetFrontPage()
-
-		// disables keybindings when writing in input fields
-		if strings.Contains(name, "-input-") {
-			return event
 		}
 
 		switch event.Rune() {
