@@ -147,6 +147,11 @@ func start(application *tview.Application, args Args) {
 		switch event.Key() {
 		// cycle through each section
 		case tcell.KeyTAB:
+
+			if gomu.pages.GetPageCount() > 1 {
+				return event
+			}
+
 			gomu.cyclePanels()
 
 		}
