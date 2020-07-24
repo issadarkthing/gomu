@@ -18,6 +18,49 @@ var (
 	popupCounter = 0
 )
 
+// Simple stack data structure
+type Stack struct {
+	popups []tview.Primitive
+}
+
+// Push popup to the stack and focus
+func (s *Stack) push(p tview.Primitive) {
+	s.popups = append(s.popups, p)
+	gomu.app.SetFocus(p)
+}
+
+// Show item on the top of the stack
+func (s *Stack) peekTop() tview.Primitive {
+
+	if len(s.popups)-1 < 0 {
+		return nil
+	}
+
+	return s.popups[len(s.popups)-1]
+}
+
+// Remove popup from the stack and focus previous popup
+func (s *Stack) pop() tview.Primitive {
+
+	if len(s.popups) == 0 {
+		return nil
+	}
+
+	last := s.popups[len(s.popups)-1]
+	res := s.popups[:len(s.popups)-1]
+	s.popups = res
+
+	// focus previous popup
+	if len(s.popups) > 0 {
+		gomu.app.SetFocus(s.popups[len(s.popups)-1])
+	} else {
+		// focus the panel if no popup left
+		gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+	}
+
+	return last
+}
+
 // Gets popup timeout from config file
 func getPopupTimeout() time.Duration {
 
@@ -48,7 +91,8 @@ func confirmationPopup(
 
 	gomu.pages.
 		AddPage("confirmation-popup", center(modal, 40, 10), true, true)
-	gomu.app.SetFocus(modal)
+
+	gomu.popups.push(modal)
 
 }
 
@@ -107,7 +151,16 @@ func timedPopup(
 		time.Sleep(timeout)
 		gomu.pages.RemovePage(popupId)
 		gomu.app.Draw()
-		gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+
+		// timed popup shouldn't get focused
+		// this here check if another popup exists and focus that instead of panel
+		// if none continue focus panel
+		topPopup := gomu.popups.peekTop()
+		if topPopup == nil {
+			gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+		} else {
+			gomu.app.SetFocus(topPopup)
+		}
 	}()
 }
 
@@ -186,7 +239,7 @@ func helpPopup(panel Panel) {
 	})
 
 	gomu.pages.AddPage("help-page", center(list, 50, 30), true, true)
-	gomu.app.SetFocus(list)
+	gomu.popups.push(list)
 }
 
 // Input popup. Takes video url from youtube to be downloaded
@@ -226,7 +279,7 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 	gomu.pages.
 		AddPage("download-input-popup", center(inputField, 50, 4), true, true)
 
-	gomu.app.SetFocus(inputField)
+	gomu.popups.push(inputField)
 
 }
 
@@ -257,17 +310,18 @@ func createPlaylistPopup() {
 			}
 
 			gomu.pages.RemovePage("mkdir-input-popup")
-			gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+			gomu.popups.pop()
 
 		case tcell.KeyEsc:
 			gomu.pages.RemovePage("mkdir-input-popup")
-			gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+			gomu.popups.pop()
 		}
 
 	})
 
 	gomu.pages.
 		AddPage("mkdir-input-popup", center(inputField, 50, 4), true, true)
-	gomu.app.SetFocus(inputField)
+
+	gomu.popups.push(inputField)
 
 }

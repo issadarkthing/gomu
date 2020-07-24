@@ -118,7 +118,6 @@ func newPlaylist() *Playlist {
 		case 'a':
 
 			name, _ := gomu.pages.GetFrontPage()
-
 			if name != "mkdir-popup" {
 				createPlaylistPopup()
 			}
@@ -229,7 +228,7 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 
 			if buttonName == "no" || buttonName == "" {
 				gomu.pages.RemovePage("confirmation-popup")
-				gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+				gomu.popups.pop()
 				return
 			}
 
@@ -251,7 +250,7 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 			}
 
 			gomu.pages.RemovePage("confirmation-popup")
-			gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+			gomu.popups.pop()
 		})
 
 	return nil
