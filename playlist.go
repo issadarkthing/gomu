@@ -111,6 +111,10 @@ func newPlaylist() *Playlist {
 
 		switch e.Rune() {
 
+		case ' ':
+			// Disable default key handler
+			return nil
+
 		case 'a':
 
 			name, _ := gomu.pages.GetFrontPage()
