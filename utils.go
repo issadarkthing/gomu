@@ -164,3 +164,22 @@ func progresStr(progress, maxProgress, maxLength int,
 		strings.Repeat(empty, maxLength-currLength),
 	)
 }
+
+// padHex pad the neccessary 0 to create six hex digit
+func padHex(r, g, b int32) string {
+
+	var result strings.Builder
+
+	for _, v := range []int32{r, g, b} {
+		hex := fmt.Sprintf("%x", v)
+
+		if len(hex) == 1 {
+			result.WriteString(fmt.Sprintf("0%s", hex))
+		} else {
+			result.WriteString(hex)
+		}
+	}
+
+	return result.String()
+
+}
