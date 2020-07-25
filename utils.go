@@ -92,6 +92,10 @@ func fmtDurationH(input time.Duration) string {
 	result = strings.Replace(result, "h", " hr ", 1)
 	result = strings.Replace(result, "m", " min", 1)
 
+	if result == "" {
+		return "0 hr 0 min"
+	}
+
 	return result
 }
 
