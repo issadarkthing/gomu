@@ -515,8 +515,11 @@ func (p *Playlist) fuzzyFind() error {
 	}
 
 	var selNode *tview.TreeNode
-	selNode = paths[result]
-	p.setHighlight(selNode)
+	selNode, ok = paths[result]
+
+	if ok {
+		p.setHighlight(selNode)
+	}
 
 	return nil
 
