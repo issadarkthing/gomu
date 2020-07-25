@@ -531,6 +531,11 @@ func (p *Playlist) updateTitle() {
 		return
 	}
 
+	// only one call can be made in one time
+	if p.download > 1 {
+		return
+	}
+
 	s := spin.New()
 
 Download:
