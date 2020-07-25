@@ -725,6 +725,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 			}
 
 			child.SetReference(audioFile)
+			child.SetText(fmt.Sprintf("🎵 %s", songName))
 			root.AddChild(child)
 
 		}
@@ -739,6 +740,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 			}
 			child.SetReference(audioFile)
 			child.SetColor(gomu.accentColor)
+			child.SetText(fmt.Sprintf("📁 %s", songName))
 			root.AddChild(child)
 			populate(child, path)
 
