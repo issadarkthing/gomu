@@ -31,7 +31,8 @@ type AudioFile struct {
 	parent      *tview.TreeNode
 }
 
-// Treeview of a music directory
+// Playlist struct represents playlist panel
+// that shows the tree of the music directory
 type Playlist struct {
 	*tview.TreeView
 	prevNode     *tview.TreeNode
@@ -521,6 +522,8 @@ func (p *Playlist) fuzzyFind() error {
 
 }
 
+// updateTitle creates a spinning motion on the title
+// of the playlist panel when downloading.
 func (p *Playlist) updateTitle() {
 
 	if p.download == 0 {
