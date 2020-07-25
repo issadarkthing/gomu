@@ -545,8 +545,12 @@ Download:
 				break Download
 			}
 		case <-time.After(time.Millisecond * 100):
-			title := fmt.Sprintf("─ Playlist ──┤ %d downloads %s ├",
-				p.download, s.Next())
+
+			r, g, b := gomu.accentColor.RGB()
+			hexColor := padHex(r, g, b)
+
+			title := fmt.Sprintf("─ Playlist ──┤ %d downloads [green]%s[#%s] ├",
+				p.download, s.Next(), hexColor)
 			p.SetTitle(title)
 			gomu.app.Draw()
 		}
