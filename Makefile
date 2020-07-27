@@ -24,10 +24,10 @@ format:
 	go fmt *.go
 
 $(BIN_DIR):
-	@mkdir -p $@
+	mkdir -p $@
 
 $(INSTALL_DIR):
-	@mkdir -p $@
+	mkdir -p $@
 
 build: test $(BIN_DIR) 
 	@echo === BUILDING ===
