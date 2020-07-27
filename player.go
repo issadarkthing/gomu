@@ -208,17 +208,17 @@ func (p *Player) play() {
 // volume up and volume down using -0.5 or +0.5
 func (p *Player) setVolume(v float64) float64 {
 
+	defer func() {
+		// saves the volume
+		volume := volToHuman(p.volume)
+		viper.Set("general.volume", volume)
+	}()
+
 	// check if no songs playing currently
 	if p._volume == nil {
 		p.volume += v
 		return p.volume
 	}
-
-	defer func() {
-		// saves the volume
-		volume := volToHuman(p.volume)
-		viper.Set("volume", volume)
-	}()
 
 	speaker.Lock()
 	p._volume.Volume += v
