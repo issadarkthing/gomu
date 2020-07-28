@@ -10,6 +10,7 @@ import (
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
 )
 
@@ -118,7 +119,8 @@ func (p *PlayingBar) run() error {
 // Updates song title
 func (p *PlayingBar) setSongTitle(title string) {
 	p.Clear()
-	p.AddText(title, true, tview.AlignCenter, tcell.ColorGreen)
+	titleColor := viper.GetString("color.now_playing_title")
+	p.AddText(title, true, tview.AlignCenter, tcell.GetColor(titleColor))
 }
 
 // Resets progress bar, ready for execution

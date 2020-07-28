@@ -63,7 +63,7 @@ func (s *Stack) pop() tview.Primitive {
 // Gets popup timeout from config file
 func getPopupTimeout() time.Duration {
 
-	dur := viper.GetString("popup_timeout")
+	dur := viper.GetString("general.popup_timeout")
 	m, err := time.ParseDuration(dur)
 
 	if err != nil {

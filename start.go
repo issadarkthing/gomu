@@ -46,13 +46,29 @@ func readConfig(args Args) {
 	viper.AddConfigPath("$HOME/.gomu")
 	viper.AddConfigPath("$HOME/.config/gomu")
 
+	colors := map[string]string{
+		"color.foreground":        "#FFFFFF",
+		"color.background":        "none",
+		"color.accent":            "#008B8B",
+		"color.popup":             "#0A0F14",
+		"color.now_playing_title": "#017702",
+		"color.playlist":          "#008B8B",
+	}
+
 	if err := viper.ReadInConfig(); err != nil {
 
-		viper.SetDefault("music_dir", musicDir)
-		viper.SetDefault("confirm_on_exit", true)
-		viper.SetDefault("confirm_bulk_add", true)
-		viper.SetDefault("popup_timeout", "5s")
-		viper.SetDefault("volume", "50")
+		// General config
+		viper.SetDefault("general.music_dir", musicDir)
+		viper.SetDefault("general.confirm_on_exit", true)
+		viper.SetDefault("general.confirm_bulk_add", true)
+		viper.SetDefault("general.popup_timeout", "5s")
+		viper.SetDefault("general.volume", 100)
+		viper.SetDefault("general.load_prev_queue", true)
+
+		// Colors
+		for k, v := range colors {
+			viper.SetDefault(k, v)
+		}
 
 		// creates gomu config dir if does not exist
 		if _, err := os.Stat(defaultPath); err != nil {
@@ -68,6 +84,16 @@ func readConfig(args Args) {
 			}
 		}
 
+	}
+
+	// Validate hex color
+	for k, v := range colors {
+		cfgColor := viper.GetString(k)
+		if validateHexColor(cfgColor) {
+			continue
+		}
+		// use default value if invalid hex color was given
+		viper.Set(k, v)
 	}
 
 }
@@ -118,8 +144,16 @@ func start(application *tview.Application, args Args) {
 	tview.Borders.TopRightFocus = tview.Borders.TopRight
 	tview.Borders.BottomLeftFocus = tview.Borders.BottomLeft
 	tview.Borders.BottomRightFocus = tview.Borders.BottomRight
-	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
-	tview.Styles.BorderColor = tcell.ColorWhite
+
+	var bgColor tcell.Color
+	bg := viper.GetString("color.background")
+	if bg == "none" {
+		bgColor = tcell.ColorDefault
+	} else {
+		bgColor = tcell.GetColor(bg)
+	}
+
+	tview.Styles.PrimitiveBackgroundColor = bgColor
 
 	// Assigning to global variable gomu
 	gomu = newGomu()
@@ -165,7 +199,7 @@ func start(application *tview.Application, args Args) {
 		switch event.Rune() {
 		case 'q':
 
-			if !viper.GetBool("confirm_on_exit") {
+			if !viper.GetBool("general.confirm_on_exit") {
 				application.Stop()
 			}
 
