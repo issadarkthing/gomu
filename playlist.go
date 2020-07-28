@@ -63,7 +63,7 @@ func (p *Playlist) help() []string {
 // on root music directory.
 func newPlaylist() *Playlist {
 
-	rootDir, err := filepath.Abs(expandTilde(viper.GetString("music_dir")))
+	rootDir, err := filepath.Abs(expandTilde(viper.GetString("general.music_dir")))
 
 	if err != nil {
 		logError(err)
@@ -190,7 +190,7 @@ func newPlaylist() *Playlist {
 			currNode.Collapse()
 
 		case 'L':
-			if !viper.GetBool("confirm_bulk_add") {
+			if !viper.GetBool("general.confirm_bulk_add") {
 				playlist.addAllToQueue(playlist.GetCurrentNode())
 				return e
 			}
@@ -611,7 +611,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		return tracerr.Wrap(err)
 	}
 
-	dir := viper.GetString("music_dir")
+	dir := viper.GetString("general.music_dir")
 
 	selAudioFile := selPlaylist.GetReference().(*AudioFile)
 	selPlaylistName := selAudioFile.name

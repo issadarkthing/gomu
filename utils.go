@@ -185,5 +185,9 @@ func padHex(r, g, b int32) string {
 	}
 
 	return result.String()
+}
 
+func validateHexColor(color string) bool {
+	reg := regexp.MustCompile(`^#([A-Fa-f0-9]{6})$`)
+	return reg.MatchString(color)
 }
