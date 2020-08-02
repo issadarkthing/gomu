@@ -5,7 +5,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/gdamore/tcell"
@@ -33,7 +35,7 @@ func readConfig(args Args) {
 		logError(err)
 	}
 
-	defaultPath := home + "/.config/gomu/config"
+	defaultPath := path.Join(home, ".config/gomu/config")
 
 	if err != nil {
 		logError(err)
@@ -78,10 +80,19 @@ func readConfig(args Args) {
 		}
 
 		// if config file was not found
+		// copy default config to default config path
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			if err := viper.SafeWriteConfigAs(defaultPath); err != nil {
+
+			input, err := ioutil.ReadFile("config")
+			if err != nil {
 				logError(err)
 			}
+
+			err = ioutil.WriteFile(defaultPath, input, 0644)
+			if err != nil {
+				logError(err)
+			}
+
 		}
 
 	}
@@ -200,7 +211,10 @@ func start(application *tview.Application, args Args) {
 		case 'q':
 
 			if !viper.GetBool("general.confirm_on_exit") {
-				application.Stop()
+				err := gomu.quit()
+				if err != nil {
+					logError(err)
+				}
 			}
 
 			exitConfirmation()
