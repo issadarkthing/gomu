@@ -34,13 +34,13 @@ type Player struct {
 }
 
 func newPlayer() *Player {
+
+	volume := viper.GetInt("general.volume")
 	// Read initial volume from config
-	initVol := absVolume(viper.GetInt("volume"))
+	initVol := absVolume(volume)
 
 	// making sure user does not give invalid volume
-	if initVol > 100 {
-		initVol = 100
-	} else if initVol < 1 {
+	if volume > 100 || volume < 0 {
 		initVol = 0
 	}
 
