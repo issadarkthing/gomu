@@ -344,15 +344,9 @@ func exitConfirmation() {
 			return
 		}
 
-		if err := gomu.queue.saveQueue(); err != nil {
+		err := gomu.quit()
+		if err != nil {
 			logError(err)
 		}
-
-		if err := viper.WriteConfig(); err != nil {
-			logError(err)
-		}
-
-		gomu.app.Stop()
-
 	})
 }
