@@ -95,16 +95,18 @@ func readConfig(args Args) {
 
 		}
 
-	}
+	} else {
 
-	// Validate hex color
-	for k, v := range colors {
-		cfgColor := viper.GetString(k)
-		if validateHexColor(cfgColor) {
-			continue
+		// Validate hex color
+		for k, v := range colors {
+			cfgColor := viper.GetString(k)
+			if validateHexColor(cfgColor) {
+				continue
+			}
+			// debugLog(fmt.Sprintf("%s is replaced by %s", cfgColor, v))
+			// use default value if invalid hex color was given
+			viper.Set(k, v)
 		}
-		// use default value if invalid hex color was given
-		viper.Set(k, v)
 	}
 
 }
