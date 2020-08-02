@@ -34,7 +34,7 @@ type Gomu struct {
 func newGomu() *Gomu {
 
 	gomu := &Gomu{
-		popupBg:     tcell.GetColor("#0A0F14"),
+		popupBg:     tcell.GetColor(viper.GetString("color.popup")),
 		textColor:   tcell.GetColor(viper.GetString("color.foreground")),
 		accentColor: tcell.GetColor(viper.GetString("color.accent")),
 	}
