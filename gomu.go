@@ -6,6 +6,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
+	"github.com/ztrue/tracerr"
 )
 
 const VERSION = "v1.4.0"
@@ -33,7 +34,7 @@ type Gomu struct {
 func newGomu() *Gomu {
 
 	gomu := &Gomu{
-		popupBg:     tcell.GetColor(viper.GetString("color.popup")),
+		popupBg:     tcell.GetColor("#0A0F14"),
 		textColor:   tcell.GetColor(viper.GetString("color.foreground")),
 		accentColor: tcell.GetColor(viper.GetString("color.accent")),
 	}
@@ -136,4 +137,16 @@ func (g *Gomu) unsuspend() bool {
 func (g *Gomu) setUnfocusPanel(panel Panel) {
 	g.prevPanel.SetBorderColor(g.textColor)
 	g.prevPanel.SetTitleColor((g.textColor))
+}
+
+// Quit the application and do the neccessary clean up
+func (g *Gomu) quit() error {
+
+	if err := gomu.queue.saveQueue(); err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	gomu.app.Stop()
+
+	return nil
 }
