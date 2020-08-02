@@ -44,8 +44,6 @@ func readConfig(args Args) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(expandTilde(configPath))
-	viper.AddConfigPath("/etc/gomu")
-	viper.AddConfigPath("$HOME/.gomu")
 	viper.AddConfigPath("$HOME/.config/gomu")
 
 	colors := map[string]string{
@@ -103,7 +101,6 @@ func readConfig(args Args) {
 			if validateHexColor(cfgColor) {
 				continue
 			}
-			// debugLog(fmt.Sprintf("%s is replaced by %s", cfgColor, v))
 			// use default value if invalid hex color was given
 			viper.Set(k, v)
 		}
