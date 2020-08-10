@@ -33,28 +33,6 @@ func TestQueueNext(t *testing.T) {
 
 }
 
-func TestDequeue(t *testing.T) {
-
-	gomu := prepareTest()
-
-	audioFiles := gomu.playlist.getAudioFiles()
-
-	for _, v := range audioFiles {
-		gomu.queue.enqueue(v)
-	}
-
-	initLen := len(gomu.queue.items)
-
-	gomu.queue.dequeue()
-
-	finalLen := len(gomu.queue.items)
-
-	if initLen-1 != finalLen {
-		t.Errorf("Expected %d got %d", initLen-1, finalLen)
-	}
-
-}
-
 func TestQueuePrev(t *testing.T) {
 
 	q := newQueue()
@@ -88,6 +66,69 @@ func TestQueueDeleteItem(t *testing.T) {
 
 	if initLen != finalLen {
 		t.Errorf("Item removed when -1 index was given")
+	}
+
+}
+
+func TestUpdateTitle(t *testing.T) {
+	
+	gomu := prepareTest()
+	audioFiles := gomu.playlist.getAudioFiles()
+
+	for _, v := range audioFiles {
+		gomu.queue.enqueue(v)
+	}
+
+	expected := gomu.queue.updateTitle()
+	got := gomu.queue.GetTitle()
+
+	if expected != got {
+		t.Errorf("Expected %s; got %s", expected, got)
+	}
+}
+
+func TestPushFront(t *testing.T) {
+
+	gomu = prepareTest()
+	rapPlaylist := gomu.playlist.GetRoot().GetChildren()[1]
+	gomu.playlist.addAllToQueue(rapPlaylist)
+
+	selSong, err := gomu.queue.deleteItem(2)
+
+	if err != nil {
+		panic(err)
+	}
+
+	gomu.queue.pushFront(selSong)
+
+	for i, v := range gomu.queue.items {
+
+		if v == selSong && i != 0 {
+			t.Errorf("Item does not move to the 0th index")
+		}
+
+	}
+
+}
+
+func TestDequeue(t *testing.T) {
+
+	gomu := prepareTest()
+
+	audioFiles := gomu.playlist.getAudioFiles()
+
+	for _, v := range audioFiles {
+		gomu.queue.enqueue(v)
+	}
+
+	initLen := len(gomu.queue.items)
+
+	gomu.queue.dequeue()
+
+	finalLen := len(gomu.queue.items)
+
+	if initLen-1 != finalLen {
+		t.Errorf("Expected %d got %d", initLen-1, finalLen)
 	}
 
 }
@@ -159,29 +200,7 @@ func TestQueueGetItems(t *testing.T) {
 
 }
 
-func TestPushFront(t *testing.T) {
 
-	gomu = prepareTest()
-	rapPlaylist := gomu.playlist.GetRoot().GetChildren()[1]
-	gomu.playlist.addAllToQueue(rapPlaylist)
-
-	selSong, err := gomu.queue.deleteItem(2)
-
-	if err != nil {
-		panic(err)
-	}
-
-	gomu.queue.pushFront(selSong)
-
-	for i, v := range gomu.queue.items {
-
-		if v == selSong && i != 0 {
-			t.Errorf("Item does not move to the 0th index")
-		}
-
-	}
-
-}
 
 func TestClearQueue(t *testing.T) {
 
