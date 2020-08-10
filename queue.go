@@ -77,7 +77,7 @@ func (q *Queue) deleteItem(index int) (*AudioFile, error) {
 }
 
 // Update queue title which shows number of items and total length
-func (q *Queue) updateTitle() {
+func (q *Queue) updateTitle() string {
 
 	var totalLength time.Duration
 
@@ -95,9 +95,12 @@ func (q *Queue) updateTitle() {
 		count = "song"
 	}
 
-	q.SetTitle(fmt.Sprintf("─ Queue ───┤ %d %s | %s ├",
-		len(q.items), count, fmtTime))
+	title := fmt.Sprintf("─ Queue ───┤ %d %s | %s ├",
+		len(q.items), count, fmtTime)
 
+	q.SetTitle(title)
+
+	return title
 }
 
 // Add item to the front of the queue
@@ -189,12 +192,13 @@ func (q *Queue) saveQueue() error {
 	var content strings.Builder
 
 	for _, songPath := range songPaths {
+		// hashed song name is easier to search through
 		hashed := sha1Hex(getName(songPath))
 		content.WriteString(hashed + "\n")
 	}
 
-	cachePath := expandTilde(q.savedQueuePath)
-	err := ioutil.WriteFile(cachePath, []byte(content.String()), 0644)
+	savedPath := expandTilde(q.savedQueuePath)
+	err := ioutil.WriteFile(savedPath, []byte(content.String()), 0644)
 
 	if err != nil {
 		return tracerr.Wrap(err)
