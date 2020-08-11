@@ -90,7 +90,7 @@ func TestExpandTilde(t *testing.T) {
 	}
 
 	sample := map[string]string{
-		"~/music":           homeDir + "/music",
+		"~/music":          homeDir + "/music",
 		homeDir + "/Music": homeDir + "/Music",
 	}
 
