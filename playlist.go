@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -61,12 +62,17 @@ func (p *Playlist) help() []string {
 
 // newPlaylist returns new instance of playlist and runs populate function
 // on root music directory.
-func newPlaylist() *Playlist {
+func newPlaylist(args Args) *Playlist {
 
 	rootDir, err := filepath.Abs(expandTilde(viper.GetString("general.music_dir")))
 
+	// if not default value was given
+	if *args.music != "~/music" {
+		rootDir = expandFilePath(*args.music)
+	}
+
 	if err != nil {
-		logError(err)
+		log.Fatalf("Unable to find music directory: %e", err)
 	}
 
 	root := tview.NewTreeNode(path.Base(rootDir)).

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -99,9 +100,24 @@ func fmtDurationH(input time.Duration) string {
 	return result
 }
 
+// Expands relative path to absolute path and tilde to /home/(user)
+func expandFilePath(path string) string {
+	p := expandTilde(path)
+
+	if filepath.IsAbs(p) {
+		return p
+	}
+
+	p, err := filepath.Abs(p)
+	if err != nil {
+		panic(err)
+	}
+
+	return p
+}
+
 // Expands tilde alias to /home/user
 func expandTilde(_path string) string {
-
 	if !strings.HasPrefix(_path, "~") {
 		return _path
 	}
@@ -113,7 +129,6 @@ func expandTilde(_path string) string {
 	}
 
 	return path.Join(home, strings.TrimPrefix(_path, "~"))
-
 }
 
 // Detects the filetype of file

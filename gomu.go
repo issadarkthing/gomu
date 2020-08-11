@@ -45,11 +45,11 @@ func newGomu() *Gomu {
 // Initialize childrens/panels this is seperated from
 // constructor function `NewGomu` so that we can
 // test independently
-func (g *Gomu) initPanels(app *tview.Application) {
+func (g *Gomu) initPanels(app *tview.Application, args Args) {
 	g.app = app
 	g.playingBar = newPlayingBar()
 	g.queue = newQueue()
-	g.playlist = newPlaylist()
+	g.playlist = newPlaylist(args)
 	g.player = newPlayer()
 	g.pages = tview.NewPages()
 	g.panels = []Panel{g.playlist, g.queue, g.playingBar}

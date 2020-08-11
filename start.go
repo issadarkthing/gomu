@@ -110,7 +110,7 @@ func readConfig(args Args) {
 
 type Args struct {
 	config  *string
-	empty    *bool
+	empty   *bool
 	music   *string
 	version *bool
 }
@@ -118,7 +118,7 @@ type Args struct {
 func getArgs() Args {
 	ar := Args{
 		config:  flag.String("config", "~/.config/gomu/config", "Specify config file"),
-		empty:    flag.Bool("empty", false, "Open gomu with empty queue. Does not override previous queue"),
+		empty:   flag.Bool("empty", false, "Open gomu with empty queue. Does not override previous queue"),
 		music:   flag.String("music", "~/music", "Specify music directory"),
 		version: flag.Bool("version", false, "Print gomu version"),
 	}
@@ -167,7 +167,7 @@ func start(application *tview.Application, args Args) {
 
 	// Assigning to global variable gomu
 	gomu = newGomu()
-	gomu.initPanels(application)
+	gomu.initPanels(application, args)
 
 	debugLog("App start")
 
