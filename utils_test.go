@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 	"time"
 )
@@ -83,9 +84,14 @@ func TestEscapeBackSlash(t *testing.T) {
 
 func TestExpandTilde(t *testing.T) {
 
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		t.Errorf("Unable to get home dir: %e", err)
+	}
+
 	sample := map[string]string{
-		"~/music":           "/home/terra/music",
-		"/home/terra/Music": "/home/terra/Music",
+		"~/music":           homeDir + "/music",
+		homeDir + "/Music": homeDir + "/Music",
 	}
 
 	for k, v := range sample {
