@@ -27,7 +27,7 @@ type Panel interface {
 
 const (
 	CONFIG_PATH = ".config/gomu/config"
-	MUSIC_PATH = "~/music"
+	MUSIC_PATH  = "~/music"
 )
 
 // Reads config file and sets the options
@@ -112,7 +112,6 @@ func readConfig(args Args) {
 		}
 
 	}
-		
 
 }
 
