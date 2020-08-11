@@ -13,3 +13,4 @@ general:
   music_dir:         ~/music
   popup_timeout:     5s
   volume:            100
+  emoji:             true

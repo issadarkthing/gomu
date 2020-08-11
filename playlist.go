@@ -362,7 +362,8 @@ func (p *Playlist) addSongToPlaylist(
 
 	defer f.Close()
 
-	node := tview.NewTreeNode(getName(audioPath))
+	songName := getName(audioPath)
+	node := tview.NewTreeNode(songName)
 
 	audioLength, err := getLength(audioPath)
 
@@ -378,7 +379,14 @@ func (p *Playlist) addSongToPlaylist(
 		parent:      selPlaylist,
 	}
 
+	displayText := songName
+
+	if viper.GetBool("general.emoji") {
+		displayText = fmt.Sprintf("🎵 %s", songName)
+	}
+
 	node.SetReference(audioFile)
+	node.SetText(displayText)
 	selPlaylist.AddChild(node)
 	gomu.app.Draw()
 
@@ -730,8 +738,13 @@ func populate(root *tview.TreeNode, rootPath string) error {
 				parent:      root,
 			}
 
+			displayText := songName
+			if viper.GetBool("general.emoji") {
+				displayText = fmt.Sprintf("🎵 %s", songName)
+			}
+
 			child.SetReference(audioFile)
-			child.SetText(fmt.Sprintf("🎵 %s", songName))
+			child.SetText(displayText)
 			root.AddChild(child)
 
 		}
@@ -744,9 +757,15 @@ func populate(root *tview.TreeNode, rootPath string) error {
 				node:   child,
 				parent: root,
 			}
+
+			displayText := songName
+			if viper.GetBool("general.emoji") {
+				displayText = fmt.Sprintf("📁 %s", songName)
+			}
+
 			child.SetReference(audioFile)
 			child.SetColor(gomu.accentColor)
-			child.SetText(fmt.Sprintf("📁 %s", songName))
+			child.SetText(displayText)
 			root.AddChild(child)
 			populate(child, path)
 
