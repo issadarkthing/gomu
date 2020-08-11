@@ -25,17 +25,23 @@ type Panel interface {
 	help() []string
 }
 
+const (
+	CONFIG_PATH = ".config/gomu/config"
+	MUSIC_PATH = "~/music"
+)
+
+// Reads config file and sets the options
 func readConfig(args Args) {
 
+	// config path passed by flag
 	configPath := *args.config
-	musicDir := *args.music
 	home, err := os.UserHomeDir()
 
 	if err != nil {
 		logError(err)
 	}
 
-	defaultPath := path.Join(home, ".config/gomu/config")
+	defaultPath := path.Join(home, CONFIG_PATH)
 
 	if err != nil {
 		logError(err)
@@ -43,7 +49,7 @@ func readConfig(args Args) {
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath(expandTilde(configPath))
+	viper.AddConfigPath(strings.TrimSuffix(expandFilePath(configPath), "/config"))
 	viper.AddConfigPath("$HOME/.config/gomu")
 
 	colors := map[string]string{
@@ -58,7 +64,7 @@ func readConfig(args Args) {
 	if err := viper.ReadInConfig(); err != nil {
 
 		// General config
-		viper.SetDefault("general.music_dir", musicDir)
+		viper.SetDefault("general.music_dir", MUSIC_PATH)
 		viper.SetDefault("general.confirm_on_exit", true)
 		viper.SetDefault("general.confirm_bulk_add", true)
 		viper.SetDefault("general.popup_timeout", "5s")
@@ -104,7 +110,9 @@ func readConfig(args Args) {
 			// use default value if invalid hex color was given
 			viper.Set(k, v)
 		}
+
 	}
+		
 
 }
 
@@ -117,9 +125,9 @@ type Args struct {
 
 func getArgs() Args {
 	ar := Args{
-		config:  flag.String("config", "~/.config/gomu/config", "Specify config file"),
+		config:  flag.String("config", CONFIG_PATH, "Specify config file"),
 		empty:   flag.Bool("empty", false, "Open gomu with empty queue. Does not override previous queue"),
-		music:   flag.String("music", "~/music", "Specify music directory"),
+		music:   flag.String("music", MUSIC_PATH, "Specify music directory"),
 		version: flag.Bool("version", false, "Print gomu version"),
 	}
 	flag.Parse()
