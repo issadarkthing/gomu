@@ -110,17 +110,17 @@ func readConfig(args Args) {
 
 type Args struct {
 	config  *string
-	load    *bool
+	empty    *bool
 	music   *string
 	version *bool
 }
 
 func getArgs() Args {
 	ar := Args{
-		config:  flag.String("config", "~/.config/gomu/config", "specify config file"),
-		load:    flag.Bool("load", true, "load previous queue"),
-		music:   flag.String("music", "~/music", "specify music directory"),
-		version: flag.Bool("version", false, "print gomu version"),
+		config:  flag.String("config", "~/.config/gomu/config", "Specify config file"),
+		empty:    flag.Bool("empty", false, "Open gomu with empty queue. Does not override previous queue"),
+		music:   flag.String("music", "~/music", "Specify music directory"),
+		version: flag.Bool("version", false, "Print gomu version"),
 	}
 	flag.Parse()
 	return ar
@@ -178,7 +178,7 @@ func start(application *tview.Application, args Args) {
 	gomu.setFocusPanel(gomu.playlist)
 	gomu.prevPanel = gomu.playlist
 
-	if *args.load {
+	if !*args.empty {
 		// load saved queue from previous
 		if err := gomu.queue.loadQueue(); err != nil {
 			logError(err)
@@ -210,13 +210,13 @@ func start(application *tview.Application, args Args) {
 		case 'q':
 
 			if !viper.GetBool("general.confirm_on_exit") {
-				err := gomu.quit()
+				err := gomu.quit(args)
 				if err != nil {
 					logError(err)
 				}
 			}
 
-			exitConfirmation()
+			exitConfirmation(args)
 
 		case ' ':
 			gomu.player.togglePause()
