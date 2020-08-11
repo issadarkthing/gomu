@@ -258,7 +258,7 @@ func helpPopup(panel Panel) {
 // Input popup. Takes video url from youtube to be downloaded
 func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 
-	re := regexp.MustCompile(`https:\/\/youtu\.be\/[a-zA-Z0-9]+`)
+	re := regexp.MustCompile(`^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$`)
 
 	inputField := tview.NewInputField().
 		SetLabel("Youtube url: ").
