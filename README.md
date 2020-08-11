@@ -1,6 +1,6 @@
 
-# Gomu (Go Music Player) [![Go Report Card](https://goreportcard.com/badge/github.com/issadarkthing/gomu)](https://goreportcard.com/report/github.com/issadarkthing/gomu)
-Gomu is a Terminal User Interface **TUI** that plays your mp3 files in your local directory. 
+# Gomu (Go Music Player) [![Go Report Card](https://goreportcard.com/badge/github.com/issadarkthing/gomu)](https://goreportcard.com/report/github.com/issadarkthing/gomu) [![Build Status](https://travis-ci.com/issadarkthing/gomu.svg?branch=master)](https://travis-ci.com/issadarkthing/gomu)
+Gomu is a Terminal User Interface **TUI** music player to play mp3 files from your local machine. 
 
 ![demo](/gomu-demo.gif)
 
@@ -9,9 +9,22 @@ Gomu is a Terminal User Interface **TUI** that plays your mp3 files in your loca
 - simple
 - fast
 - show audio files as tree
+- queue cache
 - vim keybindings
+- fzf integration
 - youtube-dl integration
 - audio file management
+- customizeable
+
+## Dependencies
+If you are on ubuntu, you need to install alsa as required dependencies
+```sh
+$ sudo apt install libasound2-dev go
+```
+Optional dependencies can be installed by this command
+```sh
+$ sudo apt install youtube-dl fzf
+```
 
 ## Installation
 ```sh
@@ -23,10 +36,10 @@ By default, gomu will look for audio files in `~/music` directory. If you wish t
 and change `music_dir: path/to/your/musicDir`. Example of the config file will look like:
 
 ```
-confirm_on_exit: true
-music_dir: ~/music
+confirm_on_exit:  true
+music_dir:        ~/music
 confirm_bulk_add: true
-popup_timeout: 5
+popup_timeout:    5
 ```
 
 ## Keybindings
@@ -47,9 +60,9 @@ popup_timeout: 5
 | D      | delete playlist        |
 | +      | volume up              |
 | -      | volume down            |
-| ?      | toggle help            |
 | Y      | download audio         |
 | a      | create playlist        |
+| ?      | toggle help            |
 
 
 
