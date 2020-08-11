@@ -70,6 +70,7 @@ func readConfig(args Args) {
 		viper.SetDefault("general.popup_timeout", "5s")
 		viper.SetDefault("general.volume", 100)
 		viper.SetDefault("general.load_prev_queue", true)
+		viper.SetDefault("general.use_emoji", true)
 
 		// Colors
 		for k, v := range colors {
