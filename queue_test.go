@@ -71,7 +71,7 @@ func TestQueueDeleteItem(t *testing.T) {
 }
 
 func TestUpdateTitle(t *testing.T) {
-	
+
 	gomu := prepareTest()
 	audioFiles := gomu.playlist.getAudioFiles()
 
@@ -199,8 +199,6 @@ func TestQueueGetItems(t *testing.T) {
 	}
 
 }
-
-
 
 func TestClearQueue(t *testing.T) {
 

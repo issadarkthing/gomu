@@ -339,7 +339,7 @@ func createPlaylistPopup() {
 
 }
 
-func exitConfirmation() {
+func exitConfirmation(args Args) {
 
 	confirmationPopup("Are you sure to exit?", func(_ int, label string) {
 
@@ -347,7 +347,7 @@ func exitConfirmation() {
 			return
 		}
 
-		err := gomu.quit()
+		err := gomu.quit(args)
 		if err != nil {
 			logError(err)
 		}
