@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/gdamore/tcell"
@@ -119,7 +120,8 @@ func topRight(p tview.Primitive, width, height int) tview.Primitive {
 		AddItem(nil, 0, 1, false)
 }
 
-// Width and height parameter is optional. It defaults to 70 and 7 respectively.
+// Width and height parameter are optional, provide 0 for both to use deault values.
+// It defaults to 70 and 7 respectively.
 func timedPopup(
 	title string, desc string, timeout time.Duration, width, height int,
 ) {
@@ -256,8 +258,10 @@ func helpPopup(panel Panel) {
 // Input popup. Takes video url from youtube to be downloaded
 func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 
+	re := regexp.MustCompile(`^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$`)
+
 	inputField := tview.NewInputField().
-		SetLabel("Enter a url: ").
+		SetLabel("Youtube url: ").
 		SetFieldWidth(0).
 		SetAcceptanceFunc(tview.InputFieldMaxLength(50)).
 		SetFieldBackgroundColor(gomu.accentColor).
@@ -272,11 +276,18 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 		case tcell.KeyEnter:
 			url := inputField.GetText()
 
-			go func() {
-				if err := ytdl(url, selPlaylist); err != nil {
-					logError(err)
-				}
-			}()
+			// check if valid youtube url was given
+			if re.MatchString(url) {
+				go func() {
+					if err := ytdl(url, selPlaylist); err != nil {
+						logError(err)
+					}
+				}()
+			} else {
+				timedPopup("Invalid url", "Invalid youtube url was given",
+					getPopupTimeout(), 0, 0)
+			}
+
 			gomu.pages.RemovePage("download-input-popup")
 			gomu.popups.pop()
 
