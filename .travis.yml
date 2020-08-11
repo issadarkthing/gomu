@@ -4,4 +4,4 @@ go:
 
 before_install:
   - sudo apt-get update
-  - sudo apt-get -y install alsa
+  - sudo apt-get -y install libasound2-dev
