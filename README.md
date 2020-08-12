@@ -33,38 +33,52 @@ go get -u github.com/issadarkthing/gomu
 
 ## Configuration
 By default, gomu will look for audio files in `~/music` directory. If you wish to change to your desired location, edit `~/.config/gomu/config` file
-and change `music_dir: path/to/your/musicDir`. Example of the config file will look like:
+and change `music_dir: path/to/your/musicDir`. 
+
+Sample config file:
 
 ```
-confirm_on_exit:  true
-music_dir:        ~/music
-confirm_bulk_add: true
-popup_timeout:    5
+color:
+  accent:            "#008B8B"
+  background:        none
+  foreground:        "#FFFFFF"
+  now_playing_title: "#017702"
+  playlist:          "#008B8B"
+  popup:             "#0A0F14"
+
+general:
+  confirm_bulk_add:  true
+  confirm_on_exit:   true
+  load_prev_queue:   true
+  music_dir:         ~/music
+  popup_timeout:     5s
+  volume:            100
+  emoji:             true
 ```
 
 ## Keybindings
 
-|  Key   |       Description      |
-|--------|------------------------|
-| j      | down                   |
-| k      | up                     |
-| tab    | change panel           |
-| space  | toggle play/pause      |
-| esc    | close popup            |
-| n      | skip                   |
-| q      | quit                   |
-| l      | add song to queue      |
-| L      | add playlist to queue  |
-| h      | close node in playlist |
-| d      | remove from queue      |
-| D      | delete playlist        |
-| +      | volume up              |
-| -      | volume down            |
-| Y      | download audio         |
-| a      | create playlist        |
-| ?      | toggle help            |
+| Key             |            Description |
+|:----------------|-----------------------:|
+| j               |                   down |
+| k               |                     up |
+| tab             |           change panel |
+| space           |      toggle play/pause |
+| esc             |            close popup |
+| n               |                   skip |
+| q               |                   quit |
+| l (lowercase L) |      add song to queue |
+| L               |  add playlist to queue |
+| h               | close node in playlist |
+| d               |      remove from queue |
+| D               |        delete playlist |
+| +               |              volume up |
+| -               |            volume down |
+| Y               |         download audio |
+| a               |        create playlist |
+| ?               |            toggle help |
 
 
 
 ## Project Background
-I just want to implement my own music player with a programming language im currently learning [Go](https://golang.org/). Gomu might not be stable as it in constant development. For now, it can do basic music player can do like adding, deleting songs from queue, skip, play, pause but not seeking or more advanced stuff; feel free to contribute :)
+I just wanted to implement my own music player with a programming language i'm currently learning [Go](https://golang.org/). Gomu might not be stable as it in constant development. For now, it can fulfill basic music player functions like add and delete songs from queue, skip, play, and pause but not seeking or more advanced stuff; feel free to contribute :)
