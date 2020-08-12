@@ -17,7 +17,7 @@ Gomu is a Terminal User Interface **TUI** music player to play mp3 files from yo
 - customizeable
 
 ## Dependencies
-If you are on ubuntu, you need to install alsa as required dependencies
+If you are using ubuntu, you need to install alsa and required dependencies
 ```sh
 $ sudo apt install libasound2-dev go
 ```
@@ -81,4 +81,11 @@ general:
 
 
 ## Project Background
-I just wanted to implement my own music player with a programming language i'm currently learning [Go](https://golang.org/). Gomu might not be stable as it in constant development. For now, it can fulfill basic music player functions like add and delete songs from queue, skip, play, and pause but not seeking or more advanced stuff; feel free to contribute :)
+I just wanted to implement my own music player with a programming language i'm currently learning ([Go](https://golang.org/)). Gomu might not be stable as it in constant development. For now, it can fulfill basic music player functions such as:
+- add and delete songs from queue
+- create playlists
+- skip
+- play
+- pause 
+
+Seeking and more advanced stuff has not yet been implemented; feel free to contribute :)
