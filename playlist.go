@@ -557,7 +557,7 @@ func (p *Playlist) updateTitle() {
 
 Download:
 	for {
-		// prevent from calling tview API when suspending
+
 		if gomu.isSuspend {
 			continue
 		}
@@ -655,6 +655,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	gomu.playlist.download++
 	go gomu.playlist.updateTitle()
 
+	// blocking
 	err = cmd.Run()
 
 	gomu.playlist.done <- struct{}{}
@@ -668,7 +669,6 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	audioPath := extractFilePath(stdout.Bytes(), playlistPath)
 
 	err = gomu.playlist.addSongToPlaylist(audioPath, selPlaylist)
-
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -681,10 +681,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		downloadFinishedMessage,
 		getPopupTimeout(), 0, 0)
 
-	gomu.app.Draw()
-
 	return nil
-
 }
 
 // Add songs and their directories in Playlist panel
