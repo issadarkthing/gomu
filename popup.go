@@ -142,9 +142,6 @@ func timedPopup(
 		SetText(desc).
 		SetTextColor(gomu.accentColor)
 
-	// debugLog(fmt.Sprintf("from color: %d", tcell.GetColor("#FF0000")))
-	// debugLog(fmt.Sprintf("from color: %d", tcell.GetColor("#0A0F14")))
-	// debugLog(fmt.Sprintf("from config: %d", gomu.popupBg))
 	textView.SetTextAlign(tview.AlignCenter).SetBackgroundColor(gomu.popupBg)
 
 	box := tview.NewFrame(textView).SetBorders(1, 0, 0, 0, 0, 0)
