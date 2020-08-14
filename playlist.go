@@ -372,10 +372,11 @@ func (p *Playlist) addSongToPlaylist(
 	}
 
 	audioFile := &AudioFile{
-		name:        path.Base(audioPath),
+		name:        songName,
 		path:        audioPath,
 		isAudioFile: true,
 		length:      audioLength,
+		node:        node,
 		parent:      selPlaylist,
 	}
 
@@ -659,6 +660,12 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	err = cmd.Run()
 
 	gomu.playlist.done <- struct{}{}
+
+	for {
+		if !gomu.isSuspend {
+			break
+		}
+	}
 
 	if err != nil {
 		timedPopup(" Error ", "Error running youtube-dl", getPopupTimeout(), 0, 0)
