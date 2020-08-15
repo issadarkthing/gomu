@@ -49,6 +49,7 @@ func (p *Playlist) help() []string {
 		"j      down",
 		"k      up",
 		"h      close node",
+		"a      create a playlist",
 		"l      add song to queue",
 		"L      add playlist to queue",
 		"d      delete file from filesystem",
@@ -388,8 +389,8 @@ func (p *Playlist) addSongToPlaylist(
 
 	node.SetReference(audioFile)
 	node.SetText(displayText)
+
 	selPlaylist.AddChild(node)
-	gomu.app.Draw()
 
 	return nil
 
@@ -661,12 +662,6 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 
 	gomu.playlist.done <- struct{}{}
 
-	for {
-		if !gomu.isSuspend {
-			break
-		}
-	}
-
 	if err != nil {
 		timedPopup(" Error ", "Error running youtube-dl", getPopupTimeout(), 0, 0)
 		return tracerr.Wrap(err)
@@ -681,7 +676,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	}
 
 	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s",
-		path.Base(audioPath))
+		getName(audioPath))
 
 	timedPopup(
 		" Ytdl ",
