@@ -206,3 +206,12 @@ func validateHexColor(color string) bool {
 	reg := regexp.MustCompile(`^#([A-Fa-f0-9]{6})$`)
 	return reg.MatchString(color)
 }
+
+func contains(needle int, haystack []int) bool {
+	for _, i := range haystack {
+		if needle == i {
+			return true
+		}
+	}
+	return false
+}
