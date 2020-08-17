@@ -25,6 +25,7 @@ type Gomu struct {
 	popupBg     tcell.Color
 	textColor   tcell.Color
 	accentColor tcell.Color
+	bgColor     tcell.Color
 	panels      []Panel
 	isSuspend   bool
 	mu          sync.Mutex
@@ -36,6 +37,7 @@ func newGomu() *Gomu {
 	gomu := &Gomu{
 		popupBg:     tcell.GetColor(viper.GetString("color.popup")),
 		textColor:   tcell.GetColor(viper.GetString("color.foreground")),
+		bgColor:     tcell.GetColor(viper.GetString("color.background")),
 		accentColor: tcell.GetColor(viper.GetString("color.accent")),
 	}
 

@@ -5,10 +5,12 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+	"github.com/sahilm/fuzzy"
 	"github.com/spf13/viper"
 )
 
@@ -360,4 +362,99 @@ func exitConfirmation(args Args) {
 			logError(err)
 		}
 	})
+}
+
+func searchPopup(stringsToMatch []string, handler func(selected string)) {
+
+	list := tview.NewList().ShowSecondaryText(false)
+	list.SetSelectedBackgroundColor(gomu.accentColor)
+	list.SetHighlightFullLine(true)
+
+	for _, v := range stringsToMatch {
+		list.AddItem(v, v, 0, nil)
+	}
+
+	input := tview.NewInputField()
+	input.SetFieldBackgroundColor(gomu.bgColor).
+		SetLabel("[red]>[-] ")
+	input.SetChangedFunc(func(text string) {
+
+		list.Clear()
+
+		// list all item if input is empty
+		if len(text) == 0 {
+			for _, v := range stringsToMatch {
+				list.AddItem(v, v, 0, nil)
+			}
+			return
+		}
+
+		pattern := input.GetText()
+		matches := fuzzy.Find(pattern, stringsToMatch)
+		const highlight = "[red]%s[-]"
+
+		for _, match := range matches {
+			var text strings.Builder
+			for i := 0; i < len(match.Str); i++ {
+				currChar := string(match.Str[i])
+				if contains(i, match.MatchedIndexes) {
+					text.WriteString(fmt.Sprintf(highlight, currChar))
+				} else {
+					text.WriteString(currChar)
+				}
+			}
+			list.AddItem(text.String(), match.Str, 0, nil)
+		}
+	})
+
+	input.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+
+		switch e.Key() {
+		case tcell.KeyCtrlN:
+			currIndx := list.GetCurrentItem()
+			// if last index
+			if currIndx == list.GetItemCount()-1 {
+				currIndx = 0
+			} else {
+				currIndx++
+			}
+			list.SetCurrentItem(currIndx)
+
+		case tcell.KeyCtrlP:
+			currIndx := list.GetCurrentItem()
+
+			if currIndx == 0 {
+				currIndx = list.GetItemCount() - 1
+			} else {
+				currIndx--
+			}
+			list.SetCurrentItem(currIndx)
+
+		case tcell.KeyEnter:
+			if list.GetItemCount() > 0 {
+				_, selected := list.GetItemText(list.GetCurrentItem())
+				handler(selected)
+				gomu.pages.RemovePage("search-input-popup")
+				gomu.popups.pop()
+			}
+
+		case tcell.KeyEscape:
+			gomu.pages.RemovePage("search-input-popup")
+			gomu.popups.pop()
+		}
+
+		return e
+	})
+
+	popup := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(input, 2, 1, true).
+		AddItem(list, 0, 1, false)
+
+	popup.SetBorder(true).
+		SetBackgroundColor(gomu.popupBg).
+		SetBorderPadding(1, 1, 2, 2).
+		SetTitle(" Find In Playlist ")
+
+	gomu.pages.AddPage("search-input-popup", center(popup, 70, 40), true, true)
+	gomu.popups.push(popup)
 }

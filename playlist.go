@@ -217,10 +217,31 @@ func newPlaylist(args Args) *Playlist {
 
 		case '/':
 
-			err := playlist.fuzzyFind()
-			if err != nil {
-				logError(err)
+			if viper.GetBool("general.fzf") {
+
+				err := playlist.fuzzyFind()
+				if err != nil {
+					logError(err)
+				}
+
+				return e
 			}
+
+			files := make([]string, len(playlist.getAudioFiles()))
+
+			for i, file := range playlist.getAudioFiles() {
+				files[i] = file.name
+			}
+
+			searchPopup(files, func(text string) {
+
+				audio, err := playlist.findAudioFile(sha1Hex(text))
+				if err != nil {
+					logError(err)
+				}
+
+				playlist.setHighlight(audio.node)
+			})
 
 		}
 
