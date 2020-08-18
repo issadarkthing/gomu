@@ -263,11 +263,13 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 		SetLabel("Youtube url: ").
 		SetFieldWidth(0).
 		SetAcceptanceFunc(tview.InputFieldMaxLength(50)).
-		SetFieldBackgroundColor(gomu.accentColor).
-		SetFieldTextColor(tcell.ColorBlack)
+		SetFieldBackgroundColor(gomu.bgColor).
+		SetFieldTextColor(gomu.textColor)
 
 	inputField.SetBackgroundColor(gomu.popupBg).
-		SetBorder(true).SetTitle(" Ytdl ")
+		SetTitle(" Ytdl ").
+		SetBorder(true).
+		SetBorderPadding(1, 0, 2, 2)
 
 	inputField.SetDoneFunc(func(key tcell.Key) {
 
@@ -300,7 +302,7 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 	})
 
 	gomu.pages.
-		AddPage("download-input-popup", center(inputField, 50, 4), true, true)
+		AddPage("download-input-popup", center(inputField, 60, 5), true, true)
 
 	gomu.popups.push(inputField)
 
@@ -450,10 +452,17 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 		AddItem(input, 2, 1, true).
 		AddItem(list, 0, 1, false)
 
+	var title string
+	if viper.GetBool("general.emoji") {
+		title = " 🔎 Finder "
+	} else {
+		title = " Finder "
+	}
+
 	popup.SetBorder(true).
 		SetBackgroundColor(gomu.popupBg).
 		SetBorderPadding(1, 1, 2, 2).
-		SetTitle(" Find In Playlist ")
+		SetTitle(title)
 
 	gomu.pages.AddPage("search-input-popup", center(popup, 70, 40), true, true)
 	gomu.popups.push(popup)
