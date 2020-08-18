@@ -64,6 +64,7 @@ if fzf is being used for a long period of time (not everytime). As of `v1.5.0`,
 the default built-in finder will be used instead of fzf. To override this behaviour,
 edit this line `fzf: false` to change it into `true` in `~/.config/gomu/config`.
 
+
 ## Keybindings
 
 | Key             |            Description |
