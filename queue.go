@@ -16,6 +16,7 @@ import (
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
 )
 
@@ -410,11 +411,33 @@ func newQueue() *Queue {
 
 		case '/':
 
-			gomu.suspend()
-			if err := queue.fuzzyFind(); err != nil {
-				logError(err)
+			if viper.GetBool("general.fzf") {
+
+				gomu.suspend()
+				if err := queue.fuzzyFind(); err != nil {
+					logError(err)
+				}
+				gomu.unsuspend()
+
+				return e
 			}
-			gomu.unsuspend()
+
+			audios := make([]string, len(queue.items))
+			for i, file := range queue.items {
+				audios[i] = file.name
+			}
+
+			searchPopup(audios, func(selected string) {
+
+				index := 0
+				for i, v := range queue.items {
+					if v.name == selected {
+						index = i
+					}
+				}
+
+				queue.SetCurrentItem(index)
+			})
 
 		}
 
