@@ -215,3 +215,15 @@ func contains(needle int, haystack []int) bool {
 	}
 	return false
 }
+
+func appendFile(path string, content string) error {
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	defer f.Close()
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	if _, err := f.WriteString(content); err != nil {
+		return tracerr.Wrap(err)
+	}
+	return nil
+}

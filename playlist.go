@@ -56,6 +56,7 @@ func (p *Playlist) help() []string {
 		"D      delete playlist from filesystem",
 		"Y      download audio",
 		"r      refresh",
+		"R      rename",
 		"/      find in playlist",
 	}
 
@@ -214,6 +215,9 @@ func newPlaylist(args Args) *Playlist {
 
 		case 'r':
 			playlist.refresh()
+
+		case 'R':
+			renamePopup(audioFile)
 
 		case '/':
 
@@ -562,6 +566,25 @@ func (p *Playlist) fuzzyFind() error {
 
 }
 
+func (p *Playlist) rename(newName string) error {
+
+	currentNode := p.GetCurrentNode()
+	audio := currentNode.GetReference().(*AudioFile)
+	pathToFile, _ := filepath.Split(audio.path)
+	var newPath string
+	if audio.isAudioFile {
+		newPath = pathToFile + newName + ".mp3"
+	} else {
+		newPath = pathToFile + newName
+	}
+	err := os.Rename(audio.path, newPath)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	return nil
+}
+
 // updateTitle creates a spinning motion on the title
 // of the playlist panel when downloading.
 func (p *Playlist) updateTitle() {
@@ -690,6 +713,11 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 
 	playlistPath := path.Join(expandTilde(dir), selPlaylistName)
 	audioPath := extractFilePath(stdout.Bytes(), playlistPath)
+
+	err = appendFile(expandTilde("~/.local/share/gomu/urls"), url + "\n")
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
 
 	err = gomu.playlist.addSongToPlaylist(audioPath, selPlaylist)
 	if err != nil {
