@@ -386,7 +386,12 @@ func newQueue() *Queue {
 		case 'd':
 			queue.deleteItem(queue.GetCurrentItem())
 		case 'D':
-			queue.clearQueue()
+
+			confirmationPopup("Are you sure to clear the queue?", func(_ int, label string) {
+				if label == "yes" {
+					queue.clearQueue()
+				}
+			})
 		case 'l':
 			a, err := queue.deleteItem(queue.GetCurrentItem())
 			if err != nil {

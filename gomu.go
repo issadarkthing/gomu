@@ -9,7 +9,7 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-const VERSION = "v1.4.1"
+const VERSION = "v1.5.0"
 
 var gomu *Gomu
 
