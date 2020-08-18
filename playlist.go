@@ -714,7 +714,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	playlistPath := path.Join(expandTilde(dir), selPlaylistName)
 	audioPath := extractFilePath(stdout.Bytes(), playlistPath)
 
-	err = appendFile(expandTilde("~/.local/share/gomu/urls"), url + "\n")
+	err = appendFile(expandTilde("~/.local/share/gomu/urls"), url+"\n")
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
