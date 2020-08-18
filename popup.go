@@ -297,23 +297,14 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 // Input popup that takes the name of directory to be created
 func createPlaylistPopup() {
 
-	inputField := tview.NewInputField().
-		SetLabel("Enter a playlist name: ").
-		SetFieldWidth(0).
-		SetAcceptanceFunc(tview.InputFieldMaxLength(50)).
-		SetFieldBackgroundColor(gomu.accentColor).
-		SetFieldTextColor(gomu.textColor)
+	popupId := "mkdir-input-popup"
+	input := newInputPopup(popupId, " New Playlist ", "Enter playlist name: ")
 
-	inputField.
-		SetBackgroundColor(gomu.popupBg).
-		SetBorder(true).
-		SetTitle(" New Playlist ")
-
-	inputField.SetDoneFunc(func(key tcell.Key) {
+	input.SetDoneFunc(func(key tcell.Key) {
 
 		switch key {
 		case tcell.KeyEnter:
-			playListName := inputField.GetText()
+			playListName := input.GetText()
 			err := gomu.playlist.createPlaylist(playListName)
 
 			if err != nil {
@@ -329,11 +320,6 @@ func createPlaylistPopup() {
 		}
 
 	})
-
-	gomu.pages.
-		AddPage("mkdir-input-popup", center(inputField, 50, 4), true, true)
-
-	gomu.popups.push(inputField)
 
 }
 
@@ -363,7 +349,7 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 	}
 
 	input := tview.NewInputField()
-	input.SetFieldBackgroundColor(gomu.bgColor).
+	input.SetFieldBackgroundColor(gomu.popupBg).
 		SetLabel("[red]>[-] ")
 	input.SetChangedFunc(func(text string) {
 
@@ -454,13 +440,14 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 	gomu.popups.push(popup)
 }
 
+// Creates new popup widget with default settings
 func newInputPopup(popupId, title, label string) *tview.InputField {
 
 	inputField := tview.NewInputField().
 		SetLabel(label).
 		SetFieldWidth(0).
 		SetAcceptanceFunc(tview.InputFieldMaxLength(50)).
-		SetFieldBackgroundColor(gomu.bgColor).
+		SetFieldBackgroundColor(gomu.popupBg).
 		SetFieldTextColor(gomu.textColor)
 
 	inputField.SetBackgroundColor(gomu.popupBg).
