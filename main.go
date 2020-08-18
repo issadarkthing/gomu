@@ -10,6 +10,7 @@ import (
 
 func main() {
 	os.Setenv("TEST", "false")
+	debugLog("App start")
 	args := getArgs()
 	readConfig(args)
 	app := tview.NewApplication()
