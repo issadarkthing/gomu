@@ -259,23 +259,14 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 
 	re := regexp.MustCompile(`^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$`)
 
-	inputField := tview.NewInputField().
-		SetLabel("Youtube url: ").
-		SetFieldWidth(0).
-		SetAcceptanceFunc(tview.InputFieldMaxLength(50)).
-		SetFieldBackgroundColor(gomu.bgColor).
-		SetFieldTextColor(gomu.textColor)
+	popupId := "download-input-popup"
+	input := newInputPopup(popupId, " Download ", "Url: ")
 
-	inputField.SetBackgroundColor(gomu.popupBg).
-		SetTitle(" Ytdl ").
-		SetBorder(true).
-		SetBorderPadding(1, 0, 2, 2)
-
-	inputField.SetDoneFunc(func(key tcell.Key) {
+	input.SetDoneFunc(func(key tcell.Key) {
 
 		switch key {
 		case tcell.KeyEnter:
-			url := inputField.GetText()
+			url := input.GetText()
 
 			// check if valid youtube url was given
 			if re.MatchString(url) {
@@ -301,11 +292,6 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 
 	})
 
-	gomu.pages.
-		AddPage("download-input-popup", center(inputField, 60, 5), true, true)
-
-	gomu.popups.push(inputField)
-
 }
 
 // Input popup that takes the name of directory to be created
@@ -316,7 +302,7 @@ func createPlaylistPopup() {
 		SetFieldWidth(0).
 		SetAcceptanceFunc(tview.InputFieldMaxLength(50)).
 		SetFieldBackgroundColor(gomu.accentColor).
-		SetFieldTextColor(tcell.ColorBlack)
+		SetFieldTextColor(gomu.textColor)
 
 	inputField.
 		SetBackgroundColor(gomu.popupBg).
@@ -466,4 +452,56 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 
 	gomu.pages.AddPage("search-input-popup", center(popup, 70, 40), true, true)
 	gomu.popups.push(popup)
+}
+
+func newInputPopup(popupId, title, label string) *tview.InputField {
+
+	inputField := tview.NewInputField().
+		SetLabel(label).
+		SetFieldWidth(0).
+		SetAcceptanceFunc(tview.InputFieldMaxLength(50)).
+		SetFieldBackgroundColor(gomu.bgColor).
+		SetFieldTextColor(gomu.textColor)
+
+	inputField.SetBackgroundColor(gomu.popupBg).
+		SetTitle(title).
+		SetBorder(true).
+		SetBorderPadding(1, 0, 2, 2)
+
+	gomu.pages.
+		AddPage(popupId, center(inputField, 60, 5), true, true)
+
+	gomu.popups.push(inputField)
+
+	return inputField
+}
+
+func renamePopup(node *AudioFile) {
+
+	popupId := "rename-input-popup"
+	input := newInputPopup(popupId, " Rename ", "New name: ")
+	input.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+
+		switch e.Key() {
+		case tcell.KeyEnter:
+			newName := input.GetText()
+			if newName == "" {
+				return e
+			}
+			err := gomu.playlist.rename(newName)
+			if err != nil {
+				timedPopup(" Error ", err.Error(), getPopupTimeout(), 0, 0)
+				logError(err)
+			}
+			gomu.pages.RemovePage(popupId)
+			gomu.popups.pop()
+			gomu.playlist.refresh()
+
+		case tcell.KeyEsc:
+			gomu.pages.RemovePage(popupId)
+			gomu.popups.pop()
+		}
+
+		return e
+	})
 }

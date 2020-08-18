@@ -14,12 +14,13 @@ const VERSION = "v1.4.1"
 var gomu *Gomu
 
 type Gomu struct {
-	app         *tview.Application
-	playingBar  *PlayingBar
-	queue       *Queue
-	playlist    *Playlist
-	player      *Player
-	pages       *tview.Pages
+	app        *tview.Application
+	playingBar *PlayingBar
+	queue      *Queue
+	playlist   *Playlist
+	player     *Player
+	pages      *tview.Pages
+	// popups is used to manage focus between popups and panels
 	popups      Stack
 	prevPanel   Panel
 	popupBg     tcell.Color

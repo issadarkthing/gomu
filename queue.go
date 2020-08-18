@@ -186,7 +186,7 @@ func (q *Queue) getItems() []string {
 	return items
 }
 
-// Save the current queue in a csv file
+// Save the current queue
 func (q *Queue) saveQueue() error {
 
 	songPaths := q.getItems()
