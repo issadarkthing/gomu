@@ -3,12 +3,15 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"path"
 	"strings"
+	"syscall"
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
@@ -163,6 +166,7 @@ func start(application *tview.Application, args Args) {
 	tview.Borders.BottomLeftFocus = tview.Borders.BottomLeft
 	tview.Borders.BottomRightFocus = tview.Borders.BottomRight
 
+	// handle none background color
 	var bgColor tcell.Color
 	bg := viper.GetString("color.background")
 	if bg == "none" {
@@ -177,8 +181,6 @@ func start(application *tview.Application, args Args) {
 	gomu = newGomu()
 	gomu.initPanels(application, args)
 
-	debugLog("App start")
-
 	flex := layout(gomu)
 	gomu.pages.AddPage("main", flex, true, true)
 
@@ -186,13 +188,26 @@ func start(application *tview.Application, args Args) {
 	gomu.setFocusPanel(gomu.playlist)
 	gomu.prevPanel = gomu.playlist
 
-	if !*args.empty {
-		// load saved queue from previous
+	if !*args.empty && viper.GetBool("general.load_prev_queue") {
+		// load saved queue from previous session
 		if err := gomu.queue.loadQueue(); err != nil {
 			logError(err)
 		}
 	}
 
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGKILL)
+	go func() {
+		sig := <-sigs
+		errMsg := fmt.Sprintf("Received %s. Exiting program", sig.String())
+		logError(errors.New(errMsg))
+		err := gomu.quit(args)
+		if err != nil {
+			logError(errors.New("Unable to quit program"))
+		}
+	}()
+
+	// global keybindings are handled here
 	application.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 
 		popupName, _ := gomu.pages.GetFrontPage()
