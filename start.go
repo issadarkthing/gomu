@@ -36,6 +36,27 @@ const (
 // Reads config file and sets the options
 func readConfig(args Args) {
 
+	const config =
+`
+color:
+  accent:            "#008B8B"
+  background:        none
+  foreground:        "#FFFFFF"
+  now_playing_title: "#017702"
+  playlist:          "#008B8B"
+  popup:             "#0A0F14"
+
+general:
+  confirm_bulk_add:  true
+  confirm_on_exit:   true
+  load_prev_queue:   true
+  music_dir:         ~/music
+  popup_timeout:     5s
+  volume:            100
+  emoji:             true
+  fzf:               false
+`
+
 	// config path passed by flag
 	configPath := *args.config
 	home, err := os.UserHomeDir()
@@ -91,12 +112,7 @@ func readConfig(args Args) {
 		// copy default config to default config path
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 
-			input, err := ioutil.ReadFile("config")
-			if err != nil {
-				logError(err)
-			}
-
-			err = ioutil.WriteFile(defaultPath, input, 0644)
+			err = ioutil.WriteFile(defaultPath, []byte(config), 0644)
 			if err != nil {
 				logError(err)
 			}
@@ -159,11 +175,11 @@ func start(application *tview.Application, args Args) {
 
 	// override default border
 	// change double line border to one line border when focused
-	tview.Borders.HorizontalFocus = tview.Borders.Horizontal
-	tview.Borders.VerticalFocus = tview.Borders.Vertical
-	tview.Borders.TopLeftFocus = tview.Borders.TopLeft
-	tview.Borders.TopRightFocus = tview.Borders.TopRight
-	tview.Borders.BottomLeftFocus = tview.Borders.BottomLeft
+	tview.Borders.HorizontalFocus  = tview.Borders.Horizontal
+	tview.Borders.VerticalFocus    = tview.Borders.Vertical
+	tview.Borders.TopLeftFocus     = tview.Borders.TopLeft
+	tview.Borders.TopRightFocus    = tview.Borders.TopRight
+	tview.Borders.BottomLeftFocus  = tview.Borders.BottomLeft
 	tview.Borders.BottomRightFocus = tview.Borders.BottomRight
 
 	// handle none background color
