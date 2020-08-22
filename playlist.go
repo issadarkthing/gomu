@@ -563,7 +563,6 @@ func (p *Playlist) fuzzyFind() error {
 	}
 
 	return nil
-
 }
 
 func (p *Playlist) rename(newName string) error {
