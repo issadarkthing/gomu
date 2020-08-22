@@ -384,7 +384,7 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 	input.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 		switch e.Key() {
-		case tcell.KeyCtrlN:
+		case tcell.KeyCtrlN, tcell.KeyDown, tcell.KeyCtrlJ:
 			currIndx := list.GetCurrentItem()
 			// if last index
 			if currIndx == list.GetItemCount()-1 {
@@ -394,7 +394,7 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 			}
 			list.SetCurrentItem(currIndx)
 
-		case tcell.KeyCtrlP:
+		case tcell.KeyCtrlP, tcell.KeyUp, tcell.KeyCtrlK:
 			currIndx := list.GetCurrentItem()
 
 			if currIndx == 0 {
