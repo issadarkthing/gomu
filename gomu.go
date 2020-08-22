@@ -3,13 +3,11 @@ package main
 import (
 	"sync"
 
-	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
-	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
 )
 
-const VERSION = "v1.5.3"
+const VERSION = "v1.5.4"
 
 var gomu *Gomu
 
@@ -20,33 +18,27 @@ type Gomu struct {
 	playlist   *Playlist
 	player     *Player
 	pages      *tview.Pages
+	colors     *Colors
 	// popups is used to manage focus between popups and panels
-	popups      Stack
-	prevPanel   Panel
-	popupBg     tcell.Color
-	textColor   tcell.Color
-	accentColor tcell.Color
-	bgColor     tcell.Color
-	panels      []Panel
-	isSuspend   bool
-	mu          sync.Mutex
+	popups    Stack
+	prevPanel Panel
+	panels    []Panel
+	isSuspend bool
+	mu        sync.Mutex
 }
 
 // Creates new instance of gomu with default values
 func newGomu() *Gomu {
 
 	gomu := &Gomu{
-		popupBg:     tcell.GetColor(viper.GetString("color.popup")),
-		textColor:   tcell.GetColor(viper.GetString("color.foreground")),
-		bgColor:     tcell.GetColor(viper.GetString("color.background")),
-		accentColor: tcell.GetColor(viper.GetString("color.accent")),
+		colors: newColor(),
 	}
 
 	return gomu
 }
 
 // Initialize childrens/panels this is seperated from
-// constructor function `NewGomu` so that we can
+// constructor function `newGomu` so that we can
 // test independently
 func (g *Gomu) initPanels(app *tview.Application, args Args) {
 	g.app = app
@@ -100,8 +92,8 @@ func (g *Gomu) cyclePanels() Panel {
 func (g *Gomu) setFocusPanel(panel Panel) {
 
 	g.app.SetFocus(panel.(tview.Primitive))
-	panel.SetBorderColor(g.accentColor)
-	panel.SetTitleColor(g.accentColor)
+	panel.SetBorderColor(g.colors.accent)
+	panel.SetTitleColor(g.colors.accent)
 
 	if g.prevPanel == nil {
 		return
@@ -138,8 +130,8 @@ func (g *Gomu) unsuspend() bool {
 
 // Removes the color of the given panel
 func (g *Gomu) setUnfocusPanel(panel Panel) {
-	g.prevPanel.SetBorderColor(g.textColor)
-	g.prevPanel.SetTitleColor((g.textColor))
+	g.prevPanel.SetBorderColor(g.colors.foreground)
+	g.prevPanel.SetTitleColor((g.colors.foreground))
 }
 
 // Quit the application and do the neccessary clean up

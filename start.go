@@ -36,8 +36,7 @@ const (
 // Reads config file and sets the options
 func readConfig(args Args) {
 
-	const config =
-`
+	const config = `
 color:
   accent:            "#008B8B"
   background:        none
@@ -76,15 +75,6 @@ general:
 	viper.AddConfigPath(strings.TrimSuffix(expandFilePath(configPath), "/config"))
 	viper.AddConfigPath("$HOME/.config/gomu")
 
-	colors := map[string]string{
-		"color.foreground":        "#FFFFFF",
-		"color.background":        "none",
-		"color.accent":            "#008B8B",
-		"color.popup":             "#0A0F14",
-		"color.now_playing_title": "#017702",
-		"color.playlist":          "#008B8B",
-	}
-
 	if err := viper.ReadInConfig(); err != nil {
 
 		// General config
@@ -95,11 +85,6 @@ general:
 		viper.SetDefault("general.volume", 100)
 		viper.SetDefault("general.load_prev_queue", true)
 		viper.SetDefault("general.use_emoji", true)
-
-		// Colors
-		for k, v := range colors {
-			viper.SetDefault(k, v)
-		}
 
 		// creates gomu config dir if does not exist
 		if _, err := os.Stat(defaultPath); err != nil {
@@ -119,20 +104,7 @@ general:
 
 		}
 
-	} else {
-
-		// Validate hex color
-		for k, v := range colors {
-			cfgColor := viper.GetString(k)
-			if validateHexColor(cfgColor) {
-				continue
-			}
-			// use default value if invalid hex color was given
-			viper.Set(k, v)
-		}
-
 	}
-
 }
 
 type Args struct {
@@ -173,28 +145,19 @@ func start(application *tview.Application, args Args) {
 		return
 	}
 
-	// override default border
-	// change double line border to one line border when focused
-	tview.Borders.HorizontalFocus  = tview.Borders.Horizontal
-	tview.Borders.VerticalFocus    = tview.Borders.Vertical
-	tview.Borders.TopLeftFocus     = tview.Borders.TopLeft
-	tview.Borders.TopRightFocus    = tview.Borders.TopRight
-	tview.Borders.BottomLeftFocus  = tview.Borders.BottomLeft
-	tview.Borders.BottomRightFocus = tview.Borders.BottomRight
-
-	// handle none background color
-	var bgColor tcell.Color
-	bg := viper.GetString("color.background")
-	if bg == "none" {
-		bgColor = tcell.ColorDefault
-	} else {
-		bgColor = tcell.GetColor(bg)
-	}
-
-	tview.Styles.PrimitiveBackgroundColor = bgColor
-
 	// Assigning to global variable gomu
 	gomu = newGomu()
+
+	// override default border
+	// change double line border to one line border when focused
+	tview.Borders.HorizontalFocus = tview.Borders.Horizontal
+	tview.Borders.VerticalFocus = tview.Borders.Vertical
+	tview.Borders.TopLeftFocus = tview.Borders.TopLeft
+	tview.Borders.TopRightFocus = tview.Borders.TopRight
+	tview.Borders.BottomLeftFocus = tview.Borders.BottomLeft
+	tview.Borders.BottomRightFocus = tview.Borders.BottomRight
+	tview.Styles.PrimitiveBackgroundColor = gomu.colors.background
+
 	gomu.initPanels(application, args)
 
 	flex := layout(gomu)

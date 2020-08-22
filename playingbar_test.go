@@ -6,6 +6,7 @@ import (
 
 func Test_NewPlayingBar(t *testing.T) {
 
+	gomu = newGomu()
 	p := newPlayingBar()
 
 	if p.progress == nil {
