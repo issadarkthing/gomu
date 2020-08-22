@@ -10,9 +10,9 @@ GIT_COMMIT= $(shell git rev-parse HEAD)
 BUILD_DATE= $(shell date '+%Y-%m-%d-%H:%M:%S')
 GO     = go
 
-default: format test build release
+default: build
 
-run: format build
+run: format test build
 	$(BIN_DIR)/$(BIN_NAME)
 
 test:
@@ -29,7 +29,7 @@ $(BIN_DIR):
 $(INSTALL_DIR):
 	mkdir -p $@
 
-build: test $(BIN_DIR) 
+build: $(BIN_DIR) 
 	@echo === BUILDING ===
 	${GO} build -v -o $(BIN_DIR)/$(BIN_NAME)
 
