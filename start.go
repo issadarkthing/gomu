@@ -37,8 +37,12 @@ const (
 func readConfig(args Args) {
 
 	const config = `
+# not all colors can be reproducible in terminal
+# changing hex colors may or may not produce expected result
 color:
   accent:            "#008B8B"
+  # none is transparent
+  # only background has none attribute
   background:        none
   foreground:        "#FFFFFF"
   now_playing_title: "#017702"
@@ -46,13 +50,21 @@ color:
   popup:             "#0A0F14"
 
 general:
+  # add the whole playlist to the queue
   confirm_bulk_add:  true
   confirm_on_exit:   true
   load_prev_queue:   true
+  # change this to point to your music directory
   music_dir:         ~/music
   popup_timeout:     5s
+  # initial volume when gomu starts up
   volume:            100
+  # some of the terminal supports unicode character
+  # you can set this to false to disable emojis
   emoji:             true
+  # you may use fzf as your finder inside gomu
+  # but it is recommended to use built-in finder
+  # as it integrates well with gomu
   fzf:               false
 `
 
