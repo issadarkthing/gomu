@@ -10,9 +10,9 @@ Gomu is a Terminal User Interface **TUI** music player to play mp3 files from yo
 - fast
 - show audio files as tree
 - queue cache
-- vim keybindings
-- fzf integration
-- youtube-dl integration
+- [vim](https://github.com/vim/vim) keybindings
+- [fzf](https://github.com/junegunn/fzf) integration
+- [youtube-dl](https://github.com/ytdl-org/youtube-dl) integration
 - audio file management
 - customizeable
 
@@ -27,9 +27,22 @@ $ sudo apt install youtube-dl fzf fonts-noto
 ```
 
 ## Installation
+
 ```sh
-go get -u github.com/issadarkthing/gomu
+$ go get -u github.com/issadarkthing/gomu
 ```
+
+For arch users, you can install from the AUR
+
+using [yay](https://github.com/Jguer/yay):
+```sh
+$ yay -S gomu
+```
+using [aura](https://github.com/fosskers/aura):
+```sh
+$ sudo aura -A gomu
+```
+
 
 ## Configuration
 By default, gomu will look for audio files in `~/music` directory. If you wish to change to your desired location, edit `~/.config/gomu/config` file
@@ -58,7 +71,7 @@ general:
 ```
 
 ## Fzf
-Eventhough gomu can use fzf as its finder but it is recommended to use built-in
+Eventhough gomu can use [fzf](https://github.com/junegunn/fzf) as its finder but it is recommended to use built-in
 finder. This is due to the bug which may cause the application to hang up
 if fzf is being used for a long period of time (not everytime). As of `v1.5.0`,
 the default built-in finder will be used instead of fzf. To override this behaviour,
@@ -66,6 +79,7 @@ edit this line `fzf: false` to change it into `true` in `~/.config/gomu/config`.
 
 
 ## Keybindings
+Each panel has it's own additional keybinding. To view the available keybinding for the specific panel use `?`
 
 | Key             |            Description |
 |:----------------|-----------------------:|
