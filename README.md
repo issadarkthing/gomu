@@ -23,7 +23,7 @@ $ sudo apt install libasound2-dev go
 ```
 Optional dependencies can be installed by this command
 ```sh
-$ sudo apt install youtube-dl fzf
+$ sudo apt install youtube-dl fzf fonts-noto
 ```
 
 ## Installation
