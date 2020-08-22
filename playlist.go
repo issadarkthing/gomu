@@ -78,7 +78,7 @@ func newPlaylist(args Args) *Playlist {
 	}
 
 	root := tview.NewTreeNode(path.Base(rootDir)).
-		SetColor(gomu.accentColor)
+		SetColor(gomu.colors.accent)
 
 	tree := tview.NewTreeView().SetRoot(root)
 
@@ -471,9 +471,9 @@ func (p *Playlist) createPlaylist(name string) error {
 func (p *Playlist) setHighlight(currNode *tview.TreeNode) {
 
 	if p.prevNode != nil {
-		p.prevNode.SetColor(gomu.textColor)
+		p.prevNode.SetColor(gomu.colors.foreground)
 	}
-	currNode.SetColor(gomu.accentColor)
+	currNode.SetColor(gomu.colors.accent)
 	p.SetCurrentNode(currNode)
 
 	if currNode.GetReference().(*AudioFile).isAudioFile {
@@ -617,7 +617,7 @@ Download:
 			}
 		case <-time.After(time.Millisecond * 100):
 
-			r, g, b := gomu.accentColor.RGB()
+			r, g, b := gomu.colors.accent.RGB()
 			hexColor := padHex(r, g, b)
 
 			title := fmt.Sprintf("─ Playlist ──┤ %d downloads [green]%s[#%s] ├",
@@ -812,7 +812,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 			}
 
 			child.SetReference(audioFile)
-			child.SetColor(gomu.accentColor)
+			child.SetColor(gomu.colors.accent)
 			child.SetText(displayText)
 			root.AddChild(child)
 			populate(child, path)

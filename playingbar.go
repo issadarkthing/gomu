@@ -8,9 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
-	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
 )
 
@@ -32,7 +30,6 @@ func (p *PlayingBar) help() []string {
 func newPlayingBar() *PlayingBar {
 
 	textView := tview.NewTextView().SetTextAlign(tview.AlignCenter)
-
 	frame := tview.NewFrame(textView).SetBorders(1, 1, 1, 1, 1, 1)
 	frame.SetBorder(true).SetTitle(" Now Playing ")
 
@@ -119,8 +116,8 @@ func (p *PlayingBar) run() error {
 // Updates song title
 func (p *PlayingBar) setSongTitle(title string) {
 	p.Clear()
-	titleColor := viper.GetString("color.now_playing_title")
-	p.AddText(title, true, tview.AlignCenter, tcell.GetColor(titleColor))
+	titleColor := gomu.colors.title
+	p.AddText(title, true, tview.AlignCenter, titleColor)
 }
 
 // Resets progress bar, ready for execution

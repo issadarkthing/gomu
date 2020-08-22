@@ -85,10 +85,10 @@ func confirmationPopup(
 
 	modal := tview.NewModal().
 		SetText(text).
-		SetBackgroundColor(gomu.popupBg).
+		SetBackgroundColor(gomu.colors.popup).
 		AddButtons([]string{"no", "yes"}).
-		SetButtonBackgroundColor(gomu.popupBg).
-		SetButtonTextColor(gomu.accentColor).
+		SetButtonBackgroundColor(gomu.colors.popup).
+		SetButtonTextColor(gomu.colors.accent).
 		SetDoneFunc(func(indx int, label string) {
 			handler(indx, label)
 			gomu.pages.RemovePage("confirmation-popup")
@@ -142,12 +142,12 @@ func timedPopup(
 
 	textView := tview.NewTextView().
 		SetText(desc).
-		SetTextColor(gomu.accentColor)
+		SetTextColor(gomu.colors.accent)
 
-	textView.SetTextAlign(tview.AlignCenter).SetBackgroundColor(gomu.popupBg)
+	textView.SetTextAlign(tview.AlignCenter).SetBackgroundColor(gomu.colors.popup)
 
 	box := tview.NewFrame(textView).SetBorders(1, 0, 0, 0, 0, 0)
-	box.SetTitle(title).SetBorder(true).SetBackgroundColor(gomu.popupBg)
+	box.SetTitle(title).SetBorder(true).SetBackgroundColor(gomu.colors.popup)
 	popupId := fmt.Sprintf("%s %d", "timeout-popup", popupCounter)
 
 	popupCounter++
@@ -209,10 +209,10 @@ func helpPopup(panel Panel) {
 	}
 
 	list := tview.NewList().ShowSecondaryText(false)
-	list.SetBackgroundColor(gomu.popupBg).SetTitle(" Help ").
+	list.SetBackgroundColor(gomu.colors.popup).SetTitle(" Help ").
 		SetBorder(true)
-	list.SetSelectedBackgroundColor(gomu.popupBg).
-		SetSelectedTextColor(gomu.accentColor)
+	list.SetSelectedBackgroundColor(gomu.colors.popup).
+		SetSelectedTextColor(gomu.colors.accent)
 
 	for _, v := range append(helpText, genHelp...) {
 		list.AddItem(v, "", 0, nil)
@@ -341,7 +341,7 @@ func exitConfirmation(args Args) {
 func searchPopup(stringsToMatch []string, handler func(selected string)) {
 
 	list := tview.NewList().ShowSecondaryText(false)
-	list.SetSelectedBackgroundColor(gomu.accentColor)
+	list.SetSelectedBackgroundColor(gomu.colors.accent)
 	list.SetHighlightFullLine(true)
 
 	for _, v := range stringsToMatch {
@@ -349,7 +349,7 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 	}
 
 	input := tview.NewInputField()
-	input.SetFieldBackgroundColor(gomu.popupBg).
+	input.SetFieldBackgroundColor(gomu.colors.popup).
 		SetLabel("[red]>[-] ")
 	input.SetChangedFunc(func(text string) {
 
@@ -432,7 +432,7 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 	}
 
 	popup.SetBorder(true).
-		SetBackgroundColor(gomu.popupBg).
+		SetBackgroundColor(gomu.colors.popup).
 		SetBorderPadding(1, 1, 2, 2).
 		SetTitle(title)
 
@@ -447,10 +447,10 @@ func newInputPopup(popupId, title, label string) *tview.InputField {
 		SetLabel(label).
 		SetFieldWidth(0).
 		SetAcceptanceFunc(tview.InputFieldMaxLength(50)).
-		SetFieldBackgroundColor(gomu.popupBg).
-		SetFieldTextColor(gomu.textColor)
+		SetFieldBackgroundColor(gomu.colors.popup).
+		SetFieldTextColor(gomu.colors.foreground)
 
-	inputField.SetBackgroundColor(gomu.popupBg).
+	inputField.SetBackgroundColor(gomu.colors.popup).
 		SetTitle(title).
 		SetBorder(true).
 		SetBorderPadding(1, 0, 2, 2)
