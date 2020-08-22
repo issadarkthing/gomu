@@ -19,15 +19,10 @@ func Test_NewProgress(t *testing.T) {
 
 	p := newPlayingBar()
 	full := 100
-	limit := 100
-	p.newProgress("sample", full, limit)
+	p.newProgress("sample", full)
 
 	if p.full != full {
 		t.Errorf("Expected %d; got %d", full, p.full)
-	}
-
-	if p.limit != limit {
-		t.Errorf("Expected %d; got %d", limit, p.limit)
 	}
 
 	if p._progress != 0 {

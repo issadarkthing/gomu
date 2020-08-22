@@ -15,7 +15,6 @@ import (
 type PlayingBar struct {
 	*tview.Frame
 	full      int
-	limit     int
 	progress  chan int
 	_progress int
 	skip      bool
@@ -100,7 +99,8 @@ func (p *PlayingBar) run() error {
 			return tracerr.Wrap(err)
 		}
 
-		progressBar := progresStr(p._progress, p.full, p.limit, "█", "━")
+		_, _, width, _ := p.GetInnerRect()
+		progressBar := progresStr(p._progress, p.full, width/2, "█", "━")
 		// our progress bar
 		p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s",
 			fmtDuration(start),
@@ -121,9 +121,8 @@ func (p *PlayingBar) setSongTitle(title string) {
 }
 
 // Resets progress bar, ready for execution
-func (p *PlayingBar) newProgress(songTitle string, full, limit int) {
+func (p *PlayingBar) newProgress(songTitle string, full int) {
 	p.full = full
-	p.limit = limit
 	p._progress = 0
 	p.setSongTitle(songTitle)
 }
@@ -131,8 +130,9 @@ func (p *PlayingBar) newProgress(songTitle string, full, limit int) {
 // Sets default title and progress bar
 func (p *PlayingBar) setDefault() {
 	p.setSongTitle("---------:---------")
+	_, _, width, _ := p.GetInnerRect()
 	text := fmt.Sprintf(
-		"%s ┣%s┫ %s", "00:00", strings.Repeat("━", 100), "00:00",
+		"%s ┣%s┫ %s", "00:00", strings.Repeat("━", width/2), "00:00",
 	)
 	p.text.SetText(text)
 }
