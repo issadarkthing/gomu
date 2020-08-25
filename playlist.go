@@ -123,130 +123,34 @@ func newPlaylist(args Args) *Playlist {
 
 	playlist.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
-		currNode := playlist.GetCurrentNode()
-		audioFile := currNode.GetReference().(*AudioFile)
+		cmds := map[rune]string{
+			'a': "create_playlist",
+			'D': "delete_playlist",
+			'd': "delete_file",
+			'Y': "download_audio",
+			'l': "add_queue",
+			'L': "bulk_add",
+			'h': "close_node",
+			'r': "refresh",
+			'R': "rename",
+			'/': "playlist_search",
+		}
 
-		switch e.Rune() {
+		for key, cmd := range cmds {
+			if e.Rune() != key {
+				continue
+			}
+			fn, err := gomu.command.getFn(cmd)
+			if err != nil {
+				logError(err)
+				return e
+			}
+			fn()
+		}
 
-		case ' ':
-			// Disable default key handler
+		// disable default key handler for space
+		if e.Rune() == ' ' {
 			return nil
-
-		case 'a':
-
-			name, _ := gomu.pages.GetFrontPage()
-			if name != "mkdir-popup" {
-				createPlaylistPopup()
-			}
-
-		case 'D':
-
-			err := playlist.deletePlaylist(audioFile)
-			if err != nil {
-				logError(err)
-			}
-
-		case 'd':
-
-			// prevent from deleting a directory
-			if !audioFile.isAudioFile {
-				return e
-			}
-
-			err := playlist.deleteSong(audioFile)
-			if err != nil {
-				logError(err)
-			}
-
-		case 'Y':
-
-			if gomu.pages.HasPage("download-popup") {
-				gomu.pages.RemovePage("download-popup")
-				return e
-			}
-
-			// this ensures it downloads to
-			// the correct dir
-			if audioFile.isAudioFile {
-				downloadMusicPopup(audioFile.parent)
-			} else {
-				downloadMusicPopup(currNode)
-			}
-
-		case 'l':
-
-			if audioFile.isAudioFile {
-				gomu.queue.enqueue(audioFile)
-			} else {
-				currNode.SetExpanded(true)
-			}
-
-		case 'h':
-
-			// if closing node with no children
-			// close the node's parent
-			// remove the color of the node
-
-			if audioFile.isAudioFile {
-				parent := audioFile.parent
-
-				playlist.setHighlight(parent)
-
-				parent.SetExpanded(false)
-			}
-
-			currNode.Collapse()
-
-		case 'L':
-			if !viper.GetBool("general.confirm_bulk_add") {
-				playlist.addAllToQueue(playlist.GetCurrentNode())
-				return e
-			}
-
-			confirmationPopup(
-				"Are you sure to add this whole directory into queue?",
-				func(_ int, label string) {
-
-					if label == "yes" {
-						playlist.addAllToQueue(playlist.GetCurrentNode())
-					}
-
-				})
-
-		case 'r':
-			playlist.refresh()
-
-		case 'R':
-			renamePopup(audioFile)
-
-		case '/':
-
-			if viper.GetBool("general.fzf") {
-
-				err := playlist.fuzzyFind()
-				if err != nil {
-					logError(err)
-				}
-
-				return e
-			}
-
-			files := make([]string, len(playlist.getAudioFiles()))
-
-			for i, file := range playlist.getAudioFiles() {
-				files[i] = file.name
-			}
-
-			searchPopup(files, func(text string) {
-
-				audio, err := playlist.findAudioFile(sha1Hex(text))
-				if err != nil {
-					logError(err)
-				}
-
-				playlist.setHighlight(audio.node)
-			})
-
 		}
 
 		return e
@@ -254,6 +158,15 @@ func newPlaylist(args Args) *Playlist {
 
 	return playlist
 
+}
+
+// Returns the current file highlighted in the playlist
+func (p Playlist) getCurrentFile() *AudioFile {
+	node := p.GetCurrentNode()
+	if node == nil {
+		return nil
+	}
+	return node.GetReference().(*AudioFile)
 }
 
 // Deletes song from filesystem

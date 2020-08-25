@@ -159,6 +159,7 @@ func start(application *tview.Application, args Args) {
 
 	// Assigning to global variable gomu
 	gomu = newGomu()
+	gomu.args = args
 
 	// override default border
 	// change double line border to one line border when focused
@@ -171,6 +172,7 @@ func start(application *tview.Application, args Args) {
 	tview.Styles.PrimitiveBackgroundColor = gomu.colors.background
 
 	gomu.initPanels(application, args)
+	gomu.command.defineCommands()
 
 	flex := layout(gomu)
 	gomu.pages.AddPage("main", flex, true, true)
@@ -199,73 +201,47 @@ func start(application *tview.Application, args Args) {
 	}()
 
 	// global keybindings are handled here
-	application.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	application.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 		popupName, _ := gomu.pages.GetFrontPage()
 
 		// disables keybindings when writing in input fields
 		if strings.Contains(popupName, "-input-") {
-			return event
+			return e
 		}
 
-		switch event.Key() {
+		switch e.Key() {
 		// cycle through each section
 		case tcell.KeyTAB:
-
 			if strings.Contains(popupName, "confirmation-") {
-				return event
+				return e
 			}
-
 			gomu.cyclePanels()
-
 		}
 
-		switch event.Rune() {
-		case 'q':
-
-			if !viper.GetBool("general.confirm_on_exit") {
-				err := gomu.quit(args)
-				if err != nil {
-					logError(err)
-				}
-			}
-
-			exitConfirmation(args)
-
-		case ' ':
-			gomu.player.togglePause()
-
-		case '+':
-			v := int(gomu.player.volume*10) + 100
-			if v < 100 {
-				vol := gomu.player.setVolume(0.5)
-				volumePopup(vol)
-			}
-
-		case '-':
-			v := int(gomu.player.volume*10) + 100
-			if v > 0 {
-				vol := gomu.player.setVolume(-0.5)
-				volumePopup(vol)
-			}
-
-		case 'n':
-			gomu.player.skip()
-
-		case '?':
-
-			name, _ := gomu.pages.GetFrontPage()
-
-			if name == "help-page" {
-				gomu.pages.RemovePage(name)
-				gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
-			} else {
-				helpPopup(gomu.prevPanel)
-			}
-
+		cmds := map[rune]string{
+			'q': "quit",
+			' ': "toggle_pause",
+			'+': "volume_up",
+			'-': "volume_down",
+			'n': "skip",
+			':': "command_search",
+			'?': "toggle_help",
 		}
 
-		return event
+		for key, cmd := range cmds {
+			if e.Rune() != key {
+				continue
+			}
+			fn, err := gomu.command.getFn(cmd)
+			if err != nil {
+				logError(err)
+				return e
+			}
+			fn()
+		}
+
+		return e
 	})
 
 	// fix transparent background issue

@@ -19,10 +19,12 @@ type Gomu struct {
 	player     *Player
 	pages      *tview.Pages
 	colors     *Colors
+	command    Command
 	// popups is used to manage focus between popups and panels
 	popups    Stack
 	prevPanel Panel
 	panels    []Panel
+	args      Args
 	isSuspend bool
 	mu        sync.Mutex
 }
@@ -31,7 +33,8 @@ type Gomu struct {
 func newGomu() *Gomu {
 
 	gomu := &Gomu{
-		colors: newColor(),
+		colors:  newColor(),
+		command: newCommand(),
 	}
 
 	return gomu
