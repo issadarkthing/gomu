@@ -87,7 +87,7 @@ func (p *Player) run(currSong *AudioFile) error {
 	popupMessage := fmt.Sprintf("%s\n\n[ %s ]",
 		currSong.name, fmtDuration(p.length))
 
-	timedPopup(" Current Song ", popupMessage, getPopupTimeout(), 0, 0)
+	defaultTimedPopup(" Current Song ", popupMessage)
 
 	done := make(chan bool, 1)
 	p.done = done
