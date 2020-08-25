@@ -16,7 +16,6 @@ import (
 
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
-	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
 )
 
@@ -378,72 +377,27 @@ func newQueue() *Queue {
 
 	queue.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
-		switch e.Rune() {
-		case 'j':
-			queue.next()
-		case 'k':
-			queue.prev()
-		case 'd':
-			queue.deleteItem(queue.GetCurrentItem())
-		case 'D':
+		cmds := map[rune]string{
+			'j': "move_down",
+			'k': "move_up",
+			'd': "delete_item",
+			'D': "clear_queue",
+			'l': "play_selected",
+			'z': "toggle_loop",
+			's': "shuffle_queue",
+			'/': "queue_search",
+		}
 
-			confirmationPopup("Are you sure to clear the queue?", func(_ int, label string) {
-				if label == "yes" {
-					queue.clearQueue()
-				}
-			})
-		case 'l':
-			a, err := queue.deleteItem(queue.GetCurrentItem())
+		for key, cmd := range cmds {
+			if e.Rune() != key {
+				continue
+			}
+			fn, err := gomu.command.getFn(cmd)
 			if err != nil {
 				logError(err)
-			}
-
-			queue.pushFront(a)
-			gomu.player.skip()
-		case 'z':
-			isLoop := gomu.player.toggleLoop()
-			var msg string
-
-			if isLoop {
-				msg = "on"
-			} else {
-				msg = "off"
-			}
-
-			timedPopup("Loop", msg, getPopupTimeout(), 30, 5)
-		case 's':
-			queue.shuffle()
-
-		case '/':
-
-			if viper.GetBool("general.fzf") {
-
-				gomu.suspend()
-				if err := queue.fuzzyFind(); err != nil {
-					logError(err)
-				}
-				gomu.unsuspend()
-
 				return e
 			}
-
-			audios := make([]string, len(queue.items))
-			for i, file := range queue.items {
-				audios[i] = file.name
-			}
-
-			searchPopup(audios, func(selected string) {
-
-				index := 0
-				for i, v := range queue.items {
-					if v.name == selected {
-						index = i
-					}
-				}
-
-				queue.SetCurrentItem(index)
-			})
-
+			fn()
 		}
 
 		return nil

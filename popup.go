@@ -407,9 +407,9 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 		case tcell.KeyEnter:
 			if list.GetItemCount() > 0 {
 				_, selected := list.GetItemText(list.GetCurrentItem())
-				handler(selected)
 				gomu.pages.RemovePage("search-input-popup")
 				gomu.popups.pop()
+				handler(selected)
 			}
 
 		case tcell.KeyEscape:
