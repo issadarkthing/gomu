@@ -77,7 +77,10 @@ func newPlaylist(args Args) *Playlist {
 		log.Fatalf("Unable to find music directory: %e", err)
 	}
 
-	root := tview.NewTreeNode(path.Base(rootDir)).
+	rootTextView := fmt.Sprintf("%s %s",
+		viper.GetString("emoji.playlist"), path.Base(rootDir))
+
+	root := tview.NewTreeNode(rootTextView).
 		SetColor(gomu.colors.accent)
 
 	tree := tview.NewTreeView().SetRoot(root)
@@ -89,7 +92,7 @@ func newPlaylist(args Args) *Playlist {
 	}
 
 	rootAudioFile := &AudioFile{
-		name: root.GetText(),
+		name: path.Base(rootDir),
 		node: root,
 		path: rootDir,
 	}
