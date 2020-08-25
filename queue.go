@@ -408,7 +408,8 @@ func newQueue() *Queue {
 	queue.
 		SetSelectedBackgroundColor(tcell.ColorDarkCyan).
 		SetSelectedTextColor(tcell.ColorWhite).
-		SetHighlightFullLine(true)
+		SetHighlightFullLine(true).
+		SetBorderPadding(0, 0, 1, 1)
 
 	return queue
 

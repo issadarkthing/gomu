@@ -99,7 +99,8 @@ func newPlaylist(args Args) *Playlist {
 	playlist.
 		SetTitle(playlist.defaultTitle).
 		SetBorder(true).
-		SetTitleAlign(tview.AlignLeft)
+		SetTitleAlign(tview.AlignLeft).
+		SetBorderPadding(0, 0, 1, 1)
 
 	populate(root, rootDir)
 
