@@ -221,9 +221,9 @@ func (c Command) defineCommands() {
 			return
 		}
 
-		audios := make([]string, len(queue.items))
-		for i, file := range queue.items {
-			audios[i] = file.name
+		audios := make([]string, 0, len(queue.items))
+		for _, file := range queue.items {
+			audios = append(audios, file.name)
 		}
 
 		searchPopup(audios, func(selected string) {
