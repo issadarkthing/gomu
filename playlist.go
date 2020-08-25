@@ -694,7 +694,8 @@ func populate(root *tview.TreeNode, rootPath string) error {
 
 			displayText := songName
 			if viper.GetBool("general.emoji") {
-				displayText = fmt.Sprintf("🎵 %s", songName)
+				displayText = fmt.Sprintf(" %s %s",
+					viper.GetString("emoji.file"), songName)
 			}
 
 			child.SetReference(audioFile)
@@ -714,7 +715,8 @@ func populate(root *tview.TreeNode, rootPath string) error {
 
 			displayText := songName
 			if viper.GetBool("general.emoji") {
-				displayText = fmt.Sprintf("📁 %s", songName)
+				displayText = fmt.Sprintf(" %s %s",
+					viper.GetString("emoji.playlist"), songName)
 			}
 
 			child.SetReference(audioFile)
