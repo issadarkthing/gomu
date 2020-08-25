@@ -428,17 +428,10 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 		AddItem(input, 2, 1, true).
 		AddItem(list, 0, 1, false)
 
-	var title string
-	if viper.GetBool("general.emoji") {
-		title = " 🔎 Finder "
-	} else {
-		title = " Finder "
-	}
-
 	popup.SetBorder(true).
 		SetBackgroundColor(gomu.colors.popup).
 		SetBorderPadding(1, 1, 2, 2).
-		SetTitle(title)
+		SetTitle(" Finder ")
 
 	gomu.pages.AddPage("search-input-popup", center(popup, 70, 40), true, true)
 	gomu.popups.push(popup)
