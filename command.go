@@ -196,12 +196,12 @@ func (c Command) defineCommands() {
 		var msg string
 
 		if isLoop {
-			msg = "on"
+			msg = "Looping current queue"
 		} else {
-			msg = "off"
+			msg = "Stopped looping current queue"
 		}
 
-		defaultTimedPopup("Loop", msg)
+		defaultTimedPopup(" Loop ", msg)
 	})
 
 	c.define("shuffle_queue", func() {
