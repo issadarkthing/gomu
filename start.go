@@ -60,12 +60,14 @@ general:
   # initial volume when gomu starts up
   volume:            100
   # some of the terminal supports unicode character
-  # you can set this to false to disable emojis
-  emoji:             true
+  # you can set this to true to enable emojis
+  emoji:             false
   # you may use fzf as your finder inside gomu
   # but it is recommended to use built-in finder
   # as it integrates well with gomu
   fzf:               false
+
+# vi:ft=yaml
 `
 
 	// config path passed by flag
