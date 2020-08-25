@@ -171,6 +171,11 @@ func timedPopup(
 	}()
 }
 
+// Wrapper for timed popup
+func defaultTimedPopup(title, description string) {
+	timedPopup(title, description, getPopupTimeout(), 0, 0)
+}
+
 // Shows popup for the current volume
 func volumePopup(volume float64) {
 
@@ -187,7 +192,7 @@ func volumePopup(volume float64) {
 		maxVol,
 	)
 
-	timedPopup(" Volume ", progress, getPopupTimeout(), 0, 0)
+	defaultTimedPopup(" Volume ", progress)
 }
 
 // Shows a list of keybind. The upper list is the local keybindings to specific
@@ -276,8 +281,7 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 					}
 				}()
 			} else {
-				timedPopup("Invalid url", "Invalid youtube url was given",
-					getPopupTimeout(), 0, 0)
+				defaultTimedPopup("Invalid url", "Invalid youtube url was given")
 			}
 
 			gomu.pages.RemovePage("download-input-popup")
@@ -477,7 +481,7 @@ func renamePopup(node *AudioFile) {
 			}
 			err := gomu.playlist.rename(newName)
 			if err != nil {
-				timedPopup(" Error ", err.Error(), getPopupTimeout(), 0, 0)
+				defaultTimedPopup(" Error ", err.Error())
 				logError(err)
 			}
 			gomu.pages.RemovePage(popupId)

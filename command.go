@@ -201,7 +201,7 @@ func (c Command) defineCommands() {
 			msg = "off"
 		}
 
-		timedPopup("Loop", msg, getPopupTimeout(), 30, 5)
+		defaultTimedPopup("Loop", msg)
 	})
 
 	c.define("shuffle_queue", func() {

@@ -183,15 +183,14 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 
 			if err != nil {
 
-				timedPopup(" Error ", "Unable to delete "+audioFile.name,
-					getPopupTimeout(), 0, 0)
+				defaultTimedPopup(" Error ", "Unable to delete "+audioFile.name)
 
 				err = tracerr.Wrap(err)
 
 			} else {
 
-				timedPopup(" Success ", audioFile.name+"\nhas been deleted successfully",
-					getPopupTimeout(), 0, 0)
+				defaultTimedPopup(" Success ",
+					audioFile.name+"\nhas been deleted successfully")
 
 				p.refresh()
 			}
@@ -224,19 +223,17 @@ func (p *Playlist) deletePlaylist(audioFile *AudioFile) (err error) {
 
 			if err != nil {
 
-				timedPopup(
+				defaultTimedPopup(
 					" Error ",
-					"Unable to delete dir "+selectedDir.name,
-					getPopupTimeout(), 0, 0)
+					"Unable to delete dir "+selectedDir.name)
 
 				err = tracerr.Wrap(err)
 
 			} else {
 
-				timedPopup(
+				defaultTimedPopup(
 					" Success ",
-					selectedDir.name+"\nhas been deleted successfully",
-					getPopupTimeout(), 0, 0)
+					selectedDir.name+"\nhas been deleted successfully")
 
 				p.refresh()
 			}
@@ -577,8 +574,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	_, err := exec.LookPath("youtube-dl")
 
 	if err != nil {
-		timedPopup(" Error ", "youtube-dl is not in your $PATH",
-			getPopupTimeout(), 0, 0)
+		defaultTimedPopup(" Error ", "youtube-dl is not in your $PATH")
 
 		return tracerr.Wrap(err)
 	}
@@ -588,7 +584,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	selAudioFile := selPlaylist.GetReference().(*AudioFile)
 	selPlaylistName := selAudioFile.name
 
-	timedPopup(" Ytdl ", "Downloading", getPopupTimeout(), 0, 0)
+	defaultTimedPopup(" Ytdl ", "Downloading")
 
 	// specify the output path for ytdl
 	outputDir := fmt.Sprintf(
@@ -619,7 +615,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	gomu.playlist.done <- struct{}{}
 
 	if err != nil {
-		timedPopup(" Error ", "Error running youtube-dl", getPopupTimeout(), 0, 0)
+		defaultTimedPopup(" Error ", "Error running youtube-dl")
 		return tracerr.Wrap(err)
 	}
 
@@ -639,10 +635,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s",
 		getName(audioPath))
 
-	timedPopup(
-		" Ytdl ",
-		downloadFinishedMessage,
-		getPopupTimeout(), 0, 0)
+	defaultTimedPopup(" Ytdl ", downloadFinishedMessage)
 
 	return nil
 }
