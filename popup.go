@@ -90,9 +90,9 @@ func confirmationPopup(
 		SetButtonBackgroundColor(gomu.colors.popup).
 		SetButtonTextColor(gomu.colors.accent).
 		SetDoneFunc(func(indx int, label string) {
-			handler(indx, label)
 			gomu.pages.RemovePage("confirmation-popup")
 			gomu.popups.pop()
+			handler(indx, label)
 		})
 
 	gomu.pages.
