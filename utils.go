@@ -34,6 +34,7 @@ func logError(err error) {
 	log.Println(tracerr.SprintSource(err))
 }
 
+// debugLog is used for debugging it prints the log to /tmp/gomu.log
 func debugLog(val ...interface{}) {
 
 	tmpDir := os.TempDir()
@@ -48,13 +49,10 @@ func debugLog(val ...interface{}) {
 
 	log.SetOutput(file)
 	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+	log.Print("DEBUG: ")
 	log.Println(val...)
 }
 
-// Wraps error in a formatted way.
-func wrapError(fnName string, err error) error {
-	return fmt.Errorf("%s: \n%e", fnName, err)
-}
 
 // Formats duration to my desired output mm:ss
 func fmtDuration(input time.Duration) string {
