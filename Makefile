@@ -31,7 +31,7 @@ $(INSTALL_DIR):
 
 build: $(BIN_DIR) 
 	@echo === BUILDING ===
-	${GO} build -v -o $(BIN_DIR)/$(BIN_NAME)
+	${GO} build -ldflags "-X main.VERSION=${VERSION}" -v -o $(BIN_DIR)/$(BIN_NAME)
 
 install: build $(INSTALL_DIR)
 	@echo === INSTALLING ===
