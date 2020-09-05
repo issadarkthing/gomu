@@ -53,7 +53,6 @@ func debugLog(val ...interface{}) {
 	log.Println(val...)
 }
 
-
 // Formats duration to my desired output mm:ss
 func fmtDuration(input time.Duration) string {
 
