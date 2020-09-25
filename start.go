@@ -29,8 +29,9 @@ type Panel interface {
 }
 
 const (
-	CONFIG_PATH = ".config/gomu/config"
-	MUSIC_PATH  = "~/music"
+	CONFIG_PATH    = ".config/gomu/config"
+	HISTORY_PATH   = "~/.local/share/gomu/urls"
+	MUSIC_PATH     = "~/music"
 )
 
 // Reads config file and sets the options
@@ -44,6 +45,8 @@ general:
   load_prev_queue:   true
   # change this to directory that contains mp3 files
   music_dir:         ~/music
+  # url history of downloaded audio will be saved here
+  history_path:      ~/.local/share/gomu/urls
   popup_timeout:     5s
   # initial volume when gomu starts up
   volume:            100
@@ -99,6 +102,7 @@ emoji:
 
 		// General config
 		viper.SetDefault("general.music_dir", MUSIC_PATH)
+		viper.SetDefault("general.history_path", HISTORY_PATH)
 		viper.SetDefault("general.confirm_on_exit", true)
 		viper.SetDefault("general.confirm_bulk_add", true)
 		viper.SetDefault("general.popup_timeout", "5s")
