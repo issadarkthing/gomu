@@ -113,9 +113,3 @@ I just wanted to implement my own music player with a programming language i'm c
 
 Seeking and more advanced stuff has not yet been implemented; feel free to contribute :)
 
-
-https://gomuplayer.netlify.app
-
-Thanks to Sysnomid for making the site.
-
-https://github.com/Sysnomid/gomu-site
