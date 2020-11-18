@@ -220,7 +220,7 @@ func helpPopup(panel Panel) {
 		SetSelectedTextColor(gomu.colors.accent)
 
 	for _, v := range append(helpText, genHelp...) {
-		list.AddItem(v, "", 0, nil)
+		list.AddItem("  " + v, "", 0, nil)
 	}
 
 	prev := func() {
