@@ -18,40 +18,9 @@ import (
 
 // Logs erros to /tmp/gomu.log
 func logError(err error) {
-
-	tmpDir := os.TempDir()
-	logFile := path.Join(tmpDir, "gomu.log")
-	file, e := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-
-	if e != nil {
-		log.Fatalf("Error opening file %s", logFile)
-	}
-
-	defer file.Close()
-
-	log.SetOutput(file)
-	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
-	log.Println(tracerr.SprintSource(err))
+	log.Println(tracerr.Sprint(err))
 }
 
-// debugLog is used for debugging it prints the log to /tmp/gomu.log
-func debugLog(val ...interface{}) {
-
-	tmpDir := os.TempDir()
-	logFile := path.Join(tmpDir, "gomu.log")
-	file, e := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-
-	if e != nil {
-		log.Fatalf("Error opening file %s", logFile)
-	}
-
-	defer file.Close()
-
-	log.SetOutput(file)
-	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
-	log.Print("DEBUG: ")
-	log.Println(val...)
-}
 
 // Formats duration to my desired output mm:ss
 func fmtDuration(input time.Duration) string {
