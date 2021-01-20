@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
 	spin "github.com/tj/go-spin"
