@@ -95,6 +95,16 @@ func confirmationPopup(
 			handler(indx, label)
 		})
 
+	modal.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+		switch e.Rune() {
+		case 'j':
+      	return tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
+		case 'k':
+        return tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone)
+		}
+		return e
+	})
+
 	gomu.pages.
 		AddPage("confirmation-popup", center(modal, 40, 10), true, true)
 
