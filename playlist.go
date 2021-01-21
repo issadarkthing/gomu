@@ -385,7 +385,7 @@ func (p *Playlist) createPlaylist(name string) error {
 func (p *Playlist) setHighlight(currNode *tview.TreeNode) {
 
 	if p.prevNode != nil {
-		p.prevNode.SetColor(gomu.colors.foreground)
+		p.prevNode.SetColor(gomu.colors.background)
 	}
 	currNode.SetColor(gomu.colors.accent)
 	p.SetCurrentNode(currNode)
