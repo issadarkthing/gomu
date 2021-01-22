@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
 	spin "github.com/tj/go-spin"
@@ -385,7 +385,7 @@ func (p *Playlist) createPlaylist(name string) error {
 func (p *Playlist) setHighlight(currNode *tview.TreeNode) {
 
 	if p.prevNode != nil {
-		p.prevNode.SetColor(gomu.colors.foreground)
+		p.prevNode.SetColor(gomu.colors.background)
 	}
 	currNode.SetColor(gomu.colors.accent)
 	p.SetCurrentNode(currNode)

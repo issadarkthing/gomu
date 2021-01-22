@@ -7,8 +7,9 @@ import (
 	"regexp"
 	"strings"
 	"time"
+  "unicode/utf8"
 
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/sahilm/fuzzy"
 	"github.com/spf13/viper"
@@ -20,7 +21,7 @@ var (
 	popupCounter = 0
 )
 
-// Simple stack data structure
+// Stack Simple stack data structure
 type Stack struct {
 	popups []tview.Primitive
 }
@@ -94,6 +95,20 @@ func confirmationPopup(
 			gomu.popups.pop()
 			handler(indx, label)
 		})
+
+	modal.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+		switch e.Rune() {
+		case 'h':
+      	return tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
+		case 'j':
+      	return tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
+		case 'k':
+        return tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone)
+		case 'l':
+        return tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone)
+		}
+		return e
+	})
 
 	gomu.pages.
 		AddPage("confirmation-popup", center(modal, 40, 10), true, true)
@@ -369,21 +384,30 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 
 		pattern := input.GetText()
 		matches := fuzzy.Find(pattern, stringsToMatch)
-		const highlight = "[red]%s[-]"
+		const highlight = "[red]%c[-]"
+		// const highlight = "[red]%s[-]"
 
 		for _, match := range matches {
 			var text strings.Builder
-			for i := 0; i < len(match.Str); i++ {
-				currChar := string(match.Str[i])
-				if contains(i, match.MatchedIndexes) {
-					text.WriteString(fmt.Sprintf(highlight, currChar))
-				} else {
-					text.WriteString(currChar)
-				}
-			}
+		  matchrune := [] rune(match.Str)
+      matchruneIndexes := match.MatchedIndexes 
+      for i:=0; i < len(match.MatchedIndexes); i++{
+        matchruneIndexes[i] = utf8.RuneCountInString(match.Str[0:match.MatchedIndexes[i]])
+      }
+      for i :=0; i < len(matchrune); i++ {
+        if contains(i, matchruneIndexes) {
+          textwithcolor := fmt.Sprintf(highlight, matchrune[i])
+          for _,j := range textwithcolor {
+            text.WriteRune(j)
+          }
+        } else{
+          text.WriteRune(matchrune[i])
+        }
+      }
 			list.AddItem(text.String(), match.Str, 0, nil)
 		}
 	})
+
 
 	input.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
