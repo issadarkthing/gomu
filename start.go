@@ -13,7 +13,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
 )
