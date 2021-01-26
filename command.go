@@ -1,6 +1,8 @@
 package main
 
 import (
+  "time"
+
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
@@ -107,6 +109,7 @@ func (c Command) defineCommands() {
 
 		if !viper.GetBool("general.confirm_bulk_add") {
 			gomu.playlist.addAllToQueue(currNode)
+      gomu.cyclePanels()
 			return
 		}
 
@@ -116,6 +119,7 @@ func (c Command) defineCommands() {
 
 				if label == "yes" {
 					gomu.playlist.addAllToQueue(currNode)
+          gomu.cyclePanels()
 				}
 
 			})
@@ -300,4 +304,62 @@ func (c Command) defineCommands() {
 			}
 		})
 	})
+
+  c.define("forward", func() {
+    if gomu.player.isRunning && ! gomu.player.ctrl.Paused {
+      position := int(gomu.player.position.Round(time.Second).Seconds()) + 10
+      if (position < gomu.playingBar.full) {
+        // gomu.playingBar.progress <- 10
+        // position := int(gomu.player.position.Round(time.Second).Seconds()) + 10
+        // position := gomu.playingBar._progress + 10
+        gomu.player.seek(position)
+        gomu.playingBar._progress = int(gomu.player.position.Round(time.Second).Seconds())
+      }
+    }
+  })
+
+  c.define("rewind", func() {
+    if gomu.player.isRunning && ! gomu.player.ctrl.Paused {
+      position := int(gomu.player.position.Round(time.Second).Seconds()) - 10
+      if (position > 0 ) {
+        // gomu.playingBar.progress <- -10
+        gomu.playingBar._progress = position
+        gomu.player.seek(position)
+      } else {
+        gomu.playingBar._progress = 0
+        gomu.player.seek(0)
+      }
+    }
+  })
+
+  c.define("forward_fast", func() {
+    if gomu.player.isRunning && ! gomu.player.ctrl.Paused {
+      position := int(gomu.player.position.Round(time.Second).Seconds()) + 60
+      if (position < gomu.playingBar.full) {
+        // gomu.playingBar.progress <- 10
+        // position := int(gomu.player.position.Round(time.Second).Seconds()) + 10
+        // position := gomu.playingBar._progress + 10
+        gomu.playingBar._progress = position
+        gomu.player.seek(position)
+      }
+    }
+  })
+
+  c.define("rewind_fast", func() {
+    if gomu.player.isRunning && ! gomu.player.ctrl.Paused {
+      position := int(gomu.player.position.Round(time.Second).Seconds()) - 60
+      if (position > 0 ) {
+        // gomu.playingBar.progress <- -10
+        // position := gomu.playingBar._progress - 10
+        gomu.playingBar._progress = position
+        gomu.player.seek(position)
+        // gomu.app.Draw()
+      } else {
+        gomu.playingBar._progress = 0
+        gomu.player.seek(0)
+        // gomu.app.Draw()
+      }
+    }
+  })
+
 }

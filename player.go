@@ -29,9 +29,16 @@ type Player struct {
 	volume      float64
 	resampler   *beep.Resampler
 	position    time.Duration
-	length      time.Duration
+  length      time.Duration
 	currentSong *AudioFile
 }
+
+var (
+  s   beep.StreamSeekCloser
+  ft  beep.Format
+	// is used to send progress
+  i   int
+)
 
 func newPlayer() *Player {
 
@@ -58,21 +65,24 @@ func (p *Player) run(currSong *AudioFile) error {
 
 	defer f.Close()
 
-	streamer, format, err := mp3.Decode(f)
+	s, ft, err = mp3.Decode(f)
+	// streamer, format, err := mp3.Decode(f)
+
+  // p.StreamSeekCloser = streamer
 
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
 
-	defer streamer.Close()
-
+	defer s.Close()
+  
 	// song duration
-	p.length = format.SampleRate.D(streamer.Len())
+	p.length = ft.SampleRate.D(s.Len())
 
 	if !p.hasInit {
 
 		err := speaker.
-			Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+			Init(ft.SampleRate, ft.SampleRate.N(time.Second/10))
 
 		if err != nil {
 			return tracerr.Wrap(err)
@@ -81,7 +91,8 @@ func (p *Player) run(currSong *AudioFile) error {
 		p.hasInit = true
 	}
 
-	p.format = &format
+	p.format = &ft
+	// p.format = &format
 	p.currentSong = currSong
 
 	popupMessage := fmt.Sprintf("%s\n\n[ %s ]",
@@ -92,7 +103,7 @@ func (p *Player) run(currSong *AudioFile) error {
 	done := make(chan bool, 1)
 	p.done = done
 
-	sstreamer := beep.Seq(streamer, beep.Callback(func() {
+	sstreamer := beep.Seq(s, beep.Callback(func() {
 		done <- true
 	}))
 
@@ -118,10 +129,6 @@ func (p *Player) run(currSong *AudioFile) error {
 	p._volume = volume
 	speaker.Play(p._volume)
 
-	position := func() time.Duration {
-		return format.SampleRate.D(streamer.Position())
-	}
-
 	p.position = position()
 	p.isRunning = true
 
@@ -139,7 +146,7 @@ func (p *Player) run(currSong *AudioFile) error {
 	}()
 
 	// is used to send progress
-	i := 0
+	i = 0
 
 next:
 	for {
@@ -204,6 +211,7 @@ func (p *Player) play() {
 	p.isRunning = true
 	speaker.Unlock()
 }
+
 
 // volume up and volume down using -0.5 or +0.5
 func (p *Player) setVolume(v float64) float64 {
@@ -290,3 +298,17 @@ func volToHuman(volume float64) int {
 func absVolume(volume int) float64 {
 	return (float64(volume) - 100) / 10
 }
+
+func position() time.Duration {
+		return ft.SampleRate.D(s.Position())
+}
+
+//seek is the function to move forward and rewind
+func (p *Player) seek(pos int) error {
+  speaker.Lock()
+  err := s.Seek(pos * int(ft.SampleRate))
+  i = pos
+  speaker.Unlock()
+  return err
+}
+
