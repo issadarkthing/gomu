@@ -1,7 +1,6 @@
 package main
 
 import (
-  "time"
 
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
@@ -185,13 +184,15 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("play_selected", func() {
-		a, err := gomu.queue.deleteItem(gomu.queue.GetCurrentItem())
-		if err != nil {
-			logError(err)
-		}
+    if (gomu.queue.GetItemCount() != 0 && gomu.queue.GetCurrentItem()!= -1) {
+      a, err := gomu.queue.deleteItem(gomu.queue.GetCurrentItem())
+      if err != nil {
+        logError(err)
+      }
 
-		gomu.queue.pushFront(a)
-		gomu.player.skip()
+      gomu.queue.pushFront(a)
+      gomu.player.skip()
+    }
 	})
 
 	c.define("toggle_loop", func() {
@@ -307,22 +308,18 @@ func (c Command) defineCommands() {
 
   c.define("forward", func() {
     if gomu.player.isRunning && ! gomu.player.ctrl.Paused {
-      position := int(gomu.player.position.Round(time.Second).Seconds()) + 10
+      position := gomu.playingBar._progress + 10
       if (position < gomu.playingBar.full) {
-        // gomu.playingBar.progress <- 10
-        // position := int(gomu.player.position.Round(time.Second).Seconds()) + 10
-        // position := gomu.playingBar._progress + 10
         gomu.player.seek(position)
-        gomu.playingBar._progress = int(gomu.player.position.Round(time.Second).Seconds())
+        gomu.playingBar._progress = position
       }
     }
   })
 
   c.define("rewind", func() {
     if gomu.player.isRunning && ! gomu.player.ctrl.Paused {
-      position := int(gomu.player.position.Round(time.Second).Seconds()) - 10
+      position := gomu.playingBar._progress - 10
       if (position > 0 ) {
-        // gomu.playingBar.progress <- -10
         gomu.playingBar._progress = position
         gomu.player.seek(position)
       } else {
@@ -334,11 +331,8 @@ func (c Command) defineCommands() {
 
   c.define("forward_fast", func() {
     if gomu.player.isRunning && ! gomu.player.ctrl.Paused {
-      position := int(gomu.player.position.Round(time.Second).Seconds()) + 60
+      position := gomu.playingBar._progress + 60
       if (position < gomu.playingBar.full) {
-        // gomu.playingBar.progress <- 10
-        // position := int(gomu.player.position.Round(time.Second).Seconds()) + 10
-        // position := gomu.playingBar._progress + 10
         gomu.playingBar._progress = position
         gomu.player.seek(position)
       }
@@ -347,17 +341,13 @@ func (c Command) defineCommands() {
 
   c.define("rewind_fast", func() {
     if gomu.player.isRunning && ! gomu.player.ctrl.Paused {
-      position := int(gomu.player.position.Round(time.Second).Seconds()) - 60
+      position := gomu.playingBar._progress - 60
       if (position > 0 ) {
-        // gomu.playingBar.progress <- -10
-        // position := gomu.playingBar._progress - 10
         gomu.playingBar._progress = position
         gomu.player.seek(position)
-        // gomu.app.Draw()
       } else {
         gomu.playingBar._progress = 0
         gomu.player.seek(0)
-        // gomu.app.Draw()
       }
     }
   })

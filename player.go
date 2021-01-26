@@ -66,9 +66,6 @@ func (p *Player) run(currSong *AudioFile) error {
 	defer f.Close()
 
 	s, ft, err = mp3.Decode(f)
-	// streamer, format, err := mp3.Decode(f)
-
-  // p.StreamSeekCloser = streamer
 
 	if err != nil {
 		return tracerr.Wrap(err)
@@ -92,7 +89,6 @@ func (p *Player) run(currSong *AudioFile) error {
 	}
 
 	p.format = &ft
-	// p.format = &format
 	p.currentSong = currSong
 
 	popupMessage := fmt.Sprintf("%s\n\n[ %s ]",
