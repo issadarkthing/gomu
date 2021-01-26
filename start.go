@@ -235,10 +235,16 @@ func start(application *tview.Application, args Args) {
 			'q': "quit",
 			' ': "toggle_pause",
 			'+': "volume_up",
+			'=': "volume_up",
 			'-': "volume_down",
+			'_': "volume_down",
 			'n': "skip",
 			':': "command_search",
 			'?': "toggle_help",
+			'f': "forward",
+			'F': "forward_fast",
+			'b': "rewind",
+			'B': "rewind_fast",
 		}
 
 		for key, cmd := range cmds {
