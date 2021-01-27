@@ -583,19 +583,23 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		return tracerr.Wrap(err)
 	}
 
-	dir := viper.GetString("general.music_dir")
+	// dir := viper.GetString("general.music_dir")
 
 	selAudioFile := selPlaylist.GetReference().(*AudioFile)
-	selPlaylistName := selAudioFile.name
+	// selPlaylistName := selAudioFile.name
+  dir := selAudioFile.path  
+  // selPlaylistName = filepath.Join(selAudioFile.path,selPlaylistName)
+  // fmt.Println(selPlaylistName)
 
 	defaultTimedPopup(" Ytdl ", "Downloading")
 
 	// specify the output path for ytdl
 	outputDir := fmt.Sprintf(
-		"%s/%s/%%(title)s.%%(ext)s",
-		dir,
-		selPlaylistName)
-
+		// "%s/%s/%%(title)s.%%(ext)s",
+		"%s/%%(title)s.%%(ext)s",
+		dir)//,
+		// selPlaylistName)
+  
 	args := []string{
 		"--extract-audio",
 		"--audio-format",
@@ -623,24 +627,25 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		return tracerr.Wrap(err)
 	}
 
-	playlistPath := path.Join(expandTilde(dir), selPlaylistName)
+	playlistPath := dir
+	// playlistPath := path.Join(expandTilde(dir), selPlaylistName)
 	audioPath := extractFilePath(stdout.Bytes(), playlistPath)
-
+  
 	err = appendFile(expandTilde(viper.GetString("general.history_path")), url+"\n")
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
+  
 
 	err = gomu.playlist.addSongToPlaylist(audioPath, selPlaylist)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
 
-	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s",
-		getName(audioPath))
+	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s", getName(audioPath))
 
 	defaultTimedPopup(" Ytdl ", downloadFinishedMessage)
-
+  
 	return nil
 }
 
@@ -655,9 +660,13 @@ func populate(root *tview.TreeNode, rootPath string) error {
 
 	for _, file := range files {
 
-		path := filepath.Join(rootPath, file.Name())
-		f, err := os.Open(path)
+		// path := filepath.Join(rootPath, file.Name())
+		path, err := filepath.EvalSymlinks(filepath.Join(rootPath, file.Name()))
+		if err != nil {
+			continue
+		}
 
+    f, err := os.Open(path)
 		if err != nil {
 			continue
 		}
@@ -667,7 +676,8 @@ func populate(root *tview.TreeNode, rootPath string) error {
 		songName := getName(file.Name())
 		child := tview.NewTreeNode(songName)
 
-		if !file.IsDir() {
+		// if !file.IsDir() {
+		if file.Mode().IsRegular() {
 
 			filetype, err := getFileContentType(f)
 
@@ -712,6 +722,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 			audioFile := &AudioFile{
 				name:   songName,
 				path:   path,
+				isAudioFile: false,
 				node:   child,
 				parent: root,
 			}
@@ -728,6 +739,30 @@ func populate(root *tview.TreeNode, rootPath string) error {
 			root.AddChild(child)
 			populate(child, path)
 
+		}
+    
+    if (file.Mode() & os.ModeSymlink != 0) {
+
+      audioFile := &AudioFile{
+        name:   songName,
+        path:   path,
+				isAudioFile: false,
+        node:   child,
+        parent: root,
+      }
+
+      displayText := songName
+      if viper.GetBool("general.emoji") {
+        displayText = fmt.Sprintf(" %s %s",
+          viper.GetString("emoji.playlist"), songName)
+      }
+
+      child.SetReference(audioFile)
+      child.SetColor(gomu.colors.accent)
+      child.SetText(displayText)
+      root.AddChild(child)
+      populate(child, path)
+      
 		}
 
 	}

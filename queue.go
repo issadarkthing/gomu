@@ -152,6 +152,10 @@ func (q *Queue) enqueue(audioFile *AudioFile) (int, error) {
 
 	}
 
+  if ! audioFile.isAudioFile {
+    return q.GetItemCount(), nil
+  } 
+
 	q.items = append(q.items, audioFile)
 	songLength, err := getLength(audioFile.path)
 
