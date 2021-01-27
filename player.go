@@ -79,7 +79,7 @@ func (p *Player) run(currSong *AudioFile) error {
 	if !p.hasInit {
 
 		err := speaker.
-			Init(ft.SampleRate, ft.SampleRate.N(time.Second))
+			Init(ft.SampleRate, ft.SampleRate.N(time.Second/3))
 
 		if err != nil {
 			return tracerr.Wrap(err)
@@ -303,8 +303,8 @@ func position() time.Duration {
 func (p *Player) seek(pos int) error {
   speaker.Lock()
   err := s.Seek(pos * int(ft.SampleRate))
-  i = pos
   speaker.Unlock()
+  i = pos
   return err
 }
 

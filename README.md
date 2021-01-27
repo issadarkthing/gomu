@@ -64,10 +64,17 @@ general:
   confirm_on_exit:   true
   load_prev_queue:   true
   music_dir:         ~/music
+  history_path:      ~/.local/share/gomu/urls
   popup_timeout:     5s
   volume:            100
   emoji:             true
   fzf:               false
+
+emoji:
+  playlist:          
+  file:              
+
+# vi:ft=yaml
 ```
 
 ## Fzf

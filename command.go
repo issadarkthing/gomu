@@ -311,7 +311,7 @@ func (c Command) defineCommands() {
       position := gomu.playingBar._progress + 10
       if (position < gomu.playingBar.full) {
         gomu.player.seek(position)
-        gomu.playingBar._progress = position
+        gomu.playingBar._progress = position - 1
       }
     }
   })
@@ -319,12 +319,12 @@ func (c Command) defineCommands() {
   c.define("rewind", func() {
     if gomu.player.isRunning && ! gomu.player.ctrl.Paused {
       position := gomu.playingBar._progress - 10
-      if (position > 0 ) {
-        gomu.playingBar._progress = position
+      if (position - 1 > 0 ) {
         gomu.player.seek(position)
+        gomu.playingBar._progress = position -1
       } else {
-        gomu.playingBar._progress = 0
         gomu.player.seek(0)
+        gomu.playingBar._progress = 0
       }
     }
   })
@@ -333,8 +333,8 @@ func (c Command) defineCommands() {
     if gomu.player.isRunning && ! gomu.player.ctrl.Paused {
       position := gomu.playingBar._progress + 60
       if (position < gomu.playingBar.full) {
-        gomu.playingBar._progress = position
         gomu.player.seek(position)
+        gomu.playingBar._progress = position - 1
       }
     }
   })
@@ -342,12 +342,12 @@ func (c Command) defineCommands() {
   c.define("rewind_fast", func() {
     if gomu.player.isRunning && ! gomu.player.ctrl.Paused {
       position := gomu.playingBar._progress - 60
-      if (position > 0 ) {
-        gomu.playingBar._progress = position
+      if (position -1 > 0 ) {
         gomu.player.seek(position)
+        gomu.playingBar._progress = position - 1
       } else {
-        gomu.playingBar._progress = 0
         gomu.player.seek(0)
+        gomu.playingBar._progress = 0
       }
     }
   })
