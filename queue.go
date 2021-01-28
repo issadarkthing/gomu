@@ -95,8 +95,16 @@ func (q *Queue) updateTitle() string {
 		count = "song"
 	}
 
-	title := fmt.Sprintf("─ Queue ───┤ %d %s | %s ├",
-		len(q.items), count, fmtTime)
+  var loop string
+
+  if q.isLoop {
+    loop = "ﯩ"
+  } else {
+    loop = ""
+  }
+
+	title := fmt.Sprintf("─ Queue ───┤ %d %s | %s | %s ├",
+		len(q.items), count, fmtTime, loop)
 
 	q.SetTitle(title)
 
@@ -136,7 +144,7 @@ func (q *Queue) dequeue() (*AudioFile, error) {
 // Add item to the list and returns the length of the queue
 func (q *Queue) enqueue(audioFile *AudioFile) (int, error) {
 
-	if !gomu.player.isRunning && "false" == os.Getenv("TEST") {
+	if !gomu.player.isRunning && os.Getenv("TEST") == "false" {
 
 		gomu.player.isRunning = true
 
