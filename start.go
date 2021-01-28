@@ -228,7 +228,7 @@ func start(application *tview.Application, args Args) {
 			if strings.Contains(popupName, "confirmation-") {
 				return e
 			}
-			gomu.cyclePanels()
+			gomu.cyclePanels2()
 		}
 
 		cmds := map[rune]string{
