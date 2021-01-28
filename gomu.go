@@ -90,6 +90,23 @@ func (g *Gomu) cyclePanels() Panel {
 	return first
 }
 
+func (g *Gomu) cyclePanels2() Panel {
+  first :=g.panels[0]
+  second :=g.panels[1]
+  if first.HasFocus() {
+    g.setFocusPanel(second)
+    g.prevPanel = second
+  } else if second.HasFocus() {
+    g.setFocusPanel(first)
+    g.prevPanel = first
+  } else {
+    g.setFocusPanel(first)
+    g.prevPanel = first
+  }
+
+  return first
+}
+
 // Changes title and border color when focusing panel
 // and changes color of the previous panel as well
 func (g *Gomu) setFocusPanel(panel Panel) {
