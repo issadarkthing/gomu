@@ -108,7 +108,6 @@ func (c Command) defineCommands() {
 
 		if !viper.GetBool("general.confirm_bulk_add") {
 			gomu.playlist.addAllToQueue(currNode)
-      gomu.cyclePanels()
 			return
 		}
 
@@ -118,7 +117,6 @@ func (c Command) defineCommands() {
 
 				if label == "yes" {
 					gomu.playlist.addAllToQueue(currNode)
-          gomu.cyclePanels()
 				}
 
 			})
@@ -202,10 +200,13 @@ func (c Command) defineCommands() {
 
 		if isLoop {
 			msg = "Looping current queue"
+      gomu.queue.isLoop = true
 		} else {
 			msg = "Stopped looping current queue"
+      gomu.queue.isLoop = false
 		}
-
+    
+    gomu.queue.updateTitle()
 		defaultTimedPopup(" Loop ", msg)
 	})
 
