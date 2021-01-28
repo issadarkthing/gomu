@@ -302,9 +302,9 @@ func position() time.Duration {
 //seek is the function to move forward and rewind
 func (p *Player) seek(pos int) error {
   speaker.Lock()
+  defer speaker.Unlock()
   err := s.Seek(pos * int(ft.SampleRate))
-  speaker.Unlock()
-  i = pos
+  i = pos-1
   return err
 }
 
