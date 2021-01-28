@@ -202,13 +202,17 @@ func (q *Queue) saveQueue() error {
 
 	songPaths := q.getItems()
 	var content strings.Builder
+  
+  songPath := gomu.player.currentSong.path
+  hashed := sha1Hex(getName(songPath))
+  content.WriteString(hashed + "\n")
 
 	for _, songPath := range songPaths {
 		// hashed song name is easier to search through
 		hashed := sha1Hex(getName(songPath))
 		content.WriteString(hashed + "\n")
 	}
-
+  
 	savedPath := expandTilde(q.savedQueuePath)
 	err := ioutil.WriteFile(savedPath, []byte(content.String()), 0644)
 
