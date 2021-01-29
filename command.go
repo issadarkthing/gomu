@@ -353,4 +353,18 @@ func (c Command) defineCommands() {
     }
   })
 
+  c.define("yank", func() {
+    err := gomu.playlist.yank()
+		if err != nil {
+			logError(err)
+		}
+  })
+  
+  c.define("paste", func() {
+    err := gomu.playlist.paste()
+    if err != nil {
+      logError(err)
+    }
+  })
+
 }

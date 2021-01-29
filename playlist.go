@@ -43,6 +43,11 @@ type Playlist struct {
 	done     chan struct{}
 }
 
+var (
+  yankFile  *AudioFile
+  isYanked  bool
+)
+
 func (p *Playlist) help() []string {
 
 	return []string{
@@ -57,6 +62,8 @@ func (p *Playlist) help() []string {
 		"Y      download audio",
 		"r      refresh",
 		"R      rename",
+    "y      yank file",
+    "p      paste file",
 		"/      find in playlist",
 	}
 
@@ -137,6 +144,8 @@ func newPlaylist(args Args) *Playlist {
 			'h': "close_node",
 			'r': "refresh",
 			'R': "rename",
+      'y': "yank",
+      'p': "paste",
 			'/': "playlist_search",
 		}
 
@@ -768,4 +777,46 @@ func populate(root *tview.TreeNode, rootPath string) error {
 	}
 
 	return nil
+}
+
+
+func (p *Playlist) yank() error {
+  yankFile = p.getCurrentFile()
+  isYanked = true
+  return nil
+}
+
+func (p *Playlist) paste() error {
+  if isYanked {
+    isYanked = false
+    oldPathDir,oldPathFileName := filepath.Split(yankFile.path)
+    pasteFile := p.getCurrentFile()
+    if pasteFile.isAudioFile {
+      newPathDir,_ := filepath.Split(pasteFile.path)
+      if oldPathDir == newPathDir {
+        return nil
+      } else {
+        newPathFull := filepath.Join(newPathDir, oldPathFileName)
+        err := os.Rename(yankFile.path, newPathFull)
+        if err != nil {
+          logError(err)
+        }
+      }
+    } else {
+      newPathDir:= pasteFile.path
+      if oldPathDir == newPathDir {
+        return nil
+      } else {
+        newPathFull := filepath.Join(newPathDir, oldPathFileName)
+        err := os.Rename(yankFile.path, newPathFull)
+        if err != nil {
+          logError(err)
+        }
+      }
+    }
+
+  p.refresh() 
+  }
+
+  return nil
 }
