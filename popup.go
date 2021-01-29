@@ -284,7 +284,7 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 	re := regexp.MustCompile(`^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$`)
 
 	popupId := "download-input-popup"
-	input := newInputPopup(popupId, " Download ", "Url: ")
+	input := newInputPopup(popupId, " Download ", "Url: ", "")
 
 	input.SetDoneFunc(func(key tcell.Key) {
 
@@ -321,7 +321,7 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 func createPlaylistPopup() {
 
 	popupId := "mkdir-input-popup"
-	input := newInputPopup(popupId, " New Playlist ", "Enter playlist name: ")
+	input := newInputPopup(popupId, " New Playlist ", "Enter playlist name: ", "")
 
 	input.SetDoneFunc(func(key tcell.Key) {
 
@@ -466,7 +466,7 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 }
 
 // Creates new popup widget with default settings
-func newInputPopup(popupId, title, label string) *tview.InputField {
+func newInputPopup(popupId, title, label string, text string) *tview.InputField {
 
 	inputField := tview.NewInputField().
 		SetLabel(label).
@@ -480,6 +480,8 @@ func newInputPopup(popupId, title, label string) *tview.InputField {
 		SetBorder(true).
 		SetBorderPadding(1, 0, 2, 2)
 
+  inputField.SetText(text)
+
 	gomu.pages.
 		AddPage(popupId, center(inputField, 60, 5), true, true)
 
@@ -491,7 +493,7 @@ func newInputPopup(popupId, title, label string) *tview.InputField {
 func renamePopup(node *AudioFile) {
 
 	popupId := "rename-input-popup"
-	input := newInputPopup(popupId, " Rename ", "New name: ")
+	input := newInputPopup(popupId, " Rename ", "New name: ", node.name)
 	input.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 		switch e.Key() {
