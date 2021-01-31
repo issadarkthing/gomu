@@ -195,15 +195,15 @@ func start(application *tview.Application, args Args) {
 	gomu.setFocusPanel(gomu.playlist)
 	gomu.prevPanel = gomu.playlist
 
+  gomu.player.isLoop = viper.GetBool("general.queue_loop")
+  gomu.queue.isLoop = gomu.player.isLoop
+
 	if !*args.empty && viper.GetBool("general.load_prev_queue") {
 		// load saved queue from previous session
 		if err := gomu.queue.loadQueue(); err != nil {
 			logError(err)
 		}
 	}
-
-  gomu.player.isLoop = viper.GetBool("general.queue_loop")
-  gomu.queue.isLoop = gomu.player.isLoop
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGKILL)
