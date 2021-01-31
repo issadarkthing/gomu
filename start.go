@@ -268,8 +268,10 @@ func start(application *tview.Application, args Args) {
 		return false
 	})
 
+  go populateAudioLength(gomu.playlist.GetRoot())
 	// main loop
 	if err := application.SetRoot(gomu.pages, true).SetFocus(gomu.playlist).Run(); err != nil {
 		logError(err)
 	}
+
 }
