@@ -43,6 +43,7 @@ general:
   confirm_bulk_add:  true
   confirm_on_exit:   true
   load_prev_queue:   true
+  queue_loop:        true
   # change this to directory that contains mp3 files
   music_dir:         ~/music
   # url history of downloaded audio will be saved here
@@ -108,6 +109,7 @@ emoji:
 		viper.SetDefault("general.popup_timeout", "5s")
 		viper.SetDefault("general.volume", 100)
 		viper.SetDefault("general.load_prev_queue", true)
+		viper.SetDefault("general.queue_loop", false)
 		viper.SetDefault("general.use_emoji", true)
 
 		// creates gomu config dir if does not exist
@@ -199,6 +201,9 @@ func start(application *tview.Application, args Args) {
 			logError(err)
 		}
 	}
+
+  gomu.player.isLoop = viper.GetBool("general.queue_loop")
+  gomu.queue.isLoop = gomu.player.isLoop
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGKILL)
