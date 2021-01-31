@@ -675,18 +675,17 @@ func populate(root *tview.TreeNode, rootPath string) error {
 			continue
 		}
 
-    f, err := os.Open(path)
-		if err != nil {
-			continue
-		}
-
-		defer f.Close()
-
 		songName := getName(file.Name())
 		child := tview.NewTreeNode(songName)
 
 		// if !file.IsDir() {
 		if file.Mode().IsRegular() {
+
+      f, err := os.Open(path)
+      if err != nil {
+        continue
+      }
+      defer f.Close()
 
 			filetype, err := getFileContentType(f)
 
@@ -699,17 +698,17 @@ func populate(root *tview.TreeNode, rootPath string) error {
 				continue
 			}
 
-			audioLength, err := getLength(path)
+			// audioLength, err := getLength(path)
 
-			if err != nil {
-				continue
-			}
+			// if err != nil {
+			// 	continue
+			// }
 
 			audioFile := &AudioFile{
 				name:        songName,
 				path:        path,
 				isAudioFile: true,
-				length:      audioLength,
+				// length:      audioLength,
 				node:        child,
 				parent:      root,
 			}
@@ -820,3 +819,22 @@ func (p *Playlist) paste() error {
 
   return nil
 }
+
+func populateAudioLength(root *tview.TreeNode) error {
+  root.Walk(func(node *tview.TreeNode, _ *tview.TreeNode) bool {
+    audioFile := node.GetReference().(*AudioFile)
+    if audioFile.isAudioFile {
+      audioLength, err := getLength (audioFile.path)
+      if err !=nil {
+        logError(err)
+        return false
+      }
+      audioFile.length = audioLength
+    }
+    return true
+  })
+
+  gomu.queue.updateTitle()
+  return nil
+}
+
