@@ -194,20 +194,8 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("toggle_loop", func() {
-
-		isLoop := gomu.player.toggleLoop()
-		var msg string
-
-		if isLoop {
-			msg = "Looping current queue"
-      gomu.queue.isLoop = true
-		} else {
-			msg = "Stopped looping current queue"
-      gomu.queue.isLoop = false
-		}
-    
+		gomu.queue.isLoop = gomu.player.toggleLoop()
     gomu.queue.updateTitle()
-		defaultTimedPopup(" Loop ", msg)
 	})
 
 	c.define("shuffle_queue", func() {

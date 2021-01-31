@@ -203,17 +203,18 @@ func (q *Queue) saveQueue() error {
 	songPaths := q.getItems()
 	var content strings.Builder
 
-
-  currentSongPath := gomu.player.currentSong.path
-  currentSongInQueue := false
- 	for _, songPath := range songPaths {
-    if songPath == currentSongPath {
-      currentSongInQueue = true
+  if gomu.player.hasInit {
+    currentSongPath := gomu.player.currentSong.path
+    currentSongInQueue := false
+    for _, songPath := range songPaths {
+      if songPath == currentSongPath {
+        currentSongInQueue = true
+      }
     }
-	}
-  if ! currentSongInQueue {
-    hashed := sha1Hex(getName(currentSongPath))
-    content.WriteString(hashed + "\n")
+    if ! currentSongInQueue {
+      hashed := sha1Hex(getName(currentSongPath))
+      content.WriteString(hashed + "\n")
+    }
   }
 
 	for _, songPath := range songPaths {
@@ -262,6 +263,24 @@ func (q *Queue) loadQueue() error {
 
 		q.enqueue(audioFile)
 	}
+
+  // if (gomu.queue.GetItemCount() != 0 && gomu.queue.GetCurrentItem()!= -1) {
+  //   a, err := gomu.queue.deleteItem(gomu.queue.GetCurrentItem())
+  //   if err != nil {
+  //     logError(err)
+  //   }
+
+  //   gomu.queue.pushFront(a)
+  //   gomu.player.skip()
+  // }
+
+  // go func() {
+  //   audioFile,_ := q.dequeue()
+  //   if err := gomu.player.run(audioFile); err != nil {
+  //     logError(err)
+  //   }
+
+  // }()
 
 	return nil
 }
