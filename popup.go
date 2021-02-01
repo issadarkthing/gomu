@@ -510,13 +510,16 @@ func renamePopup(node *AudioFile) {
 			gomu.pages.RemovePage(popupId)
 			gomu.popups.pop()
 			gomu.playlist.refresh()
-      if err:= gomu.queue.saveQueue(); err !=nil {
-        logError(err)
-      }
+      gomu.queue.saveQueue()
       gomu.queue.clearQueue()
-      if err:= gomu.queue.loadQueue(); err !=nil {
-        logError(err)
-      }
+      gomu.queue.loadQueue()
+      // if err:= gomu.queue.saveQueue(); err !=nil {
+      //   logError(err)
+      // }
+      // gomu.queue.clearQueue()
+      // if err:= gomu.queue.loadQueue(); err !=nil {
+      //   logError(err)
+      // }
       gomu.setFocusPanel(gomu.playlist)
 	    gomu.prevPanel = gomu.playlist
 
