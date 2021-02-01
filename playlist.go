@@ -505,6 +505,23 @@ func (p *Playlist) rename(newName string) error {
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
+  
+  audio.path = newPath
+  
+  // fmt.Println(newPath)
+  // fmt.Println(audio.path)
+  // // p.refresh()
+  if err:= gomu.queue.saveQueue(); err !=nil {
+    logError(err)
+  }
+  gomu.queue.clearQueue()
+  if err:= gomu.queue.loadQueue(); err !=nil {
+    logError(err)
+  }
+ 
+  // if audio.isAudioFile {
+  //   gomu.queue.enqueue(audio)
+  // }
 
 	return nil
 }

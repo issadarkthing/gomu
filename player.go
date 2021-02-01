@@ -55,7 +55,12 @@ func newPlayer() *Player {
 }
 
 func (p *Player) run(currSong *AudioFile) error {
-
+  
+  if s != nil {
+		speaker.Lock()
+		s.Close()
+		speaker.Unlock()
+	}
 	p.isSkipped = make(chan bool, 1)
 	f, err := os.Open(currSong.path)
 
