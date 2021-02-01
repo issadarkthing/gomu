@@ -843,9 +843,7 @@ func (p *Playlist) paste() error {
     }
 
   p.refresh() 
-  gomu.queue.saveQueue()
-  gomu.queue.clearQueue()
-  gomu.queue.loadQueue()
+  gomu.queue.updateQueueNames()
   }
 
   return nil
