@@ -29,15 +29,15 @@ type Player struct {
 	volume      float64
 	resampler   *beep.Resampler
 	position    time.Duration
-  length      time.Duration
+	length      time.Duration
 	currentSong *AudioFile
 }
 
 var (
-  s   beep.StreamSeekCloser
-  ft  beep.Format
+	s  beep.StreamSeekCloser
+	ft beep.Format
 	// is used to send progress
-  i   int
+	i int
 )
 
 func newPlayer() *Player {
@@ -63,7 +63,7 @@ func (p *Player) run(currSong *AudioFile) error {
 		return tracerr.Wrap(err)
 	}
 
-	defer f.Close()
+	// defer f.Close()
 
 	s, ft, err = mp3.Decode(f)
 
@@ -72,7 +72,7 @@ func (p *Player) run(currSong *AudioFile) error {
 	}
 
 	defer s.Close()
-  
+
 	// song duration
 	p.length = ft.SampleRate.D(s.Len())
 
@@ -128,10 +128,10 @@ func (p *Player) run(currSong *AudioFile) error {
 	p.position = position()
 	p.isRunning = true
 
-	if p.isLoop {
-		gomu.queue.enqueue(currSong)
-		gomu.app.Draw()
-	}
+	// if p.isLoop {
+	// 	gomu.queue.enqueue(currSong)
+	// 	gomu.app.Draw()
+	// }
 
 	gomu.playingBar.newProgress(currSong.name, int(p.length.Seconds()))
 
@@ -149,6 +149,11 @@ next:
 
 		select {
 		case <-done:
+			if p.isLoop {
+				gomu.queue.enqueue(currSong)
+				gomu.app.Draw()
+			}
+
 			close(done)
 			p.position = 0
 			p.isRunning = false
@@ -207,7 +212,6 @@ func (p *Player) play() {
 	p.isRunning = true
 	speaker.Unlock()
 }
-
 
 // volume up and volume down using -0.5 or +0.5
 func (p *Player) setVolume(v float64) float64 {
@@ -296,15 +300,14 @@ func absVolume(volume int) float64 {
 }
 
 func position() time.Duration {
-		return ft.SampleRate.D(s.Position())
+	return ft.SampleRate.D(s.Position())
 }
 
 //seek is the function to move forward and rewind
 func (p *Player) seek(pos int) error {
-  speaker.Lock()
-  defer speaker.Unlock()
-  err := s.Seek(pos * int(ft.SampleRate))
-  i = pos-1
-  return err
+	speaker.Lock()
+	defer speaker.Unlock()
+	err := s.Seek(pos * int(ft.SampleRate))
+	i = pos - 1
+	return err
 }
-
