@@ -386,7 +386,7 @@ func (q *Queue) shuffle() {
 		q.AddItem(queueText, v.path, 0, nil)
 	}
 
-	q.updateTitle()
+	// q.updateTitle()
 
 }
 
@@ -448,13 +448,10 @@ func sha1Hex(input string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-////Modify the title of songs in queue 
-//func (q *Queue) modifyTitleinQueue(oldName string, newName string, audioFile *AudioFile) error {
-  
-//  for i:=0; i < len(q.items); i++{
-//    if q.items[i] == audioFile {
-//      q.items[i].path = newName
-//    }
-//  }
-//  return nil
-//}
+//Modify the title of songs in queue 
+func (q *Queue) updateQueueNames() error {
+  q.saveQueue()
+  q.clearQueue()
+  q.loadQueue()
+  return nil
+}
