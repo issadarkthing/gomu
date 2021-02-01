@@ -119,8 +119,10 @@ func (g *Gomu) setFocusPanel(panel Panel) {
 	if g.prevPanel == nil {
 		return
 	}
-
-	g.setUnfocusPanel(g.prevPanel)
+  
+  if g.prevPanel != panel {
+  	g.setUnfocusPanel(g.prevPanel)
+  }
 }
 
 // Safely write the IsSuspend state, IsSuspend is used to indicate if we
