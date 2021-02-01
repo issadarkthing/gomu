@@ -510,6 +510,8 @@ func renamePopup(node *AudioFile) {
 			gomu.pages.RemovePage(popupId)
 			gomu.popups.pop()
 			gomu.playlist.refresh()
+      gomu.setFocusPanel(gomu.playlist)
+	    gomu.prevPanel = gomu.playlist
 
 		case tcell.KeyEsc:
 			gomu.pages.RemovePage(popupId)
