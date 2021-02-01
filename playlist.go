@@ -505,19 +505,28 @@ func (p *Playlist) rename(newName string) error {
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
-  
+ 
+ 
   audio.path = newPath
-  
-  // fmt.Println(newPath)
+  gomu.queue.saveQueue()
+  gomu.queue.clearQueue()
+  gomu.queue.loadQueue()
+  // oldName:= getName(oldNameExt)
+  // p.refresh()
+  // gomu.queue.modifyTitleinQueue(oldName, newName, audio)
+  // err =tracerr.New(oldName)
+  // logError(err)
+  // err =tracerr.New(newName)
+  // logError(err)
   // fmt.Println(audio.path)
   // // p.refresh()
-  if err:= gomu.queue.saveQueue(); err !=nil {
-    logError(err)
-  }
-  gomu.queue.clearQueue()
-  if err:= gomu.queue.loadQueue(); err !=nil {
-    logError(err)
-  }
+  // if err:= gomu.queue.saveQueue(); err !=nil {
+  //   logError(err)
+  // }
+  // gomu.queue.clearQueue()
+  // if err:= gomu.queue.loadQueue(); err !=nil {
+  //   logError(err)
+  // }
  
   // if audio.isAudioFile {
   //   gomu.queue.enqueue(audio)
@@ -834,6 +843,9 @@ func (p *Playlist) paste() error {
     }
 
   p.refresh() 
+  gomu.queue.saveQueue()
+  gomu.queue.clearQueue()
+  gomu.queue.loadQueue()
   }
 
   return nil
