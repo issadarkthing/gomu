@@ -44,8 +44,8 @@ type Playlist struct {
 }
 
 var (
-  yankFile  *AudioFile
-  isYanked  bool
+	yankFile *AudioFile
+	isYanked bool
 )
 
 func (p *Playlist) help() []string {
@@ -62,8 +62,8 @@ func (p *Playlist) help() []string {
 		"Y      download audio",
 		"r      refresh",
 		"R      rename",
-    "y      yank file",
-    "p      paste file",
+		"y      yank file",
+		"p      paste file",
 		"/      find in playlist",
 	}
 
@@ -144,8 +144,8 @@ func newPlaylist(args Args) *Playlist {
 			'h': "close_node",
 			'r': "refresh",
 			'R': "rename",
-      'y': "yank",
-      'p': "paste",
+			'y': "yank",
+			'p': "paste",
 			'/': "playlist_search",
 		}
 
@@ -269,9 +269,9 @@ func (p *Playlist) addAllToQueue(root *tview.TreeNode) {
 
 	for _, v := range childrens {
 		currNode := v.GetReference().(*AudioFile)
-    if currNode.isAudioFile {
-      gomu.queue.enqueue(currNode)
-    }
+		if currNode.isAudioFile {
+			gomu.queue.enqueue(currNode)
+		}
 	}
 
 }
@@ -505,32 +505,11 @@ func (p *Playlist) rename(newName string) error {
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
- 
- 
-  audio.path = newPath
-  gomu.queue.saveQueue()
-  gomu.queue.clearQueue()
-  gomu.queue.loadQueue()
-  // oldName:= getName(oldNameExt)
-  // p.refresh()
-  // gomu.queue.modifyTitleinQueue(oldName, newName, audio)
-  // err =tracerr.New(oldName)
-  // logError(err)
-  // err =tracerr.New(newName)
-  // logError(err)
-  // fmt.Println(audio.path)
-  // // p.refresh()
-  // if err:= gomu.queue.saveQueue(); err !=nil {
-  //   logError(err)
-  // }
-  // gomu.queue.clearQueue()
-  // if err:= gomu.queue.loadQueue(); err !=nil {
-  //   logError(err)
-  // }
- 
-  // if audio.isAudioFile {
-  //   gomu.queue.enqueue(audio)
-  // }
+
+	audio.path = newPath
+	gomu.queue.saveQueue()
+	gomu.queue.clearQueue()
+	gomu.queue.loadQueue()
 
 	return nil
 }
@@ -624,9 +603,9 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 
 	selAudioFile := selPlaylist.GetReference().(*AudioFile)
 	// selPlaylistName := selAudioFile.name
-  dir := selAudioFile.path  
-  // selPlaylistName = filepath.Join(selAudioFile.path,selPlaylistName)
-  // fmt.Println(selPlaylistName)
+	dir := selAudioFile.path
+	// selPlaylistName = filepath.Join(selAudioFile.path,selPlaylistName)
+	// fmt.Println(selPlaylistName)
 
 	defaultTimedPopup(" Ytdl ", "Downloading")
 
@@ -634,9 +613,9 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	outputDir := fmt.Sprintf(
 		// "%s/%s/%%(title)s.%%(ext)s",
 		"%s/%%(title)s.%%(ext)s",
-		dir)//,
-		// selPlaylistName)
-  
+		dir) //,
+	// selPlaylistName)
+
 	args := []string{
 		"--extract-audio",
 		"--audio-format",
@@ -667,12 +646,11 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	playlistPath := dir
 	// playlistPath := path.Join(expandTilde(dir), selPlaylistName)
 	audioPath := extractFilePath(stdout.Bytes(), playlistPath)
-  
+
 	err = appendFile(expandTilde(viper.GetString("general.history_path")), url+"\n")
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
-  
 
 	err = gomu.playlist.addSongToPlaylist(audioPath, selPlaylist)
 	if err != nil {
@@ -682,7 +660,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s", getName(audioPath))
 
 	defaultTimedPopup(" Ytdl ", downloadFinishedMessage)
-  
+
 	return nil
 }
 
@@ -709,11 +687,11 @@ func populate(root *tview.TreeNode, rootPath string) error {
 		// if !file.IsDir() {
 		if file.Mode().IsRegular() {
 
-      f, err := os.Open(path)
-      if err != nil {
-        continue
-      }
-      defer f.Close()
+			f, err := os.Open(path)
+			if err != nil {
+				continue
+			}
+			defer f.Close()
 
 			filetype, err := getFileContentType(f)
 
@@ -737,8 +715,8 @@ func populate(root *tview.TreeNode, rootPath string) error {
 				path:        path,
 				isAudioFile: true,
 				// length:      audioLength,
-				node:        child,
-				parent:      root,
+				node:   child,
+				parent: root,
 			}
 
 			displayText := songName
@@ -756,11 +734,11 @@ func populate(root *tview.TreeNode, rootPath string) error {
 		if file.IsDir() {
 
 			audioFile := &AudioFile{
-				name:   songName,
-				path:   path,
+				name:        songName,
+				path:        path,
 				isAudioFile: false,
-				node:   child,
-				parent: root,
+				node:        child,
+				parent:      root,
 			}
 
 			displayText := songName
@@ -776,29 +754,29 @@ func populate(root *tview.TreeNode, rootPath string) error {
 			populate(child, path)
 
 		}
-    
-    if (file.Mode() & os.ModeSymlink != 0) {
 
-      audioFile := &AudioFile{
-        name:   songName,
-        path:   path,
+		if file.Mode()&os.ModeSymlink != 0 {
+
+			audioFile := &AudioFile{
+				name:        songName,
+				path:        path,
 				isAudioFile: false,
-        node:   child,
-        parent: root,
-      }
+				node:        child,
+				parent:      root,
+			}
 
-      displayText := songName
-      if viper.GetBool("general.emoji") {
-        displayText = fmt.Sprintf(" %s %s",
-          viper.GetString("emoji.playlist"), songName)
-      }
+			displayText := songName
+			if viper.GetBool("general.emoji") {
+				displayText = fmt.Sprintf(" %s %s",
+					viper.GetString("emoji.playlist"), songName)
+			}
 
-      child.SetReference(audioFile)
-      child.SetColor(gomu.colors.accent)
-      child.SetText(displayText)
-      root.AddChild(child)
-      populate(child, path)
-      
+			child.SetReference(audioFile)
+			child.SetColor(gomu.colors.accent)
+			child.SetText(displayText)
+			root.AddChild(child)
+			populate(child, path)
+
 		}
 
 	}
@@ -806,64 +784,62 @@ func populate(root *tview.TreeNode, rootPath string) error {
 	return nil
 }
 
-
 func (p *Playlist) yank() error {
-  yankFile = p.getCurrentFile()
-  isYanked = true
-  return nil
+	yankFile = p.getCurrentFile()
+	isYanked = true
+	return nil
 }
 
 func (p *Playlist) paste() error {
-  if isYanked {
-    isYanked = false
-    oldPathDir,oldPathFileName := filepath.Split(yankFile.path)
-    pasteFile := p.getCurrentFile()
-    if pasteFile.isAudioFile {
-      newPathDir,_ := filepath.Split(pasteFile.path)
-      if oldPathDir == newPathDir {
-        return nil
-      } else {
-        newPathFull := filepath.Join(newPathDir, oldPathFileName)
-        err := os.Rename(yankFile.path, newPathFull)
-        if err != nil {
-          logError(err)
-        }
-      }
-    } else {
-      newPathDir:= pasteFile.path
-      if oldPathDir == newPathDir {
-        return nil
-      } else {
-        newPathFull := filepath.Join(newPathDir, oldPathFileName)
-        err := os.Rename(yankFile.path, newPathFull)
-        if err != nil {
-          logError(err)
-        }
-      }
-    }
+	if isYanked {
+		isYanked = false
+		oldPathDir, oldPathFileName := filepath.Split(yankFile.path)
+		pasteFile := p.getCurrentFile()
+		if pasteFile.isAudioFile {
+			newPathDir, _ := filepath.Split(pasteFile.path)
+			if oldPathDir == newPathDir {
+				return nil
+			} else {
+				newPathFull := filepath.Join(newPathDir, oldPathFileName)
+				err := os.Rename(yankFile.path, newPathFull)
+				if err != nil {
+					logError(err)
+				}
+			}
+		} else {
+			newPathDir := pasteFile.path
+			if oldPathDir == newPathDir {
+				return nil
+			} else {
+				newPathFull := filepath.Join(newPathDir, oldPathFileName)
+				err := os.Rename(yankFile.path, newPathFull)
+				if err != nil {
+					logError(err)
+				}
+			}
+		}
 
-  p.refresh() 
-  gomu.queue.updateQueueNames()
-  }
+		p.refresh()
+		gomu.queue.updateQueueNames()
+	}
 
-  return nil
+	return nil
 }
 
 func populateAudioLength(root *tview.TreeNode) error {
-  root.Walk(func(node *tview.TreeNode, _ *tview.TreeNode) bool {
-    audioFile := node.GetReference().(*AudioFile)
-    if audioFile.isAudioFile {
-      audioLength, err := getLength (audioFile.path)
-      if err !=nil {
-        logError(err)
-        return false
-      }
-      audioFile.length = audioLength
-    }
-    return true
-  })
+	root.Walk(func(node *tview.TreeNode, _ *tview.TreeNode) bool {
+		audioFile := node.GetReference().(*AudioFile)
+		if audioFile.isAudioFile {
+			audioLength, err := getLength(audioFile.path)
+			if err != nil {
+				logError(err)
+				return false
+			}
+			audioFile.length = audioLength
+		}
+		return true
+	})
 
-  gomu.queue.updateTitle()
-  return nil
+	gomu.queue.updateTitle()
+	return nil
 }
-
