@@ -95,13 +95,13 @@ func (q *Queue) updateTitle() string {
 		count = "song"
 	}
 
-  var loop string
+	var loop string
 
-  if q.isLoop {
-    loop = "ﯩ"
-  } else {
-    loop = ""
-  }
+	if q.isLoop {
+		loop = "ﯩ"
+	} else {
+		loop = ""
+	}
 
 	title := fmt.Sprintf("─ Queue ───┤ %d %s | %s | %s ├",
 		len(q.items), count, fmtTime, loop)
@@ -160,9 +160,9 @@ func (q *Queue) enqueue(audioFile *AudioFile) (int, error) {
 
 	}
 
-  if ! audioFile.isAudioFile {
-    return q.GetItemCount(), nil
-  } 
+	if !audioFile.isAudioFile {
+		return q.GetItemCount(), nil
+	}
 
 	q.items = append(q.items, audioFile)
 	songLength, err := getLength(audioFile.path)
@@ -203,26 +203,26 @@ func (q *Queue) saveQueue() error {
 	songPaths := q.getItems()
 	var content strings.Builder
 
-  if gomu.player.hasInit {
-    currentSongPath := gomu.player.currentSong.path
-    currentSongInQueue := false
-    for _, songPath := range songPaths {
-      if songPath == currentSongPath {
-        currentSongInQueue = true
-      }
-    }
-    if ! currentSongInQueue {
-      hashed := sha1Hex(getName(currentSongPath))
-      content.WriteString(hashed + "\n")
-    }
-  }
+	if gomu.player.hasInit {
+		currentSongPath := gomu.player.currentSong.path
+		currentSongInQueue := false
+		for _, songPath := range songPaths {
+			if songPath == currentSongPath {
+				currentSongInQueue = true
+			}
+		}
+		if !currentSongInQueue {
+			hashed := sha1Hex(getName(currentSongPath))
+			content.WriteString(hashed + "\n")
+		}
+	}
 
 	for _, songPath := range songPaths {
 		// hashed song name is easier to search through
 		hashed := sha1Hex(getName(songPath))
 		content.WriteString(hashed + "\n")
 	}
-  
+
 	savedPath := expandTilde(q.savedQueuePath)
 	err := ioutil.WriteFile(savedPath, []byte(content.String()), 0644)
 
@@ -448,10 +448,10 @@ func sha1Hex(input string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-//Modify the title of songs in queue 
+//Modify the title of songs in queue
 func (q *Queue) updateQueueNames() error {
-  q.saveQueue()
-  q.clearQueue()
-  q.loadQueue()
-  return nil
+	q.saveQueue()
+	q.clearQueue()
+	q.loadQueue()
+	return nil
 }
