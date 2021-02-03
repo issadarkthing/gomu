@@ -21,7 +21,6 @@ func logError(err error) {
 	log.Println(tracerr.Sprint(err))
 }
 
-
 // Formats duration to my desired output mm:ss
 func fmtDuration(input time.Duration) string {
 
