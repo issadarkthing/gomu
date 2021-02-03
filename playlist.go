@@ -826,6 +826,8 @@ func (p *Playlist) paste() error {
 	return nil
 }
 
+//populateAudioLength is the most time consuming part of startup,
+//so here we initialize it separately
 func populateAudioLength(root *tview.TreeNode) error {
 	root.Walk(func(node *tview.TreeNode, _ *tview.TreeNode) bool {
 		audioFile := node.GetReference().(*AudioFile)

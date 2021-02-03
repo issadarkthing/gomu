@@ -1,7 +1,6 @@
 package main
 
 import (
-
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
@@ -106,6 +105,11 @@ func (c Command) defineCommands() {
 	c.define("bulk_add", func() {
 		currNode := gomu.playlist.GetCurrentNode()
 
+		//Below code is to fix the problem when paused, added songs are not correct
+		if gomu.player.ctrl.Paused {
+			gomu.player.togglePause()
+		}
+
 		if !viper.GetBool("general.confirm_bulk_add") {
 			gomu.playlist.addAllToQueue(currNode)
 			return
@@ -182,20 +186,20 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("play_selected", func() {
-    if (gomu.queue.GetItemCount() != 0 && gomu.queue.GetCurrentItem()!= -1) {
-      a, err := gomu.queue.deleteItem(gomu.queue.GetCurrentItem())
-      if err != nil {
-        logError(err)
-      }
+		if gomu.queue.GetItemCount() != 0 && gomu.queue.GetCurrentItem() != -1 {
+			a, err := gomu.queue.deleteItem(gomu.queue.GetCurrentItem())
+			if err != nil {
+				logError(err)
+			}
 
-      gomu.queue.pushFront(a)
-      gomu.player.skip()
-    }
+			gomu.queue.pushFront(a)
+			gomu.player.skip()
+		}
 	})
 
 	c.define("toggle_loop", func() {
 		gomu.queue.isLoop = gomu.player.toggleLoop()
-    gomu.queue.updateTitle()
+		gomu.queue.updateTitle()
 	})
 
 	c.define("shuffle_queue", func() {
@@ -295,64 +299,64 @@ func (c Command) defineCommands() {
 		})
 	})
 
-  c.define("forward", func() {
-    if gomu.player.isRunning && ! gomu.player.ctrl.Paused {
-      position := gomu.playingBar._progress + 10
-      if (position < gomu.playingBar.full) {
-        gomu.player.seek(position)
-        gomu.playingBar._progress = position - 1
-      }
-    }
-  })
+	c.define("forward", func() {
+		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
+			position := gomu.playingBar._progress + 10
+			if position < gomu.playingBar.full {
+				gomu.player.seek(position)
+				gomu.playingBar._progress = position - 1
+			}
+		}
+	})
 
-  c.define("rewind", func() {
-    if gomu.player.isRunning && ! gomu.player.ctrl.Paused {
-      position := gomu.playingBar._progress - 10
-      if (position - 1 > 0 ) {
-        gomu.player.seek(position)
-        gomu.playingBar._progress = position -1
-      } else {
-        gomu.player.seek(0)
-        gomu.playingBar._progress = 0
-      }
-    }
-  })
+	c.define("rewind", func() {
+		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
+			position := gomu.playingBar._progress - 10
+			if position-1 > 0 {
+				gomu.player.seek(position)
+				gomu.playingBar._progress = position - 1
+			} else {
+				gomu.player.seek(0)
+				gomu.playingBar._progress = 0
+			}
+		}
+	})
 
-  c.define("forward_fast", func() {
-    if gomu.player.isRunning && ! gomu.player.ctrl.Paused {
-      position := gomu.playingBar._progress + 60
-      if (position < gomu.playingBar.full) {
-        gomu.player.seek(position)
-        gomu.playingBar._progress = position - 1
-      }
-    }
-  })
+	c.define("forward_fast", func() {
+		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
+			position := gomu.playingBar._progress + 60
+			if position < gomu.playingBar.full {
+				gomu.player.seek(position)
+				gomu.playingBar._progress = position - 1
+			}
+		}
+	})
 
-  c.define("rewind_fast", func() {
-    if gomu.player.isRunning && ! gomu.player.ctrl.Paused {
-      position := gomu.playingBar._progress - 60
-      if (position -1 > 0 ) {
-        gomu.player.seek(position)
-        gomu.playingBar._progress = position - 1
-      } else {
-        gomu.player.seek(0)
-        gomu.playingBar._progress = 0
-      }
-    }
-  })
+	c.define("rewind_fast", func() {
+		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
+			position := gomu.playingBar._progress - 60
+			if position-1 > 0 {
+				gomu.player.seek(position)
+				gomu.playingBar._progress = position - 1
+			} else {
+				gomu.player.seek(0)
+				gomu.playingBar._progress = 0
+			}
+		}
+	})
 
-  c.define("yank", func() {
-    err := gomu.playlist.yank()
+	c.define("yank", func() {
+		err := gomu.playlist.yank()
 		if err != nil {
 			logError(err)
 		}
-  })
-  
-  c.define("paste", func() {
-    err := gomu.playlist.paste()
-    if err != nil {
-      logError(err)
-    }
-  })
+	})
+
+	c.define("paste", func() {
+		err := gomu.playlist.paste()
+		if err != nil {
+			logError(err)
+		}
+	})
 
 }
