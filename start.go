@@ -29,9 +29,9 @@ type Panel interface {
 }
 
 const (
-	CONFIG_PATH    = ".config/gomu/config"
-	HISTORY_PATH   = "~/.local/share/gomu/urls"
-	MUSIC_PATH     = "~/music"
+	CONFIG_PATH  = ".config/gomu/config"
+	HISTORY_PATH = "~/.local/share/gomu/urls"
+	MUSIC_PATH   = "~/music"
 )
 
 // Reads config file and sets the options
@@ -195,8 +195,8 @@ func start(application *tview.Application, args Args) {
 	gomu.setFocusPanel(gomu.playlist)
 	gomu.prevPanel = gomu.playlist
 
-  gomu.player.isLoop = viper.GetBool("general.queue_loop")
-  gomu.queue.isLoop = gomu.player.isLoop
+	gomu.player.isLoop = viper.GetBool("general.queue_loop")
+	gomu.queue.isLoop = gomu.player.isLoop
 
 	if !*args.empty && viper.GetBool("general.load_prev_queue") {
 		// load saved queue from previous session
@@ -206,14 +206,14 @@ func start(application *tview.Application, args Args) {
 	}
 
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGKILL)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		sig := <-sigs
 		errMsg := fmt.Sprintf("Received %s. Exiting program", sig.String())
 		logError(errors.New(errMsg))
 		err := gomu.quit(args)
 		if err != nil {
-			logError(errors.New("Unable to quit program"))
+			logError(errors.New("unable to quit program"))
 		}
 	}()
 
@@ -273,7 +273,7 @@ func start(application *tview.Application, args Args) {
 		return false
 	})
 
-  go populateAudioLength(gomu.playlist.GetRoot())
+	go populateAudioLength(gomu.playlist.GetRoot())
 	// main loop
 	if err := application.SetRoot(gomu.pages, true).SetFocus(gomu.playlist).Run(); err != nil {
 		logError(err)

@@ -24,21 +24,17 @@ type Player struct {
 	done      chan bool
 
 	// to control the _volume internally
-	_volume     *effects.Volume
-	ctrl        *beep.Ctrl
-	volume      float64
-	resampler   *beep.Resampler
-	position    time.Duration
-	length      time.Duration
-	currentSong *AudioFile
-}
-
-var (
-	s  beep.StreamSeekCloser
-	ft beep.Format
+	_volume          *effects.Volume
+	ctrl             *beep.Ctrl
+	volume           float64
+	resampler        *beep.Resampler
+	position         time.Duration
+	length           time.Duration
+	currentSong      *AudioFile
+	streamSeekCloser beep.StreamSeekCloser
 	// is used to send progress
 	i int
-)
+}
 
 func newPlayer() *Player {
 
@@ -55,12 +51,12 @@ func newPlayer() *Player {
 }
 
 func (p *Player) run(currSong *AudioFile) error {
-  
-  if s != nil {
-		speaker.Lock()
-		s.Close()
-		speaker.Unlock()
-	}
+
+	// if p.streamSeekCloser != nil {
+	// 	speaker.Lock()
+	// 	p.streamSeekCloser.Close()
+	// 	speaker.Unlock()
+	// }
 	p.isSkipped = make(chan bool, 1)
 	f, err := os.Open(currSong.path)
 
@@ -68,23 +64,27 @@ func (p *Player) run(currSong *AudioFile) error {
 		return tracerr.Wrap(err)
 	}
 
-	// defer f.Close()
+	defer f.Close()
 
-	s, ft, err = mp3.Decode(f)
+	stream, format, err := mp3.Decode(f)
+	// p.streamSeekCloser, *(p.format), err = mp3.Decode(f)
+
+	p.streamSeekCloser = stream
+	p.format = &format
 
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
 
-	defer s.Close()
+	defer stream.Close()
 
 	// song duration
-	p.length = ft.SampleRate.D(s.Len())
+	p.length = p.format.SampleRate.D(p.streamSeekCloser.Len())
 
 	if !p.hasInit {
 
 		err := speaker.
-			Init(ft.SampleRate, ft.SampleRate.N(time.Second/10))
+			Init(p.format.SampleRate, p.format.SampleRate.N(time.Second/10))
 
 		if err != nil {
 			return tracerr.Wrap(err)
@@ -93,7 +93,6 @@ func (p *Player) run(currSong *AudioFile) error {
 		p.hasInit = true
 	}
 
-	p.format = &ft
 	p.currentSong = currSong
 
 	popupMessage := fmt.Sprintf("%s\n\n[ %s ]",
@@ -104,7 +103,7 @@ func (p *Player) run(currSong *AudioFile) error {
 	done := make(chan bool, 1)
 	p.done = done
 
-	sstreamer := beep.Seq(s, beep.Callback(func() {
+	sstreamer := beep.Seq(p.streamSeekCloser, beep.Callback(func() {
 		done <- true
 	}))
 
@@ -130,7 +129,7 @@ func (p *Player) run(currSong *AudioFile) error {
 	p._volume = volume
 	speaker.Play(p._volume)
 
-	p.position = position()
+	p.position = p.getPosition()
 	p.isRunning = true
 
 	// if p.isLoop {
@@ -147,7 +146,7 @@ func (p *Player) run(currSong *AudioFile) error {
 	}()
 
 	// is used to send progress
-	i = 0
+	p.i = 0
 
 next:
 	for {
@@ -186,14 +185,14 @@ next:
 				continue
 			}
 
-			i++
+			p.i++
 			gomu.playingBar.progress <- 1
 
 			speaker.Lock()
-			p.position = position()
+			p.position = p.getPosition()
 			speaker.Unlock()
 
-			if i > gomu.playingBar.full {
+			if p.i > gomu.playingBar.full {
 				break next
 			}
 
@@ -304,15 +303,15 @@ func absVolume(volume int) float64 {
 	return (float64(volume) - 100) / 10
 }
 
-func position() time.Duration {
-	return ft.SampleRate.D(s.Position())
+func (p *Player) getPosition() time.Duration {
+	return p.format.SampleRate.D(p.streamSeekCloser.Position())
 }
 
 //seek is the function to move forward and rewind
 func (p *Player) seek(pos int) error {
 	speaker.Lock()
 	defer speaker.Unlock()
-	err := s.Seek(pos * int(ft.SampleRate))
-	i = pos - 1
+	err := p.streamSeekCloser.Seek(pos * int(p.format.SampleRate))
+	p.i = pos - 1
 	return err
 }
