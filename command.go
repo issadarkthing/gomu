@@ -105,11 +105,6 @@ func (c Command) defineCommands() {
 	c.define("bulk_add", func() {
 		currNode := gomu.playlist.GetCurrentNode()
 
-		//Below code is to fix the problem when paused, added songs are not correct
-		if gomu.player.ctrl.Paused {
-			gomu.player.togglePause()
-		}
-
 		if !viper.GetBool("general.confirm_bulk_add") {
 			gomu.playlist.addAllToQueue(currNode)
 			return

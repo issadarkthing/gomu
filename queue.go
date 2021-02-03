@@ -144,20 +144,23 @@ func (q *Queue) dequeue() (*AudioFile, error) {
 // Add item to the list and returns the length of the queue
 func (q *Queue) enqueue(audioFile *AudioFile) (int, error) {
 
-	if !gomu.player.isRunning && os.Getenv("TEST") == "false" {
+	//this is to fix the problem bulk_add when paused
+	if !gomu.player.hasInit {
+		if !gomu.player.isRunning && os.Getenv("TEST") == "false" {
 
-		gomu.player.isRunning = true
+			gomu.player.isRunning = true
 
-		go func() {
+			go func() {
 
-			if err := gomu.player.run(audioFile); err != nil {
-				logError(err)
-			}
+				if err := gomu.player.run(audioFile); err != nil {
+					logError(err)
+				}
 
-		}()
+			}()
 
-		return q.GetItemCount(), nil
+			return q.GetItemCount(), nil
 
+		}
 	}
 
 	if !audioFile.isAudioFile {

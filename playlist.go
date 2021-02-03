@@ -270,7 +270,9 @@ func (p *Playlist) addAllToQueue(root *tview.TreeNode) {
 	for _, v := range childrens {
 		currNode := v.GetReference().(*AudioFile)
 		if currNode.isAudioFile {
-			gomu.queue.enqueue(currNode)
+			if currNode != gomu.player.currentSong {
+				gomu.queue.enqueue(currNode)
+			}
 		}
 	}
 
