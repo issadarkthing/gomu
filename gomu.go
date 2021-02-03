@@ -91,21 +91,21 @@ func (g *Gomu) cyclePanels() Panel {
 }
 
 func (g *Gomu) cyclePanels2() Panel {
-  first :=g.panels[0]
-  second :=g.panels[1]
-  if first.HasFocus() {
-    g.setFocusPanel(second)
-    g.prevPanel = second
-    return second
-  } else if second.HasFocus() {
-    g.setFocusPanel(first)
-    g.prevPanel = first
-    return first
-  } else {
-    g.setFocusPanel(first)
-    g.prevPanel = first
-    return first
-  }
+	first := g.panels[0]
+	second := g.panels[1]
+	if first.HasFocus() {
+		g.setFocusPanel(second)
+		g.prevPanel = second
+		return second
+	} else if second.HasFocus() {
+		g.setFocusPanel(first)
+		g.prevPanel = first
+		return first
+	} else {
+		g.setFocusPanel(first)
+		g.prevPanel = first
+		return first
+	}
 }
 
 // Changes title and border color when focusing panel
@@ -119,10 +119,10 @@ func (g *Gomu) setFocusPanel(panel Panel) {
 	if g.prevPanel == nil {
 		return
 	}
-  
-  if g.prevPanel != panel {
-  	g.setUnfocusPanel(g.prevPanel)
-  }
+
+	if g.prevPanel != panel {
+		g.setUnfocusPanel(g.prevPanel)
+	}
 }
 
 // Safely write the IsSuspend state, IsSuspend is used to indicate if we

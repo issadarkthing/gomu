@@ -30,7 +30,6 @@ func setupLog() {
 		log.Fatalf("Error opening file %s", logFile)
 	}
 
-
 	log.SetOutput(file)
 	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 }
