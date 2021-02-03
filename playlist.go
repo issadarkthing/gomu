@@ -509,7 +509,7 @@ func (p *Playlist) rename(newName string) error {
 	}
 
 	audio.path = newPath
-	gomu.queue.saveQueue()
+	gomu.queue.saveQueue(false)
 	gomu.queue.clearQueue()
 	gomu.queue.loadQueue()
 

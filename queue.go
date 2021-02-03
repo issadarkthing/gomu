@@ -201,16 +201,16 @@ func (q *Queue) getItems() []string {
 }
 
 // Save the current queue
-func (q *Queue) saveQueue() error {
+func (q *Queue) saveQueue(isQuit bool) error {
 
 	songPaths := q.getItems()
 	var content strings.Builder
 
-	if gomu.player.hasInit {
+	if gomu.player.hasInit && isQuit {
 		currentSongPath := gomu.player.currentSong.path
 		currentSongInQueue := false
 		for _, songPath := range songPaths {
-			if songPath == currentSongPath {
+			if getName(songPath) == getName(currentSongPath) {
 				currentSongInQueue = true
 			}
 		}
@@ -453,7 +453,7 @@ func sha1Hex(input string) string {
 
 //Modify the title of songs in queue
 func (q *Queue) updateQueueNames() error {
-	q.saveQueue()
+	q.saveQueue(false)
 	q.clearQueue()
 	q.loadQueue()
 	return nil

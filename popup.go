@@ -516,6 +516,13 @@ func renamePopup(node *AudioFile) {
 			gomu.setFocusPanel(gomu.playlist)
 			gomu.prevPanel = gomu.playlist
 			// gomu.playlist.setHighlight(node.node)
+			root := gomu.playlist.GetRoot()
+			root.Walk(func(node, _ *tview.TreeNode) bool {
+				if strings.Contains(node.GetText(), newName) {
+					gomu.playlist.setHighlight(node)
+				}
+				return true
+			})
 
 		case tcell.KeyEsc:
 			gomu.pages.RemovePage(popupId)
