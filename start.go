@@ -29,9 +29,9 @@ type Panel interface {
 }
 
 const (
-	CONFIG_PATH    = ".config/gomu/config"
-	HISTORY_PATH   = "~/.local/share/gomu/urls"
-	MUSIC_PATH     = "~/music"
+	CONFIG_PATH  = ".config/gomu/config"
+	HISTORY_PATH = "~/.local/share/gomu/urls"
+	MUSIC_PATH   = "~/music"
 )
 
 // Reads config file and sets the options
@@ -108,7 +108,7 @@ emoji:
 		viper.SetDefault("general.popup_timeout", "5s")
 		viper.SetDefault("general.volume", 100)
 		viper.SetDefault("general.load_prev_queue", true)
-		viper.SetDefault("general.use_emoji", true)
+		viper.SetDefault("general.use_emoji", false)
 
 		// creates gomu config dir if does not exist
 		if _, err := os.Stat(defaultPath); err != nil {
