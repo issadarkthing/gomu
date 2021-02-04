@@ -289,7 +289,7 @@ func (p *Playlist) refresh() {
 
 	populate(root, root.GetReference().(*AudioFile).path)
 
-	root.Walk(func(node, parent *tview.TreeNode) bool {
+	root.Walk(func(node, _ *tview.TreeNode) bool {
 
 		// to preserve previously highlighted node
 		if node.GetText() == prevFileName {
@@ -679,7 +679,6 @@ func populate(root *tview.TreeNode, rootPath string) error {
 
 	for _, file := range files {
 
-		// path := filepath.Join(rootPath, file.Name())
 		path, err := filepath.EvalSymlinks(filepath.Join(rootPath, file.Name()))
 		if err != nil {
 			continue
@@ -688,7 +687,6 @@ func populate(root *tview.TreeNode, rootPath string) error {
 		songName := getName(file.Name())
 		child := tview.NewTreeNode(songName)
 
-		// if !file.IsDir() {
 		if file.Mode().IsRegular() {
 
 			f, err := os.Open(path)
@@ -708,19 +706,12 @@ func populate(root *tview.TreeNode, rootPath string) error {
 				continue
 			}
 
-			// audioLength, err := getLength(path)
-
-			// if err != nil {
-			// 	continue
-			// }
-
 			audioFile := &AudioFile{
 				name:        songName,
 				path:        path,
 				isAudioFile: true,
-				// length:      audioLength,
-				node:   child,
-				parent: root,
+				node:        child,
+				parent:      root,
 			}
 
 			displayText := songName
@@ -735,31 +726,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 
 		}
 
-		if file.IsDir() {
-
-			audioFile := &AudioFile{
-				name:        songName,
-				path:        path,
-				isAudioFile: false,
-				node:        child,
-				parent:      root,
-			}
-
-			displayText := songName
-			if viper.GetBool("general.emoji") {
-				displayText = fmt.Sprintf(" %s %s",
-					viper.GetString("emoji.playlist"), songName)
-			}
-
-			child.SetReference(audioFile)
-			child.SetColor(gomu.colors.accent)
-			child.SetText(displayText)
-			root.AddChild(child)
-			populate(child, path)
-
-		}
-
-		if file.Mode()&os.ModeSymlink != 0 {
+		if file.IsDir() || file.Mode()&os.ModeSymlink != 0 {
 
 			audioFile := &AudioFile{
 				name:        songName,

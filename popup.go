@@ -465,7 +465,7 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 }
 
 // Creates new popup widget with default settings
-func newInputPopup(popupId, title, label string, text string) *tview.InputField {
+func newInputPopup(popupID, title, label string, text string) *tview.InputField {
 
 	inputField := tview.NewInputField().
 		SetLabel(label).
@@ -482,7 +482,7 @@ func newInputPopup(popupId, title, label string, text string) *tview.InputField 
 	inputField.SetText(text)
 
 	gomu.pages.
-		AddPage(popupId, center(inputField, 60, 5), true, true)
+		AddPage(popupID, center(inputField, 60, 5), true, true)
 
 	gomu.popups.push(inputField)
 
@@ -491,8 +491,8 @@ func newInputPopup(popupId, title, label string, text string) *tview.InputField 
 
 func renamePopup(node *AudioFile) {
 
-	popupId := "rename-input-popup"
-	input := newInputPopup(popupId, " Rename ", "New name: ", node.name)
+	popupID := "rename-input-popup"
+	input := newInputPopup(popupID, " Rename ", "New name: ", node.name)
 	input.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 		switch e.Key() {
@@ -506,7 +506,7 @@ func renamePopup(node *AudioFile) {
 				defaultTimedPopup(" Error ", err.Error())
 				logError(err)
 			}
-			gomu.pages.RemovePage(popupId)
+			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 			gomu.playlist.refresh()
 			// gomu.queue.saveQueue()
@@ -525,7 +525,7 @@ func renamePopup(node *AudioFile) {
 			})
 
 		case tcell.KeyEsc:
-			gomu.pages.RemovePage(popupId)
+			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 		}
 
