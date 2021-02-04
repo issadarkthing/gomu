@@ -1,6 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"time"
+
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
@@ -59,6 +63,78 @@ func (c Command) defineCommands() {
 			logError(err)
 		}
 	})
+
+	c.define("youtube_search", func() {
+
+		popupId := "youtube-search-input-popup"
+
+		input := newInputPopup(popupId, " Youtube Search ", "search: ")
+
+		input.SetDoneFunc(func(key tcell.Key) {
+
+			switch key {
+			case tcell.KeyEnter:
+				search := input.GetText()
+				gomu.pages.RemovePage(popupId)
+				gomu.popups.pop()
+
+				results, err := getSearchResult(search)
+				if err != nil {
+					logError(err)
+					defaultTimedPopup(" Error ", err.Error())
+				} else {
+
+					titles := []string{}
+					urls := make(map[string]string)
+
+					for _, result := range results {
+						duration, err := time.ParseDuration(fmt.Sprintf("%ds", result.LengthSeconds))
+						if err != nil {
+							logError(err)
+							return
+						}
+
+						durationText := fmt.Sprintf("[ %s ] ", fmtDuration(duration))
+						title := durationText + result.Title
+
+						urls[title] = `https://www.youtube.com/watch?v=` + result.VideoId
+
+						titles = append(titles, title)
+					}
+
+					searchPopup(titles, func(title string) {
+						defaultTimedPopup(" URL ", title)
+
+						audioFile := gomu.playlist.getCurrentFile()
+
+						var dir *tview.TreeNode
+
+						if audioFile.isAudioFile {
+							dir = audioFile.parent
+						} else {
+							dir = audioFile.node
+						}
+
+						go func() {
+							url := urls[title]
+							if err := ytdl(url, dir); err != nil {
+								logError(err)
+							}
+							gomu.playlist.refresh()
+						}()
+						gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+					})
+				}
+
+			case tcell.KeyEscape:
+				gomu.pages.RemovePage(popupId)
+				gomu.popups.pop()
+				gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+			}
+
+		})
+	})
+
 
 	c.define("download_audio", func() {
 
