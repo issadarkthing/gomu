@@ -207,7 +207,11 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 					audioFile.name+"\nhas been deleted successfully")
 				p.refresh()
 
+				//Here we remove the song from queue
 				songPaths := gomu.queue.getItems()
+				if audioName == getName(gomu.player.currentSong.name) {
+					gomu.player.skip()
+				}
 				for i, songPath := range songPaths {
 					if strings.Contains(songPath, audioName) {
 						gomu.queue.deleteItem(i)
