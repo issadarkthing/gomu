@@ -192,6 +192,7 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 				return
 			}
 
+			audioName := getName(audioFile.path)
 			err := os.Remove(audioFile.path)
 
 			if err != nil {
@@ -204,8 +205,14 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 
 				defaultTimedPopup(" Success ",
 					audioFile.name+"\nhas been deleted successfully")
-
 				p.refresh()
+
+				songPaths := gomu.queue.getItems()
+				for i, songPath := range songPaths {
+					if strings.Contains(songPath, audioName) {
+						gomu.queue.deleteItem(i)
+					}
+				}
 			}
 
 		})
