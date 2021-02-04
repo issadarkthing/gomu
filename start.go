@@ -102,17 +102,19 @@ emoji:
 	viper.AddConfigPath(strings.TrimSuffix(expandFilePath(configPath), "/config"))
 	viper.AddConfigPath("$HOME/.config/gomu")
 
+	// General config
+	viper.SetDefault("general.music_dir", MUSIC_PATH)
+	viper.SetDefault("general.history_path", HISTORY_PATH)
+	viper.SetDefault("general.confirm_on_exit", true)
+	viper.SetDefault("general.confirm_bulk_add", true)
+	viper.SetDefault("general.popup_timeout", "5s")
+	viper.SetDefault("general.volume", 100)
+	viper.SetDefault("general.load_prev_queue", true)
+	viper.SetDefault("general.use_emoji", false)
+	viper.SetDefault("general.invidious_instance", "https://invidious.namazso.eu")
+
 	if err := viper.ReadInConfig(); err != nil {
 
-		// General config
-		viper.SetDefault("general.music_dir", MUSIC_PATH)
-		viper.SetDefault("general.history_path", HISTORY_PATH)
-		viper.SetDefault("general.confirm_on_exit", true)
-		viper.SetDefault("general.confirm_bulk_add", true)
-		viper.SetDefault("general.popup_timeout", "5s")
-		viper.SetDefault("general.volume", 100)
-		viper.SetDefault("general.load_prev_queue", true)
-		viper.SetDefault("general.use_emoji", false)
 
 		// creates gomu config dir if does not exist
 		if _, err := os.Stat(defaultPath); err != nil {
