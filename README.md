@@ -14,7 +14,7 @@ Gomu is a Terminal User Interface **TUI** music player to play mp3 files from yo
 - [fzf](https://github.com/junegunn/fzf) integration
 - [youtube-dl](https://github.com/ytdl-org/youtube-dl) integration
 - audio file management
-- customizeable
+- customizable
 
 ## Dependencies
 If you are using ubuntu, you need to install alsa and required dependencies
@@ -112,6 +112,3 @@ I just wanted to implement my own music player with a programming language i'm c
 - pause 
 
 Seeking and more advanced stuff has not yet been implemented; feel free to contribute :)
-
-## Donation
-Paypal: paypal.me/razimanmahathir
