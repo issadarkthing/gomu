@@ -40,23 +40,27 @@ func readConfig(args Args) {
 	const config = `
 general:
   # confirmation popup to add the whole playlist to the queue
-  confirm_bulk_add:  true
-  confirm_on_exit:   true
-  load_prev_queue:   true
+  confirm_bulk_add:   true
+  confirm_on_exit:    true
+  load_prev_queue:    true
   # change this to directory that contains mp3 files
-  music_dir:         ~/music
+  music_dir:          ~/music
   # url history of downloaded audio will be saved here
-  history_path:      ~/.local/share/gomu/urls
-  popup_timeout:     5s
+  history_path:       ~/.local/share/gomu/urls
+  popup_timeout:      5s
   # initial volume when gomu starts up
-  volume:            100
+  volume:             100
   # some of the terminal supports unicode character
   # you can set this to true to enable emojis
-  emoji:             false
+  emoji:              false
   # you may use fzf as your finder inside gomu
   # but it is recommended to use built-in finder
   # as it integrates well with gomu
-  fzf:               false
+  fzf:                false
+  # if you experiencing error using this invidious instance, you can change it
+  # to another instance from this list:
+  # https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
+  invidious_instance: "https://invidious.namazso.eu"
 
 # not all colors can be reproducible in terminal
 # changing hex colors may or may not produce expected result
