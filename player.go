@@ -52,11 +52,6 @@ func newPlayer() *Player {
 
 func (p *Player) run(currSong *AudioFile) error {
 
-	// if p.streamSeekCloser != nil {
-	// 	speaker.Lock()
-	// 	p.streamSeekCloser.Close()
-	// 	speaker.Unlock()
-	// }
 	p.isSkipped = make(chan bool, 1)
 	f, err := os.Open(currSong.path)
 
@@ -67,7 +62,6 @@ func (p *Player) run(currSong *AudioFile) error {
 	defer f.Close()
 
 	stream, format, err := mp3.Decode(f)
-	// p.streamSeekCloser, *(p.format), err = mp3.Decode(f)
 
 	p.streamSeekCloser = stream
 	p.format = &format
@@ -131,11 +125,6 @@ func (p *Player) run(currSong *AudioFile) error {
 
 	p.position = p.getPosition()
 	p.isRunning = true
-
-	// if p.isLoop {
-	// 	gomu.queue.enqueue(currSong)
-	// 	gomu.app.Draw()
-	// }
 
 	gomu.playingBar.newProgress(currSong.name, int(p.length.Seconds()))
 
