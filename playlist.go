@@ -601,22 +601,15 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		return tracerr.Wrap(err)
 	}
 
-	// dir := viper.GetString("general.music_dir")
-
 	selAudioFile := selPlaylist.GetReference().(*AudioFile)
-	// selPlaylistName := selAudioFile.name
 	dir := selAudioFile.path
-	// selPlaylistName = filepath.Join(selAudioFile.path,selPlaylistName)
-	// fmt.Println(selPlaylistName)
 
 	defaultTimedPopup(" Ytdl ", "Downloading")
 
 	// specify the output path for ytdl
 	outputDir := fmt.Sprintf(
-		// "%s/%s/%%(title)s.%%(ext)s",
 		"%s/%%(title)s.%%(ext)s",
 		dir) //,
-	// selPlaylistName)
 
 	args := []string{
 		"--extract-audio",
@@ -648,7 +641,6 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	}
 
 	playlistPath := dir
-	// playlistPath := path.Join(expandTilde(dir), selPlaylistName)
 	audioPath := extractFilePath(stdout.Bytes(), playlistPath)
 
 	err = appendFile(expandTilde(viper.GetString("general.history_path")), url+"\n")
