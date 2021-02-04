@@ -78,8 +78,15 @@ func newPlaylist(args Args) *Playlist {
 		log.Fatalf("Unable to find music directory: %e", err)
 	}
 
-	rootTextView := fmt.Sprintf("%s %s",
-		viper.GetString("emoji.playlist"), path.Base(rootDir))
+	var rootTextView string
+
+	if viper.GetBool("general.emoji") {
+
+		rootTextView = fmt.Sprintf("%s %s",
+			viper.GetString("emoji.playlist"), path.Base(rootDir))
+	} else {
+		rootTextView = path.Base(rootDir)
+	}
 
 	root := tview.NewTreeNode(rootTextView).
 		SetColor(gomu.colors.accent)
