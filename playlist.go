@@ -21,7 +21,7 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-// Playlist and mp3 files are represented with this struct
+// AudioFile is representing directories and mp3 files
 // if isAudioFile equals to false it is a directory
 type AudioFile struct {
 	name        string
@@ -307,13 +307,13 @@ func (p *Playlist) addSongToPlaylist(
 	audioPath string, selPlaylist *tview.TreeNode,
 ) error {
 
-	f, err := os.Open(audioPath)
+	// f, err := os.Open(audioPath)
 
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
+	// if err != nil {
+	// 	return tracerr.Wrap(err)
+	// }
 
-	defer f.Close()
+	// defer f.Close()
 
 	songName := getName(audioPath)
 	node := tview.NewTreeNode(songName)
@@ -624,6 +624,8 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		"mp3",
 		"--output",
 		outputDir,
+		// "--cookies",
+		// "~/Downloads/youtube.com_cookies.txt",
 		url,
 	}
 
@@ -654,14 +656,14 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		return tracerr.Wrap(err)
 	}
 
+	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s", getName(audioPath))
+
+	defaultTimedPopup(" Ytdl ", downloadFinishedMessage)
+
 	err = gomu.playlist.addSongToPlaylist(audioPath, selPlaylist)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
-
-	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s", getName(audioPath))
-
-	defaultTimedPopup(" Ytdl ", downloadFinishedMessage)
 
 	return nil
 }
