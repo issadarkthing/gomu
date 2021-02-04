@@ -5,7 +5,7 @@ go 1.14
 require (
 	github.com/faiface/beep v1.0.2
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/gdamore/tcell/v2 v2.0.1-0.20201017141208-acf90d56d591
+	github.com/gdamore/tcell/v2 v2.1.0
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.1 // indirect
 	github.com/hajimehoshi/oto v0.7.1 // indirect
@@ -15,7 +15,7 @@ require (
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/pelletier/go-toml v1.8.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/rivo/tview v0.0.0-20210117162420-745e4ceeb711
+	github.com/rivo/tview v0.0.0-20210125085121-dbc1f32bb1d0
 	github.com/sahilm/fuzzy v0.1.0
 	github.com/spf13/afero v1.5.1 // indirect
 	github.com/spf13/cast v1.3.1 // indirect

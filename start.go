@@ -18,7 +18,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Created so we can keep track of childrens in slices
+// Panel is used to keep track of childrens in slices
 type Panel interface {
 	HasFocus() bool
 	SetBorderColor(color tcell.Color) *tview.Box
@@ -29,9 +29,9 @@ type Panel interface {
 }
 
 const (
-	CONFIG_PATH  = ".config/gomu/config"
-	HISTORY_PATH = "~/.local/share/gomu/urls"
-	MUSIC_PATH   = "~/music"
+	Config_Path  = ".config/gomu/config"
+	History_Path = "~/.local/share/gomu/urls"
+	Music_Path   = "~/music"
 )
 
 // Reads config file and sets the options
@@ -88,7 +88,7 @@ emoji:
 		logError(err)
 	}
 
-	defaultPath := path.Join(home, CONFIG_PATH)
+	defaultPath := path.Join(home, Config_Path)
 
 	if err != nil {
 		logError(err)
@@ -102,8 +102,8 @@ emoji:
 	if err := viper.ReadInConfig(); err != nil {
 
 		// General config
-		viper.SetDefault("general.music_dir", MUSIC_PATH)
-		viper.SetDefault("general.history_path", HISTORY_PATH)
+		viper.SetDefault("general.music_dir", Music_Path)
+		viper.SetDefault("general.history_path", History_Path)
 		viper.SetDefault("general.confirm_on_exit", true)
 		viper.SetDefault("general.confirm_bulk_add", true)
 		viper.SetDefault("general.popup_timeout", "5s")
@@ -142,9 +142,9 @@ type Args struct {
 
 func getArgs() Args {
 	ar := Args{
-		config:  flag.String("config", CONFIG_PATH, "Specify config file"),
+		config:  flag.String("config", Config_Path, "Specify config file"),
 		empty:   flag.Bool("empty", false, "Open gomu with empty queue. Does not override previous queue"),
-		music:   flag.String("music", MUSIC_PATH, "Specify music directory"),
+		music:   flag.String("music", Music_Path, "Specify music directory"),
 		version: flag.Bool("version", false, "Print gomu version"),
 	}
 	flag.Parse()
