@@ -260,6 +260,7 @@ func (p *Player) skip() {
 	}
 
 	p.ctrl.Streamer = nil
+	p.streamSeekCloser.Close()
 	p.done <- true
 }
 

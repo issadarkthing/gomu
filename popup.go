@@ -163,15 +163,15 @@ func timedPopup(
 
 	box := tview.NewFrame(textView).SetBorders(1, 0, 0, 0, 0, 0)
 	box.SetTitle(title).SetBorder(true).SetBackgroundColor(gomu.colors.popup)
-	popupId := fmt.Sprintf("%s %d", "timeout-popup", popupCounter)
+	popupID := fmt.Sprintf("%s %d", "timeout-popup", popupCounter)
 
 	popupCounter++
-	gomu.pages.AddPage(popupId, topRight(box, width, height), true, true)
+	gomu.pages.AddPage(popupID, topRight(box, width, height), true, true)
 	gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 
 	go func() {
 		time.Sleep(timeout)
-		gomu.pages.RemovePage(popupId)
+		gomu.pages.RemovePage(popupID)
 		gomu.app.Draw()
 
 		// timed popup shouldn't get focused
@@ -283,8 +283,8 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 
 	re := regexp.MustCompile(`^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$`)
 
-	popupId := "download-input-popup"
-	input := newInputPopup(popupId, " Download ", "Url: ", "")
+	popupID := "download-input-popup"
+	input := newInputPopup(popupID, " Download ", "Url: ", "")
 
 	input.SetDoneFunc(func(key tcell.Key) {
 
@@ -320,8 +320,8 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 // Input popup that takes the name of directory to be created
 func createPlaylistPopup() {
 
-	popupId := "mkdir-input-popup"
-	input := newInputPopup(popupId, " New Playlist ", "Enter playlist name: ", "")
+	popupID := "mkdir-input-popup"
+	input := newInputPopup(popupID, " New Playlist ", "Enter playlist name: ", "")
 
 	input.SetDoneFunc(func(key tcell.Key) {
 

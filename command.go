@@ -64,8 +64,9 @@ func (c Command) defineCommands() {
 
 		audioFile := gomu.playlist.getCurrentFile()
 		currNode := gomu.playlist.GetCurrentNode()
-		if gomu.pages.HasPage("download-popup") {
-			gomu.pages.RemovePage("download-popup")
+		if gomu.pages.HasPage("download-input-popup") {
+			gomu.pages.RemovePage("download-input-popup")
+			gomu.popups.pop()
 			return
 		}
 		// this ensures it downloads to
