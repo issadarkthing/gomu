@@ -609,7 +609,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	// specify the output path for ytdl
 	outputDir := fmt.Sprintf(
 		"%s/%%(title)s.%%(ext)s",
-		dir) //,
+		dir)
 
 	args := []string{
 		"--extract-audio",
@@ -648,14 +648,14 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		return tracerr.Wrap(err)
 	}
 
-	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s", getName(audioPath))
-
-	defaultTimedPopup(" Ytdl ", downloadFinishedMessage)
-
 	err = gomu.playlist.addSongToPlaylist(audioPath, selPlaylist)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
+
+	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s", getName(audioPath))
+	defaultTimedPopup(" Ytdl ", downloadFinishedMessage)
+	gomu.app.Draw()
 
 	return nil
 }
