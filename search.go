@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+
+	"github.com/spf13/viper"
 )
 
 type ResponseError struct {
@@ -50,7 +52,9 @@ func getSearchResult(search string) ([]YoutubeVideo, error) {
 
 	search = url.QueryEscape(search)
 
-	req, err := http.NewRequest("GET", `https://invidious.namazso.eu/api/v1/search?q=`+search, nil)
+	domain := viper.GetString("general.invidious_instance")
+
+	req, err := http.NewRequest("GET", domain+`/api/v1/search?q=`+search, nil)
 	if err != nil {
 		return nil, err
 	}
