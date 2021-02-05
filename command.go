@@ -70,6 +70,22 @@ func (c Command) defineCommands() {
 
 		input := newInputPopup(popupId, " Youtube Search ", "search: ")
 
+		// quick hack to change the autocomplete text color
+		tview.Styles.PrimitiveBackgroundColor = tcell.ColorBlack
+		input.SetAutocompleteFunc(func(currentText string) (entries []string) {
+
+			if currentText == "" {
+				return []string{}
+			}
+
+			suggestions, err := getSuggestions(currentText)
+			if err != nil {
+				logError(err)
+			}
+
+			return suggestions
+		})
+
 		input.SetDoneFunc(func(key tcell.Key) {
 
 			switch key {
@@ -130,11 +146,15 @@ func (c Command) defineCommands() {
 				gomu.pages.RemovePage(popupId)
 				gomu.popups.pop()
 				gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+
+			case tcell.KeyBackspace:
+
+			default:
+				input.Autocomplete()
 			}
 
 		})
 	})
-
 
 	c.define("download_audio", func() {
 
