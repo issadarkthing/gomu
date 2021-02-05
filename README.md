@@ -97,6 +97,7 @@ Each panel has it's own additional keybinding. To view the available keybinding 
 | D               |        delete playlist |
 | +               |              volume up |
 | -               |            volume down |
+| y               |         search youtube |
 | Y               |         download audio |
 | a               |        create playlist |
 | ?               |            toggle help |
