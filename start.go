@@ -29,9 +29,9 @@ type Panel interface {
 }
 
 const (
-	Config_Path  = ".config/gomu/config"
-	History_Path = "~/.local/share/gomu/urls"
-	Music_Path   = "~/music"
+	configPath  = ".config/gomu/config"
+	historyPath = "~/.local/share/gomu/urls"
+	musicPath   = "~/music"
 )
 
 // Reads config file and sets the options
@@ -76,7 +76,9 @@ color:
 emoji:
   playlist:          
   file:              
-
+  loop:              ﯩ
+  noloop:            
+ 
 # vi:ft=yaml
 `
 
@@ -88,7 +90,7 @@ emoji:
 		logError(err)
 	}
 
-	defaultPath := path.Join(home, Config_Path)
+	defaultPath := path.Join(home, configPath)
 
 	if err != nil {
 		logError(err)
@@ -102,8 +104,8 @@ emoji:
 	if err := viper.ReadInConfig(); err != nil {
 
 		// General config
-		viper.SetDefault("general.music_dir", Music_Path)
-		viper.SetDefault("general.history_path", History_Path)
+		viper.SetDefault("general.music_dir", musicPath)
+		viper.SetDefault("general.history_path", historyPath)
 		viper.SetDefault("general.confirm_on_exit", true)
 		viper.SetDefault("general.confirm_bulk_add", true)
 		viper.SetDefault("general.popup_timeout", "5s")
@@ -142,9 +144,9 @@ type Args struct {
 
 func getArgs() Args {
 	ar := Args{
-		config:  flag.String("config", Config_Path, "Specify config file"),
+		config:  flag.String("config", configPath, "Specify config file"),
 		empty:   flag.Bool("empty", false, "Open gomu with empty queue. Does not override previous queue"),
-		music:   flag.String("music", Music_Path, "Specify music directory"),
+		music:   flag.String("music", musicPath, "Specify music directory"),
 		version: flag.Bool("version", false, "Print gomu version"),
 	}
 	flag.Parse()
