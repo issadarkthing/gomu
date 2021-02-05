@@ -91,14 +91,18 @@ func (c Command) defineCommands() {
 			switch key {
 			case tcell.KeyEnter:
 				search := input.GetText()
+				defaultTimedPopup(" Youtube Search ", "Searching for "+search)
 				gomu.pages.RemovePage(popupId)
 				gomu.popups.pop()
 
-				results, err := getSearchResult(search)
-				if err != nil {
-					logError(err)
-					defaultTimedPopup(" Error ", err.Error())
-				} else {
+				go func() {
+
+					results, err := getSearchResult(search)
+					if err != nil {
+						logError(err)
+						defaultTimedPopup(" Error ", err.Error())
+						return
+					}
 
 					titles := []string{}
 					urls := make(map[string]string)
@@ -119,7 +123,6 @@ func (c Command) defineCommands() {
 					}
 
 					searchPopup(titles, func(title string) {
-						defaultTimedPopup(" URL ", title)
 
 						audioFile := gomu.playlist.getCurrentFile()
 
@@ -140,14 +143,14 @@ func (c Command) defineCommands() {
 						}()
 						gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 					})
-				}
+
+					gomu.app.Draw()
+				}()
 
 			case tcell.KeyEscape:
 				gomu.pages.RemovePage(popupId)
 				gomu.popups.pop()
 				gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
-
-			case tcell.KeyBackspace:
 
 			default:
 				input.Autocomplete()
