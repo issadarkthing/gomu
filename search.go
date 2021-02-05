@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/spf13/viper"
+	"github.com/ztrue/tracerr"
 )
 
 type ResponseError struct {
@@ -46,24 +47,20 @@ type YoutubeVideo struct {
 
 const userAgent = "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
 
-func getSearchResult(search string) ([]YoutubeVideo, error) {
+func getRequest(url string, v interface{}) error {
 
 	client := &http.Client{}
 
-	search = url.QueryEscape(search)
-
-	domain := viper.GetString("general.invidious_instance")
-
-	req, err := http.NewRequest("GET", domain+`/api/v1/search?q=`+search, nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, err
+		return tracerr.Wrap(err)
 	}
 
 	req.Header.Set("User-Agent", userAgent)
 
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return tracerr.Wrap(err)
 	}
 
 	defer res.Body.Close()
@@ -73,18 +70,52 @@ func getSearchResult(search string) ([]YoutubeVideo, error) {
 
 		err = json.NewDecoder(res.Body).Decode(&resErr)
 		if err != nil {
-			return nil, err
+			return tracerr.Wrap(err)
 		}
 
-		return nil, &resErr
+		return &resErr
 	}
 
+	err = json.NewDecoder(res.Body).Decode(&v)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	return nil
+}
+
+func getSearchResult(query string) ([]YoutubeVideo, error) {
+
+	query = url.QueryEscape(query)
+	domain := viper.GetString("general.invidious_instance")
+	targetUrl := domain + `/api/v1/search?q=` + query
 	yt := []YoutubeVideo{}
 
-	err = json.NewDecoder(res.Body).Decode(&yt)
+	err := getRequest(targetUrl, &yt)
 	if err != nil {
-		return nil, err
+		return nil, tracerr.Wrap(err)
 	}
 
 	return yt, nil
+}
+
+func getSuggestions(query string) ([]string, error) {
+
+	query = url.QueryEscape(query)
+	targetUrl :=
+		`http://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=` + query
+
+	res := []json.RawMessage{}
+	err := getRequest(targetUrl, &res)
+	if err != nil {
+		return nil, tracerr.Wrap(err)
+	}
+
+	suggestions := []string{}
+	err = json.Unmarshal(res[1], &suggestions)
+	if err != nil {
+		return nil, tracerr.Wrap(err)
+	}
+
+	return suggestions, nil
 }
