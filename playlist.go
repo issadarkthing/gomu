@@ -318,13 +318,13 @@ func (p *Playlist) addSongToPlaylist(
 	audioPath string, selPlaylist *tview.TreeNode,
 ) error {
 
-	// f, err := os.Open(audioPath)
+	f, err := os.Open(audioPath)
 
-	// if err != nil {
-	// 	return tracerr.Wrap(err)
-	// }
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
 
-	// defer f.Close()
+	defer f.Close()
 
 	songName := getName(audioPath)
 	node := tview.NewTreeNode(songName)
@@ -760,7 +760,19 @@ func populate(root *tview.TreeNode, rootPath string) error {
 
 func (p *Playlist) yank() error {
 	yankFile = p.getCurrentFile()
+	if yankFile == nil {
+		isYanked = false
+		defaultTimedPopup(" Error! ", "No file has been yanked.")
+		return nil
+	}
+	if yankFile.node == p.GetRoot() {
+		isYanked = false
+		defaultTimedPopup(" Error! ", "Please don't yank the root directory.")
+		return nil
+	}
 	isYanked = true
+	defaultTimedPopup(" Success ", yankFile.name+"\n has been yanked successfully.")
+
 	return nil
 }
 
@@ -777,8 +789,10 @@ func (p *Playlist) paste() error {
 				newPathFull := filepath.Join(newPathDir, oldPathFileName)
 				err := os.Rename(yankFile.path, newPathFull)
 				if err != nil {
-					logError(err)
+					defaultTimedPopup(" Error ", yankFile.name+"\n has not been pasted.")
+					return tracerr.Wrap(err)
 				}
+				defaultTimedPopup(" Success ", yankFile.name+"\n has been pasted to\n"+pasteFile.name)
 			}
 		} else {
 			newPathDir := pasteFile.path
@@ -788,8 +802,10 @@ func (p *Playlist) paste() error {
 				newPathFull := filepath.Join(newPathDir, oldPathFileName)
 				err := os.Rename(yankFile.path, newPathFull)
 				if err != nil {
-					logError(err)
+					defaultTimedPopup(" Error ", yankFile.name+"\n has not been pasted.")
+					return tracerr.Wrap(err)
 				}
+				defaultTimedPopup(" Success ", yankFile.name+"\n has been pasted to\n"+pasteFile.name)
 			}
 		}
 

@@ -16,6 +16,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
 )
 
@@ -96,11 +97,20 @@ func (q *Queue) updateTitle() string {
 	}
 
 	var loop string
+	isEmoji := viper.GetBool("general.emoji")
 
 	if q.isLoop {
-		loop = "ﯩ"
+		if isEmoji {
+			loop = viper.GetString("emoji.loop")
+		} else {
+			loop = "Loop"
+		}
 	} else {
-		loop = ""
+		if isEmoji {
+			loop = viper.GetString("emoji.noloop")
+		} else {
+			loop = "No loop"
+		}
 	}
 
 	title := fmt.Sprintf("─ Queue ───┤ %d %s | %s | %s ├",
