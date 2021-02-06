@@ -93,7 +93,7 @@ func getSearchResult(query string) ([]YoutubeVideo, error) {
 
 	err := getRequest(targetUrl, &yt)
 	if err != nil {
-		return nil, tracerr.Wrap(err)
+		return nil, err
 	}
 
 	return yt, nil
