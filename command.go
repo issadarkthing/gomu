@@ -64,8 +64,9 @@ func (c Command) defineCommands() {
 
 		audioFile := gomu.playlist.getCurrentFile()
 		currNode := gomu.playlist.GetCurrentNode()
-		if gomu.pages.HasPage("download-popup") {
-			gomu.pages.RemovePage("download-popup")
+		if gomu.pages.HasPage("download-input-popup") {
+			gomu.pages.RemovePage("download-input-popup")
+			gomu.popups.pop()
 			return
 		}
 		// this ensures it downloads to
@@ -181,27 +182,20 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("play_selected", func() {
-		a, err := gomu.queue.deleteItem(gomu.queue.GetCurrentItem())
-		if err != nil {
-			logError(err)
-		}
+		if gomu.queue.GetItemCount() != 0 && gomu.queue.GetCurrentItem() != -1 {
+			a, err := gomu.queue.deleteItem(gomu.queue.GetCurrentItem())
+			if err != nil {
+				logError(err)
+			}
 
-		gomu.queue.pushFront(a)
-		gomu.player.skip()
+			gomu.queue.pushFront(a)
+			gomu.player.skip()
+		}
 	})
 
 	c.define("toggle_loop", func() {
-
-		isLoop := gomu.player.toggleLoop()
-		var msg string
-
-		if isLoop {
-			msg = "Looping current queue"
-		} else {
-			msg = "Stopped looping current queue"
-		}
-
-		defaultTimedPopup(" Loop ", msg)
+		gomu.queue.isLoop = gomu.player.toggleLoop()
+		gomu.queue.updateTitle()
 	})
 
 	c.define("shuffle_queue", func() {
@@ -300,4 +294,65 @@ func (c Command) defineCommands() {
 			}
 		})
 	})
+
+	c.define("forward", func() {
+		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
+			position := gomu.playingBar._progress + 10
+			if position < gomu.playingBar.full {
+				gomu.player.seek(position)
+				gomu.playingBar._progress = position - 1
+			}
+		}
+	})
+
+	c.define("rewind", func() {
+		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
+			position := gomu.playingBar._progress - 10
+			if position-1 > 0 {
+				gomu.player.seek(position)
+				gomu.playingBar._progress = position - 1
+			} else {
+				gomu.player.seek(0)
+				gomu.playingBar._progress = 0
+			}
+		}
+	})
+
+	c.define("forward_fast", func() {
+		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
+			position := gomu.playingBar._progress + 60
+			if position < gomu.playingBar.full {
+				gomu.player.seek(position)
+				gomu.playingBar._progress = position - 1
+			}
+		}
+	})
+
+	c.define("rewind_fast", func() {
+		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
+			position := gomu.playingBar._progress - 60
+			if position-1 > 0 {
+				gomu.player.seek(position)
+				gomu.playingBar._progress = position - 1
+			} else {
+				gomu.player.seek(0)
+				gomu.playingBar._progress = 0
+			}
+		}
+	})
+
+	c.define("yank", func() {
+		err := gomu.playlist.yank()
+		if err != nil {
+			logError(err)
+		}
+	})
+
+	c.define("paste", func() {
+		err := gomu.playlist.paste()
+		if err != nil {
+			logError(err)
+		}
+	})
+
 }

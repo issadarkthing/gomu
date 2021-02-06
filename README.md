@@ -64,10 +64,19 @@ general:
   confirm_on_exit:   true
   load_prev_queue:   true
   music_dir:         ~/music
+  history_path:      ~/.local/share/gomu/urls
   popup_timeout:     5s
   volume:            100
   emoji:             true
   fzf:               false
+
+emoji:
+  playlist:          
+  file:              
+  loop:              ﯩ
+  noloop:            
+ 
+# vi:ft=yaml
 ```
 
 ## Fzf
@@ -81,26 +90,50 @@ edit this line `fzf: false` to change it into `true` in `~/.config/gomu/config`.
 ## Keybindings
 Each panel has it's own additional keybinding. To view the available keybinding for the specific panel use `?`
 
-| Key             |            Description |
-|:----------------|-----------------------:|
-| j               |                   down |
-| k               |                     up |
-| tab             |           change panel |
-| space           |      toggle play/pause |
-| esc             |            close popup |
-| n               |                   skip |
-| q               |                   quit |
-| l (lowercase L) |      add song to queue |
-| L               |  add playlist to queue |
-| h               | close node in playlist |
-| d               |      remove from queue |
-| D               |        delete playlist |
-| +               |              volume up |
-| -               |            volume down |
-| Y               |         download audio |
-| a               |        create playlist |
-| ?               |            toggle help |
-
+|-----------------|---------------------------------|
+| Key(General)    |                     Description |
+|:----------------|--------------------------------:|
+| tab             |                    change panel |
+| space           |               toggle play/pause |
+| esc             |                     close popup |
+| n               |                            skip |
+| q               |                            quit |
+| +               |                       volume up |
+| -               |                     volume down |
+| f               |              forward 10 seconds |
+| F               |              forward 60 seconds |
+| b               |               rewind 10 seconds |
+| B               |               rewind 60 seconds |
+| ?               |                     toggle help |
+|:----------------|--------------------------------:|
+| Key(Playlist)   |                     Description |
+|:----------------|--------------------------------:|
+| j               |                            down |
+| k               |                              up |
+| h               |          close node in playlist |
+| a               |                 create playlist |
+| l (lowercase L) |               add song to queue |
+| L               |           add playlist to queue |
+| d               |    delete file from filesystemd |
+| D               | delete playlist from filesystem |
+| Y               |                  download audio |
+| r               |                         refresh |
+| R               |                          rename |
+| y               |                       yank file |
+| p               |                      paste file |
+| /               |                find in playlist |
+|:----------------|--------------------------------:|
+| Key(Queue)      |                     Description |
+|:----------------|--------------------------------:|
+| j               |                            down |
+| k               |                              up |
+| l (lowercase L) |              play selected song |
+| d               |               remove from queue |
+| D               |                 delete playlist |
+| z               |                     toggle loop |
+| s               |                         shuffle |
+| f               |                   find in queue |
+|-----------------|---------------------------------|
 
 
 ## Project Background
@@ -110,6 +143,7 @@ I just wanted to implement my own music player with a programming language i'm c
 - skip
 - play
 - pause 
+- forward and rewind
 
 Seeking and more advanced stuff has not yet been implemented; feel free to contribute :)
 

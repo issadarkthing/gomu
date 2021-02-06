@@ -16,6 +16,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
 )
 
@@ -95,8 +96,25 @@ func (q *Queue) updateTitle() string {
 		count = "song"
 	}
 
-	title := fmt.Sprintf("─ Queue ───┤ %d %s | %s ├",
-		len(q.items), count, fmtTime)
+	var loop string
+	isEmoji := viper.GetBool("general.emoji")
+
+	if q.isLoop {
+		if isEmoji {
+			loop = viper.GetString("emoji.loop")
+		} else {
+			loop = "Loop"
+		}
+	} else {
+		if isEmoji {
+			loop = viper.GetString("emoji.noloop")
+		} else {
+			loop = "No loop"
+		}
+	}
+
+	title := fmt.Sprintf("─ Queue ───┤ %d %s | %s | %s ├",
+		len(q.items), count, fmtTime, loop)
 
 	q.SetTitle(title)
 
@@ -136,20 +154,27 @@ func (q *Queue) dequeue() (*AudioFile, error) {
 // Add item to the list and returns the length of the queue
 func (q *Queue) enqueue(audioFile *AudioFile) (int, error) {
 
-	if !gomu.player.isRunning && "false" == os.Getenv("TEST") {
+	//this is to fix the problem bulk_add when paused
+	if !gomu.player.hasInit {
+		if !gomu.player.isRunning && os.Getenv("TEST") == "false" {
 
-		gomu.player.isRunning = true
+			gomu.player.isRunning = true
 
-		go func() {
+			go func() {
 
-			if err := gomu.player.run(audioFile); err != nil {
-				logError(err)
-			}
+				if err := gomu.player.run(audioFile); err != nil {
+					logError(err)
+				}
 
-		}()
+			}()
 
+			return q.GetItemCount(), nil
+
+		}
+	}
+
+	if !audioFile.isAudioFile {
 		return q.GetItemCount(), nil
-
 	}
 
 	q.items = append(q.items, audioFile)
@@ -186,10 +211,24 @@ func (q *Queue) getItems() []string {
 }
 
 // Save the current queue
-func (q *Queue) saveQueue() error {
+func (q *Queue) saveQueue(isQuit bool) error {
 
 	songPaths := q.getItems()
 	var content strings.Builder
+
+	if gomu.player.hasInit && isQuit {
+		currentSongPath := gomu.player.currentSong.path
+		currentSongInQueue := false
+		for _, songPath := range songPaths {
+			if getName(songPath) == getName(currentSongPath) {
+				currentSongInQueue = true
+			}
+		}
+		if !currentSongInQueue {
+			hashed := sha1Hex(getName(currentSongPath))
+			content.WriteString(hashed + "\n")
+		}
+	}
 
 	for _, songPath := range songPaths {
 		// hashed song name is easier to search through
@@ -360,7 +399,7 @@ func (q *Queue) shuffle() {
 		q.AddItem(queueText, v.path, 0, nil)
 	}
 
-	q.updateTitle()
+	// q.updateTitle()
 
 }
 
@@ -420,4 +459,12 @@ func sha1Hex(input string) string {
 	h := sha1.New()
 	h.Write([]byte(input))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+//Modify the title of songs in queue
+func (q *Queue) updateQueueNames() error {
+	q.saveQueue(false)
+	q.clearQueue()
+	q.loadQueue()
+	return nil
 }
