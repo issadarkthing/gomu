@@ -254,6 +254,7 @@ func (c Command) defineCommands() {
 			}
 
 			gomu.playlist.setHighlight(audio.node)
+			gomu.playlist.refresh()
 		})
 	})
 
