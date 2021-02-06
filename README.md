@@ -2,7 +2,7 @@
 # Gomu (Go Music Player) [![Go Report Card](https://goreportcard.com/badge/github.com/issadarkthing/gomu)](https://goreportcard.com/report/github.com/issadarkthing/gomu) [![Build Status](https://travis-ci.com/issadarkthing/gomu.svg?branch=master)](https://travis-ci.com/issadarkthing/gomu)
 Gomu is a Terminal User Interface **TUI** music player to play mp3 files from your local machine. 
 
-![demo](/gomu.gif)
+![gomu](https://user-images.githubusercontent.com/50593529/107107772-37fdc000-686e-11eb-8c0f-c7d7f43f3c80.png)
 
 ## Features
 - lightweight
