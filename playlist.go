@@ -147,7 +147,7 @@ func newPlaylist(args Args) *Playlist {
 			'D': "delete_playlist",
 			'd': "delete_file",
 			'Y': "download_audio",
-			'y': "youtube_search",
+			's': "youtube_search",
 			'l': "add_queue",
 			'L': "bulk_add",
 			'h': "close_node",
