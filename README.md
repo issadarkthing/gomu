@@ -132,7 +132,7 @@ Each panel has it's own additional keybinding. To view the available keybinding 
 | D               |                 delete playlist |
 | z               |                     toggle loop |
 | s               |                         shuffle |
-| f               |                   find in queue |
+| /               |                   find in queue |
 
 
 ## Project Background
