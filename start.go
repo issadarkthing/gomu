@@ -40,24 +40,28 @@ func readConfig(args Args) {
 	const config = `
 general:
   # confirmation popup to add the whole playlist to the queue
-  confirm_bulk_add:  true
-  confirm_on_exit:   true
-  load_prev_queue:   true
-  queue_loop:        true
+  confirm_bulk_add:   true
+  confirm_on_exit:    true
+  load_prev_queue:    true
+  queue_loop:         true
   # change this to directory that contains mp3 files
-  music_dir:         ~/music
+  music_dir:          ~/music
   # url history of downloaded audio will be saved here
-  history_path:      ~/.local/share/gomu/urls
-  popup_timeout:     5s
+  history_path:       ~/.local/share/gomu/urls
+  popup_timeout:      5s
   # initial volume when gomu starts up
-  volume:            100
+  volume:             100
   # some of the terminal supports unicode character
   # you can set this to true to enable emojis
-  emoji:             false
+  emoji:              false
   # you may use fzf as your finder inside gomu
   # but it is recommended to use built-in finder
   # as it integrates well with gomu
-  fzf:               false
+  fzf:                false
+  # if you experiencing error using this invidious instance, you can change it
+  # to another instance from this list:
+  # https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
+  invidious_instance: "https://vid.puffyan.us"
 
 # not all colors can be reproducible in terminal
 # changing hex colors may or may not produce expected result
@@ -101,18 +105,18 @@ emoji:
 	viper.AddConfigPath(strings.TrimSuffix(expandFilePath(configPath), "/config"))
 	viper.AddConfigPath("$HOME/.config/gomu")
 
-	if err := viper.ReadInConfig(); err != nil {
+	// General config
+	viper.SetDefault("general.music_dir", musicPath)
+	viper.SetDefault("general.history_path", historyPath)
+	viper.SetDefault("general.confirm_on_exit", true)
+	viper.SetDefault("general.confirm_bulk_add", true)
+	viper.SetDefault("general.popup_timeout", "5s")
+	viper.SetDefault("general.volume", 100)
+	viper.SetDefault("general.load_prev_queue", true)
+	viper.SetDefault("general.use_emoji", false)
+	viper.SetDefault("general.invidious_instance", "https://vid.puffyan.us")
 
-		// General config
-		viper.SetDefault("general.music_dir", musicPath)
-		viper.SetDefault("general.history_path", historyPath)
-		viper.SetDefault("general.confirm_on_exit", true)
-		viper.SetDefault("general.confirm_bulk_add", true)
-		viper.SetDefault("general.popup_timeout", "5s")
-		viper.SetDefault("general.volume", 100)
-		viper.SetDefault("general.load_prev_queue", true)
-		viper.SetDefault("general.queue_loop", false)
-		viper.SetDefault("general.use_emoji", true)
+	if err := viper.ReadInConfig(); err != nil {
 
 		// creates gomu config dir if does not exist
 		if _, err := os.Stat(defaultPath); err != nil {

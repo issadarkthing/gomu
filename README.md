@@ -14,7 +14,8 @@ Gomu is a Terminal User Interface **TUI** music player to play mp3 files from yo
 - [fzf](https://github.com/junegunn/fzf) integration
 - [youtube-dl](https://github.com/ytdl-org/youtube-dl) integration
 - audio file management
-- customizeable
+- customizable
+- find music from youtube
 
 ## Dependencies
 If you are using ubuntu, you need to install alsa and required dependencies
@@ -67,7 +68,7 @@ general:
   history_path:      ~/.local/share/gomu/urls
   popup_timeout:     5s
   volume:            100
-  emoji:             true
+  emoji:             false
   fzf:               false
 
 emoji:
@@ -90,8 +91,7 @@ edit this line `fzf: false` to change it into `true` in `~/.config/gomu/config`.
 ## Keybindings
 Each panel has it's own additional keybinding. To view the available keybinding for the specific panel use `?`
 
-|-----------------|---------------------------------|
-| Key(General)    |                     Description |
+| Key (General)   |                     Description |
 |:----------------|--------------------------------:|
 | tab             |                    change panel |
 | space           |               toggle play/pause |
@@ -105,8 +105,9 @@ Each panel has it's own additional keybinding. To view the available keybinding 
 | b               |               rewind 10 seconds |
 | B               |               rewind 60 seconds |
 | ?               |                     toggle help |
-|:----------------|--------------------------------:|
-| Key(Playlist)   |                     Description |
+
+
+| Key (Playlist)  |                     Description |
 |:----------------|--------------------------------:|
 | j               |                            down |
 | k               |                              up |
@@ -122,8 +123,9 @@ Each panel has it's own additional keybinding. To view the available keybinding 
 | y               |                       yank file |
 | p               |                      paste file |
 | /               |                find in playlist |
-|:----------------|--------------------------------:|
-| Key(Queue)      |                     Description |
+| s               |       search audio from youtube |
+
+| Key (Queue)     |                     Description |
 |:----------------|--------------------------------:|
 | j               |                            down |
 | k               |                              up |
@@ -133,7 +135,6 @@ Each panel has it's own additional keybinding. To view the available keybinding 
 | z               |                     toggle loop |
 | s               |                         shuffle |
 | f               |                   find in queue |
-|-----------------|---------------------------------|
 
 
 ## Project Background
@@ -146,6 +147,3 @@ I just wanted to implement my own music player with a programming language i'm c
 - forward and rewind
 
 Seeking and more advanced stuff has not yet been implemented; feel free to contribute :)
-
-## Donation
-Paypal: paypal.me/razimanmahathir
