@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
-  "unicode/utf8"
+	"unicode/utf8"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -99,13 +99,13 @@ func confirmationPopup(
 	modal.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 		switch e.Rune() {
 		case 'h':
-      	return tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
+			return tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
 		case 'j':
-      	return tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
+			return tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
 		case 'k':
-        return tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone)
+			return tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone)
 		case 'l':
-        return tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone)
+			return tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone)
 		}
 		return e
 	})
@@ -163,15 +163,15 @@ func timedPopup(
 
 	box := tview.NewFrame(textView).SetBorders(1, 0, 0, 0, 0, 0)
 	box.SetTitle(title).SetBorder(true).SetBackgroundColor(gomu.colors.popup)
-	popupId := fmt.Sprintf("%s %d", "timeout-popup", popupCounter)
+	popupID := fmt.Sprintf("%s %d", "timeout-popup", popupCounter)
 
 	popupCounter++
-	gomu.pages.AddPage(popupId, topRight(box, width, height), true, true)
+	gomu.pages.AddPage(popupID, topRight(box, width, height), true, true)
 	gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 
 	go func() {
 		time.Sleep(timeout)
-		gomu.pages.RemovePage(popupId)
+		gomu.pages.RemovePage(popupID)
 		gomu.app.Draw()
 
 		// timed popup shouldn't get focused
@@ -225,6 +225,10 @@ func helpPopup(panel Panel) {
 		"q      quit",
 		"+      volume up",
 		"-      volume down",
+		"f      forward 10 seconds",
+		"F      forward 60 seconds",
+		"b      rewind 10 seconds",
+		"B      rewind 60 seconds",
 		"?      toggle help",
 	}
 
@@ -235,7 +239,7 @@ func helpPopup(panel Panel) {
 		SetSelectedTextColor(gomu.colors.accent)
 
 	for _, v := range append(helpText, genHelp...) {
-		list.AddItem("  " + v, "", 0, nil)
+		list.AddItem("  "+v, "", 0, nil)
 	}
 
 	prev := func() {
@@ -279,8 +283,8 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 
 	re := regexp.MustCompile(`^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$`)
 
-	popupId := "download-input-popup"
-	input := newInputPopup(popupId, " Download ", "Url: ")
+	popupID := "download-input-popup"
+	input := newInputPopup(popupID, " Download ", "Url: ", "")
 
 	input.SetDoneFunc(func(key tcell.Key) {
 
@@ -316,8 +320,8 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 // Input popup that takes the name of directory to be created
 func createPlaylistPopup() {
 
-	popupId := "mkdir-input-popup"
-	input := newInputPopup(popupId, " New Playlist ", "Enter playlist name: ")
+	popupID := "mkdir-input-popup"
+	input := newInputPopup(popupID, " New Playlist ", "Enter playlist name: ", "")
 
 	input.SetDoneFunc(func(key tcell.Key) {
 
@@ -389,25 +393,24 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 
 		for _, match := range matches {
 			var text strings.Builder
-		  matchrune := [] rune(match.Str)
-      matchruneIndexes := match.MatchedIndexes 
-      for i:=0; i < len(match.MatchedIndexes); i++{
-        matchruneIndexes[i] = utf8.RuneCountInString(match.Str[0:match.MatchedIndexes[i]])
-      }
-      for i :=0; i < len(matchrune); i++ {
-        if contains(i, matchruneIndexes) {
-          textwithcolor := fmt.Sprintf(highlight, matchrune[i])
-          for _,j := range textwithcolor {
-            text.WriteRune(j)
-          }
-        } else{
-          text.WriteRune(matchrune[i])
-        }
-      }
+			matchrune := []rune(match.Str)
+			matchruneIndexes := match.MatchedIndexes
+			for i := 0; i < len(match.MatchedIndexes); i++ {
+				matchruneIndexes[i] = utf8.RuneCountInString(match.Str[0:match.MatchedIndexes[i]])
+			}
+			for i := 0; i < len(matchrune); i++ {
+				if contains(i, matchruneIndexes) {
+					textwithcolor := fmt.Sprintf(highlight, matchrune[i])
+					for _, j := range textwithcolor {
+						text.WriteRune(j)
+					}
+				} else {
+					text.WriteRune(matchrune[i])
+				}
+			}
 			list.AddItem(text.String(), match.Str, 0, nil)
 		}
 	})
-
 
 	input.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
@@ -462,7 +465,7 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 }
 
 // Creates new popup widget with default settings
-func newInputPopup(popupId, title, label string) *tview.InputField {
+func newInputPopup(popupID, title, label string, text string) *tview.InputField {
 
 	inputField := tview.NewInputField().
 		SetLabel(label).
@@ -476,8 +479,10 @@ func newInputPopup(popupId, title, label string) *tview.InputField {
 		SetBorder(true).
 		SetBorderPadding(1, 0, 2, 2)
 
+	inputField.SetText(text)
+
 	gomu.pages.
-		AddPage(popupId, center(inputField, 60, 5), true, true)
+		AddPage(popupID, center(inputField, 60, 5), true, true)
 
 	gomu.popups.push(inputField)
 
@@ -486,8 +491,8 @@ func newInputPopup(popupId, title, label string) *tview.InputField {
 
 func renamePopup(node *AudioFile) {
 
-	popupId := "rename-input-popup"
-	input := newInputPopup(popupId, " Rename ", "New name: ")
+	popupID := "rename-input-popup"
+	input := newInputPopup(popupID, " Rename ", "New name: ", node.name)
 	input.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 		switch e.Key() {
@@ -501,12 +506,26 @@ func renamePopup(node *AudioFile) {
 				defaultTimedPopup(" Error ", err.Error())
 				logError(err)
 			}
-			gomu.pages.RemovePage(popupId)
+			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 			gomu.playlist.refresh()
+			// gomu.queue.saveQueue()
+			// gomu.queue.clearQueue()
+			// gomu.queue.loadQueue()
+			gomu.queue.updateQueueNames()
+			gomu.setFocusPanel(gomu.playlist)
+			gomu.prevPanel = gomu.playlist
+			// gomu.playlist.setHighlight(node.node)
+			root := gomu.playlist.GetRoot()
+			root.Walk(func(node, _ *tview.TreeNode) bool {
+				if strings.Contains(node.GetText(), newName) {
+					gomu.playlist.setHighlight(node)
+				}
+				return true
+			})
 
 		case tcell.KeyEsc:
-			gomu.pages.RemovePage(popupId)
+			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 		}
 
