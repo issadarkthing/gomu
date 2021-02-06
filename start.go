@@ -18,7 +18,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Created so we can keep track of childrens in slices
+// Panel is used to keep track of childrens in slices
 type Panel interface {
 	HasFocus() bool
 	SetBorderColor(color tcell.Color) *tview.Box
@@ -29,9 +29,9 @@ type Panel interface {
 }
 
 const (
-	CONFIG_PATH  = ".config/gomu/config"
-	HISTORY_PATH = "~/.local/share/gomu/urls"
-	MUSIC_PATH   = "~/music"
+	configPath  = ".config/gomu/config"
+	historyPath = "~/.local/share/gomu/urls"
+	musicPath   = "~/music"
 )
 
 // Reads config file and sets the options
@@ -43,6 +43,7 @@ general:
   confirm_bulk_add:   true
   confirm_on_exit:    true
   load_prev_queue:    true
+  queue_loop:         true
   # change this to directory that contains mp3 files
   music_dir:          ~/music
   # url history of downloaded audio will be saved here
@@ -60,7 +61,7 @@ general:
   # if you experiencing error using this invidious instance, you can change it
   # to another instance from this list:
   # https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
-  invidious_instance: "https://invidious.namazso.eu"
+  invidious_instance: "https://vid.puffyan.us"
 
 # not all colors can be reproducible in terminal
 # changing hex colors may or may not produce expected result
@@ -79,7 +80,9 @@ color:
 emoji:
   playlist:          
   file:              
-
+  loop:              ﯩ
+  noloop:            
+ 
 # vi:ft=yaml
 `
 
@@ -91,7 +94,7 @@ emoji:
 		logError(err)
 	}
 
-	defaultPath := path.Join(home, CONFIG_PATH)
+	defaultPath := path.Join(home, configPath)
 
 	if err != nil {
 		logError(err)
@@ -103,18 +106,17 @@ emoji:
 	viper.AddConfigPath("$HOME/.config/gomu")
 
 	// General config
-	viper.SetDefault("general.music_dir", MUSIC_PATH)
-	viper.SetDefault("general.history_path", HISTORY_PATH)
+	viper.SetDefault("general.music_dir", musicPath)
+	viper.SetDefault("general.history_path", historyPath)
 	viper.SetDefault("general.confirm_on_exit", true)
 	viper.SetDefault("general.confirm_bulk_add", true)
 	viper.SetDefault("general.popup_timeout", "5s")
 	viper.SetDefault("general.volume", 100)
 	viper.SetDefault("general.load_prev_queue", true)
 	viper.SetDefault("general.use_emoji", false)
-	viper.SetDefault("general.invidious_instance", "https://invidious.namazso.eu")
+	viper.SetDefault("general.invidious_instance", "https://vid.puffyan.us")
 
 	if err := viper.ReadInConfig(); err != nil {
-
 
 		// creates gomu config dir if does not exist
 		if _, err := os.Stat(defaultPath); err != nil {
@@ -146,9 +148,9 @@ type Args struct {
 
 func getArgs() Args {
 	ar := Args{
-		config:  flag.String("config", CONFIG_PATH, "Specify config file"),
+		config:  flag.String("config", configPath, "Specify config file"),
 		empty:   flag.Bool("empty", false, "Open gomu with empty queue. Does not override previous queue"),
-		music:   flag.String("music", MUSIC_PATH, "Specify music directory"),
+		music:   flag.String("music", musicPath, "Specify music directory"),
 		version: flag.Bool("version", false, "Print gomu version"),
 	}
 	flag.Parse()
@@ -199,6 +201,9 @@ func start(application *tview.Application, args Args) {
 	gomu.setFocusPanel(gomu.playlist)
 	gomu.prevPanel = gomu.playlist
 
+	gomu.player.isLoop = viper.GetBool("general.queue_loop")
+	gomu.queue.isLoop = gomu.player.isLoop
+
 	if !*args.empty && viper.GetBool("general.load_prev_queue") {
 		// load saved queue from previous session
 		if err := gomu.queue.loadQueue(); err != nil {
@@ -207,14 +212,14 @@ func start(application *tview.Application, args Args) {
 	}
 
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGKILL)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		sig := <-sigs
 		errMsg := fmt.Sprintf("Received %s. Exiting program", sig.String())
 		logError(errors.New(errMsg))
 		err := gomu.quit(args)
 		if err != nil {
-			logError(errors.New("Unable to quit program"))
+			logError(errors.New("unable to quit program"))
 		}
 	}()
 
@@ -234,17 +239,23 @@ func start(application *tview.Application, args Args) {
 			if strings.Contains(popupName, "confirmation-") {
 				return e
 			}
-			gomu.cyclePanels()
+			gomu.cyclePanels2()
 		}
 
 		cmds := map[rune]string{
 			'q': "quit",
 			' ': "toggle_pause",
 			'+': "volume_up",
+			'=': "volume_up",
 			'-': "volume_down",
+			'_': "volume_down",
 			'n': "skip",
 			':': "command_search",
 			'?': "toggle_help",
+			'f': "forward",
+			'F': "forward_fast",
+			'b': "rewind",
+			'B': "rewind_fast",
 		}
 
 		for key, cmd := range cmds {
@@ -268,8 +279,10 @@ func start(application *tview.Application, args Args) {
 		return false
 	})
 
+	go populateAudioLength(gomu.playlist.GetRoot())
 	// main loop
 	if err := application.SetRoot(gomu.pages, true).SetFocus(gomu.playlist).Run(); err != nil {
 		logError(err)
 	}
+
 }
