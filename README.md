@@ -100,10 +100,8 @@ Each panel has it's own additional keybinding. To view the available keybinding 
 | q               |                            quit |
 | +               |                       volume up |
 | -               |                     volume down |
-| f               |              forward 10 seconds |
-| F               |              forward 60 seconds |
-| b               |               rewind 10 seconds |
-| B               |               rewind 60 seconds |
+| f/F             |           forward 10/60 seconds |
+| b/B             |            rewind 10/60 seconds |
 | ?               |                     toggle help |
 
 
