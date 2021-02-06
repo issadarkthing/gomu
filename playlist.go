@@ -60,12 +60,12 @@ func (p *Playlist) help() []string {
 		"d      delete file from filesystem",
 		"D      delete playlist from filesystem",
 		"Y      download audio from url",
-		"y      query audio from youtube and download",
 		"r      refresh",
 		"R      rename",
 		"y      yank file",
 		"p      paste file",
 		"/      find in playlist",
+		"s      search audio from youtube",
 	}
 
 }
