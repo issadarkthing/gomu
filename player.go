@@ -244,6 +244,7 @@ func (p *Player) togglePause() {
 // skips current song
 func (p *Player) skip() {
 
+	defer handleClosedChannel()
 	if gomu.queue.GetItemCount() < 1 {
 		return
 	}
@@ -251,6 +252,12 @@ func (p *Player) skip() {
 	p.ctrl.Streamer = nil
 	p.streamSeekCloser.Close()
 	p.done <- true
+}
+
+func handleClosedChannel() {
+	if x := recover(); x != nil {
+		time.Sleep(1 * time.Second)
+	}
 }
 
 // Toggles the queue to loop
