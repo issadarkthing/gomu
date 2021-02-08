@@ -157,6 +157,7 @@ next:
 			gomu.app.Draw()
 
 			if err != nil {
+				gomu.playingBar.setDefault()
 				break next
 			}
 
