@@ -55,8 +55,8 @@ func newPlayingBar() *PlayingBar {
 func (p *PlayingBar) run() error {
 
 	// When app is suspending, we want the progress bar to stop progressing
-	// because it causes screen to hang-up when app starts to stop suspending
-	// accumulate when app is suspending
+	// because it will cause the screen to hang-up. Once the app has stopped
+	// from suspend, accumulate the lost progress.
 	acc := 0
 	wasSuspended := false
 
