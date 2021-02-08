@@ -10,6 +10,8 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
+var lastSkip time.Time
+
 type Command struct {
 	commands map[string]func()
 }
@@ -365,7 +367,10 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("skip", func() {
-		gomu.player.skip()
+		if time.Since(lastSkip) > 1*time.Second {
+			gomu.player.skip()
+			lastSkip = time.Now()
+		}
 	})
 
 	c.define("toggle_help", func() {
