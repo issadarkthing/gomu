@@ -147,7 +147,7 @@ next:
 				gomu.app.Draw()
 			}
 
-			close(done)
+			// close(done)
 			p.position = 0
 			p.isRunning = false
 			p.format = nil

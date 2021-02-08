@@ -10,6 +10,8 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
+var lastSkip time.Time
+
 type Command struct {
 	commands map[string]func()
 }
@@ -254,6 +256,7 @@ func (c Command) defineCommands() {
 			}
 
 			gomu.playlist.setHighlight(audio.node)
+			gomu.playlist.refresh()
 		})
 	})
 
@@ -364,7 +367,10 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("skip", func() {
-		gomu.player.skip()
+		if time.Since(lastSkip) > 1*time.Second {
+			gomu.player.skip()
+			lastSkip = time.Now()
+		}
 	})
 
 	c.define("toggle_help", func() {
@@ -398,7 +404,10 @@ func (c Command) defineCommands() {
 		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
 			position := gomu.playingBar._progress + 10
 			if position < gomu.playingBar.full {
-				gomu.player.seek(position)
+				err := gomu.player.seek(position)
+				if err != nil {
+					logError(err)
+				}
 				gomu.playingBar._progress = position - 1
 			}
 		}
@@ -408,10 +417,16 @@ func (c Command) defineCommands() {
 		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
 			position := gomu.playingBar._progress - 10
 			if position-1 > 0 {
-				gomu.player.seek(position)
+				err := gomu.player.seek(position)
+				if err != nil {
+					logError(err)
+				}
 				gomu.playingBar._progress = position - 1
 			} else {
-				gomu.player.seek(0)
+				err := gomu.player.seek(0)
+				if err != nil {
+					logError(err)
+				}
 				gomu.playingBar._progress = 0
 			}
 		}
@@ -421,7 +436,10 @@ func (c Command) defineCommands() {
 		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
 			position := gomu.playingBar._progress + 60
 			if position < gomu.playingBar.full {
-				gomu.player.seek(position)
+				err := gomu.player.seek(position)
+				if err != nil {
+					logError(err)
+				}
 				gomu.playingBar._progress = position - 1
 			}
 		}
@@ -431,10 +449,16 @@ func (c Command) defineCommands() {
 		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
 			position := gomu.playingBar._progress - 60
 			if position-1 > 0 {
-				gomu.player.seek(position)
+				err := gomu.player.seek(position)
+				if err != nil {
+					logError(err)
+				}
 				gomu.playingBar._progress = position - 1
 			} else {
-				gomu.player.seek(0)
+				err := gomu.player.seek(0)
+				if err != nil {
+					logError(err)
+				}
 				gomu.playingBar._progress = 0
 			}
 		}

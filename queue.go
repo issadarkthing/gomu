@@ -374,7 +374,7 @@ func (q *Queue) help() []string {
 		"D      clear queue",
 		"z      toggle loop",
 		"s      shuffle",
-		"f      find in queue",
+		"/      find in queue",
 	}
 
 }
