@@ -20,8 +20,8 @@ type Player struct {
 	format    *beep.Format
 	isLoop    bool
 	isRunning bool
-	isSkipped chan bool
-	done      chan bool
+	isSkipped chan struct{}
+	done      chan struct{}
 
 	// to control the _volume internally
 	_volume          *effects.Volume
@@ -52,7 +52,7 @@ func newPlayer() *Player {
 
 func (p *Player) run(currSong *AudioFile) error {
 
-	p.isSkipped = make(chan bool, 1)
+	p.isSkipped = make(chan struct{}, 1)
 	f, err := os.Open(currSong.path)
 
 	if err != nil {
@@ -94,11 +94,11 @@ func (p *Player) run(currSong *AudioFile) error {
 
 	defaultTimedPopup(" Current Song ", popupMessage)
 
-	done := make(chan bool, 1)
+	done := make(chan struct{}, 1)
 	p.done = done
 
 	sstreamer := beep.Seq(p.streamSeekCloser, beep.Callback(func() {
-		done <- true
+		done <- struct{}{}
 	}))
 
 	ctrl := &beep.Ctrl{
@@ -157,6 +157,7 @@ next:
 			gomu.app.Draw()
 
 			if err != nil {
+				gomu.playingBar.setDefault()
 				break next
 			}
 
@@ -250,7 +251,7 @@ func (p *Player) skip() {
 
 	p.ctrl.Streamer = nil
 	p.streamSeekCloser.Close()
-	p.done <- true
+	p.done <- struct{}{}
 }
 
 // Toggles the queue to loop
