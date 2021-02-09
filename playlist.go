@@ -356,7 +356,8 @@ func (p *Playlist) addSongToPlaylist(
 	displayText := songName
 
 	if viper.GetBool("general.emoji") {
-		displayText = fmt.Sprintf("🎵 %s", songName)
+		displayText = fmt.Sprintf(" %s %s", 
+			viper.GetString("emoji.file"), songName)
 	}
 
 	node.SetReference(audioFile)
