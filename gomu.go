@@ -153,8 +153,8 @@ func (g *Gomu) unsuspend() bool {
 
 // Removes the color of the given panel
 func (g *Gomu) setUnfocusPanel(panel Panel) {
-	g.prevPanel.SetBorderColor(g.colors.foreground)
-	g.prevPanel.SetTitleColor((g.colors.foreground))
+	g.prevPanel.SetBorderColor(g.colors.background)
+	g.prevPanel.SetTitleColor((g.colors.background))
 }
 
 // Quit the application and do the neccessary clean up
