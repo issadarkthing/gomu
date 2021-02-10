@@ -201,6 +201,8 @@ func start(application *tview.Application, args Args) {
 	gomu.setFocusPanel(gomu.playlist)
 	gomu.prevPanel = gomu.playlist
 
+	gomu.playingBar.setDefault()
+
 	gomu.player.isLoop = viper.GetBool("general.queue_loop")
 	gomu.queue.isLoop = gomu.player.isLoop
 
