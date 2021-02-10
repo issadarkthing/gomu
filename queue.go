@@ -213,7 +213,7 @@ func (q *Queue) saveQueue(isQuit bool) error {
 	songPaths := q.getItems()
 	var content strings.Builder
 
-	if gomu.player.hasInit && isQuit {
+	if gomu.player.hasInit && isQuit && gomu.player.currentSong != nil {
 		currentSongPath := gomu.player.currentSong.path
 		currentSongInQueue := false
 		for _, songPath := range songPaths {

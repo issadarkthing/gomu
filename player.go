@@ -157,6 +157,8 @@ next:
 			gomu.app.Draw()
 
 			if err != nil {
+				// when there are no songs to be played, set currentSong as nil
+				p.currentSong = nil
 				gomu.playingBar.setDefault()
 				break next
 			}
