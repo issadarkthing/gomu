@@ -69,7 +69,6 @@ general:
   popup_timeout:     5s
   volume:            100
   emoji:             false
-  fzf:               false
 
 emoji:
   playlist:          
@@ -80,7 +79,7 @@ emoji:
 # vi:ft=yaml
 ```
 
-## Fzf
+## Fzf (Deprecated)
 Eventhough gomu can use [fzf](https://github.com/junegunn/fzf) as its finder but it is recommended to use built-in
 finder. This is due to the bug which may cause the application to hang up
 if fzf is being used for a long period of time (not everytime). As of `v1.5.0`,

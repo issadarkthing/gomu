@@ -1,8 +1,6 @@
 package main
 
 import (
-	"sync"
-
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
 )
@@ -25,8 +23,6 @@ type Gomu struct {
 	prevPanel Panel
 	panels    []Panel
 	args      Args
-	isSuspend bool
-	mu        sync.Mutex
 }
 
 // Creates new instance of gomu with default values
@@ -125,36 +121,10 @@ func (g *Gomu) setFocusPanel(panel Panel) {
 	}
 }
 
-// Safely write the IsSuspend state, IsSuspend is used to indicate if we
-// are going to suspend the app. This should be used to widgets or
-// texts that keeps rendering continuosly or possible to render when the app
-// is going to suspend.
-// Returns true if app is not in suspend
-func (g *Gomu) suspend() bool {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	if g.isSuspend {
-		return false
-	}
-	g.isSuspend = true
-	return true
-}
-
-// The opposite of Suspend. Returns true if app is in suspend
-func (g *Gomu) unsuspend() bool {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	if !g.isSuspend {
-		return false
-	}
-	g.isSuspend = false
-	return true
-}
-
 // Removes the color of the given panel
 func (g *Gomu) setUnfocusPanel(panel Panel) {
 	g.prevPanel.SetBorderColor(g.colors.background)
-	g.prevPanel.SetTitleColor((g.colors.background))
+	g.prevPanel.SetTitleColor(g.colors.background)
 }
 
 // Quit the application and do the neccessary clean up

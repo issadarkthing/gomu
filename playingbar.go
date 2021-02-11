@@ -52,12 +52,6 @@ func newPlayingBar() *PlayingBar {
 // Start processing progress bar
 func (p *PlayingBar) run() error {
 
-	// When app is suspending, we want the progress bar to stop progressing
-	// because it will cause the screen to hang-up. Once the app has stopped
-	// from suspend, accumulate the lost progress.
-	acc := 0
-	wasSuspended := false
-
 	for {
 
 		// stop progressing if song ends or skipped
@@ -67,22 +61,7 @@ func (p *PlayingBar) run() error {
 			break
 		}
 
-		if gomu.isSuspend {
-			// channel the progress to acc
-			acc += <-p.progress
-			wasSuspended = true
-			continue
-		} else {
-			// normal progressing
-			p._progress += <-p.progress
-		}
-
-		if wasSuspended {
-			// add back so that we dont lose track in progress bar
-			p._progress += acc
-			wasSuspended = false
-			acc = 0
-		}
+		p._progress += <-p.progress
 
 		p.text.Clear()
 		start, err := time.ParseDuration(strconv.Itoa(p._progress) + "s")

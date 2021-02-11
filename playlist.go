@@ -459,59 +459,6 @@ func (p *Playlist) findAudioFile(audioName string) (*AudioFile, error) {
 	return selNode, nil
 }
 
-// Highlight the selected node searched using fzf
-func (p *Playlist) fuzzyFind() error {
-
-	var result string
-	var err error
-
-	audioFiles := p.getAudioFiles()
-	paths := make(map[string]*tview.TreeNode, len(audioFiles))
-	input := make([]string, 0, len(audioFiles))
-
-	for _, v := range audioFiles {
-		rootDir := audioFiles[0].path + "/"
-		// path relative to music directory
-		shortPath := strings.TrimPrefix(v.path, rootDir)
-		paths[shortPath] = v.node
-		input = append(input, shortPath)
-	}
-
-	gomu.suspend()
-	ok := gomu.app.Suspend(func() {
-		res, e := fzfFind(input)
-		if e != nil {
-			err = tracerr.Wrap(e)
-		}
-		result = res
-	})
-	gomu.unsuspend()
-
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-
-	if !ok {
-		return tracerr.New("App was not suspended")
-	}
-
-	if result == "" {
-		return nil
-	}
-
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-
-	var selNode *tview.TreeNode
-	selNode, ok = paths[result]
-
-	if ok {
-		p.setHighlight(selNode)
-	}
-
-	return nil
-}
 
 func (p *Playlist) rename(newName string) error {
 
@@ -556,10 +503,6 @@ func (p *Playlist) updateTitle() {
 Download:
 	for {
 
-		if gomu.isSuspend {
-			continue
-		}
-
 		select {
 		case <-p.done:
 			p.download -= 1
@@ -581,34 +524,6 @@ Download:
 
 }
 
-// Takes a list of input and suspends tview
-// returns empty string if cancelled
-func fzfFind(input []string) (string, error) {
-
-	var in strings.Builder
-	var out strings.Builder
-
-	for _, v := range input {
-		in.WriteString(v + "\n")
-	}
-
-	cmd := exec.Command("fzf")
-	cmd.Stdin = strings.NewReader(in.String())
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = &out
-
-	if err := cmd.Run(); cmd.ProcessState.ExitCode() == 130 {
-		// exit code 130 is when we cancel FZF
-		// not an error
-		return "", nil
-	} else if err != nil {
-		return "", fmt.Errorf("failed to find a file: %s", err)
-	}
-
-	f := strings.TrimSpace(out.String())
-
-	return f, nil
-}
 
 // Download audio from youtube audio and adds the song to the selected playlist
 func ytdl(url string, selPlaylist *tview.TreeNode) error {

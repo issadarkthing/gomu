@@ -320,46 +320,6 @@ func (q *Queue) getSavedQueue() ([]string, error) {
 	return records, nil
 }
 
-// Fuzzy find queue
-func (q *Queue) fuzzyFind() error {
-
-	var result string
-	var err error
-
-	audioFiles := q.items
-	input := make([]string, 0, len(audioFiles))
-
-	for _, v := range q.items {
-		input = append(input, v.name)
-	}
-
-	ok := gomu.app.Suspend(func() {
-		result, err = fzfFind(input)
-	})
-
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-
-	if !ok {
-		return tracerr.New("Fzf not executed")
-	}
-
-	var index int
-	for i, v := range q.items {
-		if v.name == result {
-			index = i
-		}
-	}
-
-	if result == "" {
-		return nil
-	}
-
-	q.SetCurrentItem(index)
-
-	return nil
-}
 
 func (q *Queue) help() []string {
 

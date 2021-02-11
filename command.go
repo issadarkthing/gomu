@@ -233,14 +233,6 @@ func (c Command) defineCommands() {
 
 	c.define("playlist_search", func() {
 
-		if viper.GetBool("general.fzf") {
-			err := gomu.playlist.fuzzyFind()
-			if err != nil {
-				logError(err)
-			}
-			return
-		}
-
 		files := make([]string, len(gomu.playlist.getAudioFiles()))
 
 		for i, file := range gomu.playlist.getAudioFiles() {
@@ -306,15 +298,6 @@ func (c Command) defineCommands() {
 	c.define("queue_search", func() {
 
 		queue := gomu.queue
-
-		if viper.GetBool("general.fzf") {
-			gomu.suspend()
-			if err := queue.fuzzyFind(); err != nil {
-				logError(err)
-			}
-			gomu.unsuspend()
-			return
-		}
 
 		audios := make([]string, 0, len(queue.items))
 		for _, file := range queue.items {

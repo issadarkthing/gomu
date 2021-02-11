@@ -54,10 +54,6 @@ general:
   # some of the terminal supports unicode character
   # you can set this to true to enable emojis
   emoji:              false
-  # you may use fzf as your finder inside gomu
-  # but it is recommended to use built-in finder
-  # as it integrates well with gomu
-  fzf:                false
   # if you experiencing error using this invidious instance, you can change it
   # to another instance from this list:
   # https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
