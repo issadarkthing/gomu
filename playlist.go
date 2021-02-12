@@ -16,7 +16,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/spf13/viper"
 	spin "github.com/tj/go-spin"
 	"github.com/ztrue/tracerr"
 )
@@ -74,7 +73,12 @@ func (p *Playlist) help() []string {
 // on root music directory.
 func newPlaylist(args Args) *Playlist {
 
-	rootDir, err := filepath.Abs(expandTilde(viper.GetString("general.music_dir")))
+	m, err := gomu.env.Get("music_dir")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rootDir, err := filepath.Abs(expandTilde(m.(string)))
 
 	// if not default value was given
 	if *args.music != "~/music" {
@@ -87,10 +91,21 @@ func newPlaylist(args Args) *Playlist {
 
 	var rootTextView string
 
-	if viper.GetBool("general.emoji") {
+	useEmoji, err := gomu.env.Get("use_emoji")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		rootTextView = fmt.Sprintf("%s %s",
-			viper.GetString("emoji.playlist"), path.Base(rootDir))
+	if useEmoji.(bool) {
+
+		emojiPlaylist, err := gomu.env.Get("emoji_playlist")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		rootTextView =
+			fmt.Sprintf("%s %s", emojiPlaylist.(string), path.Base(rootDir))
+
 	} else {
 		rootTextView = path.Base(rootDir)
 	}
@@ -328,18 +343,15 @@ func (p *Playlist) addSongToPlaylist(
 ) error {
 
 	f, err := os.Open(audioPath)
-
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
-
 	defer f.Close()
 
 	songName := getName(audioPath)
 	node := tview.NewTreeNode(songName)
 
 	audioLength, err := getLength(audioPath)
-
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -353,20 +365,13 @@ func (p *Playlist) addSongToPlaylist(
 		parent:      selPlaylist,
 	}
 
-	displayText := songName
-
-	if viper.GetBool("general.emoji") {
-		displayText = fmt.Sprintf(" %s %s",
-			viper.GetString("emoji.file"), songName)
-	}
+	displayText := setDisplayText(songName)
 
 	node.SetReference(audioFile)
 	node.SetText(displayText)
-
 	selPlaylist.AddChild(node)
 
 	return nil
-
 }
 
 // Gets all audio files walks from music root directory
@@ -577,7 +582,12 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	playlistPath := dir
 	audioPath := extractFilePath(stdout.Bytes(), playlistPath)
 
-	err = appendFile(expandTilde(viper.GetString("general.history_path")), url+"\n")
+	historyPath, err := gomu.env.Get("history_path")
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	err = appendFile(expandTilde(historyPath.(string)), url+"\n")
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -640,11 +650,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 				parent:      root,
 			}
 
-			displayText := songName
-			if viper.GetBool("general.emoji") {
-				displayText = fmt.Sprintf(" %s %s",
-					viper.GetString("emoji.file"), songName)
-			}
+			displayText := setDisplayText(songName)
 
 			child.SetReference(audioFile)
 			child.SetText(displayText)
@@ -662,11 +668,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 				parent:      root,
 			}
 
-			displayText := songName
-			if viper.GetBool("general.emoji") {
-				displayText = fmt.Sprintf(" %s %s",
-					viper.GetString("emoji.playlist"), songName)
-			}
+			displayText := setDisplayText(songName)
 
 			child.SetReference(audioFile)
 			child.SetColor(gomu.colors.accent)
@@ -737,6 +739,24 @@ func (p *Playlist) paste() error {
 	}
 
 	return nil
+}
+
+func setDisplayText(songName string) string {
+	useEmoji, err := getBool(gomu.env, "use_emoji")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if !useEmoji {
+		return songName
+	}
+
+	emojiFile, err := getString(gomu.env, "emoji_file")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return fmt.Sprintf(" %s %s", emojiFile, songName)
 }
 
 //populateAudioLength is the most time consuming part of startup,

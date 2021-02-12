@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mattn/anko/env"
 	"github.com/ztrue/tracerr"
 )
 
@@ -199,4 +200,46 @@ func appendFile(path string, content string) error {
 		return tracerr.Wrap(err)
 	}
 	return nil
+}
+
+func getInt(e *env.Env, symbol string) (int, error) {
+	v, err := e.Get(symbol)
+	if err != nil {
+		return 0, err
+	}
+
+	val, ok := v.(int64)
+	if !ok {
+		return 0, tracerr.New("expected int")
+	}
+
+	return int(val), nil
+}
+
+func getString(e *env.Env, symbol string) (string, error) {
+	v, err := e.Get(symbol)
+	if err != nil {
+		return "", err
+	}
+
+	val, ok := v.(string)
+	if !ok {
+		return "", tracerr.New("expected string")
+	}
+
+	return val, nil
+}
+
+func getBool(e *env.Env, symbol string) (bool, error) {
+	v, err := e.Get(symbol)
+	if err != nil {
+		return false, err
+	}
+
+	val, ok := v.(bool)
+	if !ok {
+		return false, tracerr.New("expected bool")
+	}
+
+	return val, nil
 }

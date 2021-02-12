@@ -15,7 +15,6 @@ func main() {
 	os.Setenv("TEST", "false")
 	args := getArgs()
 
-	readConfig(args)
 	app := tview.NewApplication()
 
 	// main loop

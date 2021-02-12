@@ -9,13 +9,14 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
-	"path"
 	"strings"
 	"syscall"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/spf13/viper"
+	"github.com/ztrue/tracerr"
+
+	"github.com/mattn/anko/vm"
 )
 
 // Panel is used to keep track of childrens in slices
@@ -34,106 +35,26 @@ const (
 	musicPath   = "~/music"
 )
 
-// Reads config file and sets the options
-func readConfig(args Args) {
+func execConfig() error {
 
-	const config = `
-general:
-  # confirmation popup to add the whole playlist to the queue
-  confirm_bulk_add:   true
-  confirm_on_exit:    true
-  load_prev_queue:    true
-  queue_loop:         true
-  # change this to directory that contains mp3 files
-  music_dir:          ~/music
-  # url history of downloaded audio will be saved here
-  history_path:       ~/.local/share/gomu/urls
-  popup_timeout:      5s
-  # initial volume when gomu starts up
-  volume:             100
-  # some of the terminal supports unicode character
-  # you can set this to true to enable emojis
-  emoji:              false
-  # if you experiencing error using this invidious instance, you can change it
-  # to another instance from this list:
-  # https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
-  invidious_instance: "https://vid.puffyan.us"
+	gomu.env.Define("echo", func(text string) {
+		defaultTimedPopup(" Debug ", text)
+	})
 
-# not all colors can be reproducible in terminal
-# changing hex colors may or may not produce expected result
-color:
-  accent:            "#008B8B"
-  # none is transparent
-  # only background has none attribute
-  background:        none
-  foreground:        "#FFFFFF"
-  now_playing_title: "#017702"
-  playlist:          "#008B8B"
-  popup:             "#0A0F14"
-
-# default emoji here is using awesome-terminal-fonts
-# you can change these to your liking
-emoji:
-  playlist:          
-  file:              
-  loop:              ﯩ
-  noloop:            
- 
-# vi:ft=yaml
-`
-
-	// config path passed by flag
-	configPath := *args.config
-	home, err := os.UserHomeDir()
-
+	content, err := ioutil.ReadFile("/home/terra/.config/gomu/config.anko")
 	if err != nil {
-		logError(err)
+		return tracerr.Wrap(err)
 	}
 
-	defaultPath := path.Join(home, configPath)
-
+	_, err = vm.Execute(gomu.env, nil, string(content))
 	if err != nil {
-		logError(err)
+		return tracerr.Wrap(err)
 	}
 
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(strings.TrimSuffix(expandFilePath(configPath), "/config"))
-	viper.AddConfigPath("$HOME/.config/gomu")
-
-	// General config
-	viper.SetDefault("general.music_dir", musicPath)
-	viper.SetDefault("general.history_path", historyPath)
-	viper.SetDefault("general.confirm_on_exit", true)
-	viper.SetDefault("general.confirm_bulk_add", true)
-	viper.SetDefault("general.popup_timeout", "5s")
-	viper.SetDefault("general.volume", 100)
-	viper.SetDefault("general.load_prev_queue", true)
-	viper.SetDefault("general.use_emoji", false)
-	viper.SetDefault("general.invidious_instance", "https://vid.puffyan.us")
-
-	if err := viper.ReadInConfig(); err != nil {
-
-		// creates gomu config dir if does not exist
-		if _, err := os.Stat(defaultPath); err != nil {
-			if err := os.MkdirAll(home+"/.config/gomu", 0755); err != nil {
-				logError(err)
-			}
-		}
-
-		// if config file was not found
-		// copy default config to default config path
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-
-			err = ioutil.WriteFile(defaultPath, []byte(config), 0644)
-			if err != nil {
-				logError(err)
-			}
-
-		}
-
-	}
+	return nil
 }
+
+
 
 type Args struct {
 	config  *string
@@ -175,7 +96,13 @@ func start(application *tview.Application, args Args) {
 
 	// Assigning to global variable gomu
 	gomu = newGomu()
+	err := execConfig()
+	if err != nil {
+		panic(err)
+	}
+
 	gomu.args = args
+	gomu.colors = newColor()
 
 	// override default border
 	// change double line border to one line border when focused
@@ -199,10 +126,22 @@ func start(application *tview.Application, args Args) {
 
 	gomu.playingBar.setDefault()
 
-	gomu.player.isLoop = viper.GetBool("general.queue_loop")
+	isQueueLoop, err := getBool(gomu.env, "queue_loop")
+	if err != nil {
+		logError(err)
+		return
+	}
+
+	gomu.player.isLoop = isQueueLoop
 	gomu.queue.isLoop = gomu.player.isLoop
 
-	if !*args.empty && viper.GetBool("general.load_prev_queue") {
+	loadQueue, err := getBool(gomu.env, "load_prev_queue")
+	if err != nil {
+		logError(err)
+		return
+	}
+
+	if !*args.empty && loadQueue {
 		// load saved queue from previous session
 		if err := gomu.queue.loadQueue(); err != nil {
 			logError(err)

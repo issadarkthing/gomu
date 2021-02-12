@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
 )
 
@@ -204,8 +204,12 @@ func (c Command) defineCommands() {
 
 	c.define("bulk_add", func() {
 		currNode := gomu.playlist.GetCurrentNode()
+		bulkAdd, err := getBool(gomu.env, "confirm_bulk_add")
+		if err != nil {
+			log.Fatal(err)
+		}
 
-		if !viper.GetBool("general.confirm_bulk_add") {
+		if !bulkAdd {
 			gomu.playlist.addAllToQueue(currNode)
 			return
 		}
@@ -318,7 +322,13 @@ func (c Command) defineCommands() {
 
 	/* Global */
 	c.define("quit", func() {
-		if !viper.GetBool("general.confirm_on_exit") {
+
+		confirmOnExit, err := getBool(gomu.env, "confirm_on_exit")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if !confirmOnExit {
 			err := gomu.quit(gomu.args)
 			if err != nil {
 				logError(err)

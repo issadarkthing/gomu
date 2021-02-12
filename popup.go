@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/sahilm/fuzzy"
-	"github.com/spf13/viper"
 )
 
 // this is used to make the popup unique
@@ -67,7 +67,11 @@ func (s *Stack) pop() tview.Primitive {
 // Gets popup timeout from config file
 func getPopupTimeout() time.Duration {
 
-	dur := viper.GetString("general.popup_timeout")
+	dur, err := getString(gomu.env, "popup_timeout")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	m, err := time.ParseDuration(dur)
 
 	if err != nil {

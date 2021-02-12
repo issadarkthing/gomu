@@ -3,6 +3,10 @@ package main
 import (
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
+
+	"github.com/mattn/anko/core"
+	"github.com/mattn/anko/env"
+	_ "github.com/mattn/anko/packages"
 )
 
 var VERSION = "N/A"
@@ -23,14 +27,15 @@ type Gomu struct {
 	prevPanel Panel
 	panels    []Panel
 	args      Args
+	env       *env.Env
 }
 
 // Creates new instance of gomu with default values
 func newGomu() *Gomu {
 
 	gomu := &Gomu{
-		colors:  newColor(),
 		command: newCommand(),
+		env:     core.Import(env.NewEnv()),
 	}
 
 	return gomu

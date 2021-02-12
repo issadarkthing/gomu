@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/faiface/beep/effects"
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
-	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
 )
 
@@ -38,7 +38,10 @@ type Player struct {
 
 func newPlayer() *Player {
 
-	volume := viper.GetInt("general.volume")
+	volume, err := getInt(gomu.env, "volume")
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Read initial volume from config
 	initVol := absVolume(volume)
 
@@ -211,12 +214,6 @@ func (p *Player) play() {
 
 // volume up and volume down using -0.5 or +0.5
 func (p *Player) setVolume(v float64) float64 {
-
-	defer func() {
-		// saves the volume
-		volume := volToHuman(p.volume)
-		viper.Set("general.volume", volume)
-	}()
 
 	// check if no songs playing currently
 	if p._volume == nil {

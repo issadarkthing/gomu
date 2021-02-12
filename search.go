@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
 )
 
@@ -87,11 +86,15 @@ func getRequest(url string, v interface{}) error {
 func getSearchResult(query string) ([]YoutubeVideo, error) {
 
 	query = url.QueryEscape(query)
-	domain := viper.GetString("general.invidious_instance")
+	domain, err := getString(gomu.env, "invidious_instance")
+	if err != nil {
+		return nil, err
+	}
+
 	targetUrl := domain + `/api/v1/search?q=` + query
 	yt := []YoutubeVideo{}
 
-	err := getRequest(targetUrl, &yt)
+	err = getRequest(targetUrl, &yt)
 	if err != nil {
 		return nil, err
 	}

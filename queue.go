@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"os"
 	"path"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
 )
 
@@ -97,20 +97,28 @@ func (q *Queue) updateTitle() string {
 	}
 
 	var loop string
-	isEmoji := viper.GetBool("general.emoji")
+
+	isEmoji, err := getBool(gomu.env, "use_emoji")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if q.isLoop {
 		if isEmoji {
-			loop = viper.GetString("emoji.loop")
+			loop, err = getString(gomu.env, "emoji_loop")
 		} else {
 			loop = "Loop"
 		}
 	} else {
 		if isEmoji {
-			loop = viper.GetString("emoji.noloop")
+			loop, err = getString(gomu.env, "emoji_noloop")
 		} else {
 			loop = "No loop"
 		}
+	}
+
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	title := fmt.Sprintf("─ Queue ───┤ %d %s | %s | %s ├",
@@ -304,8 +312,6 @@ func (q *Queue) getSavedQueue() ([]string, error) {
 	if err != nil {
 		return nil, tracerr.Wrap(err)
 	}
-
-	defer f.Close()
 
 	records := []string{}
 	scanner := bufio.NewScanner(f)
