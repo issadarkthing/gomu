@@ -31,7 +31,6 @@ type Panel interface {
 
 const (
 	configPath  = ".config/gomu/config"
-	historyPath = "~/.local/share/gomu/urls"
 	musicPath   = "~/music"
 )
 
