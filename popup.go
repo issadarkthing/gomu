@@ -143,13 +143,6 @@ func timedPopup(
 	title string, desc string, timeout time.Duration, width, height int,
 ) {
 
-	// Wait until app is not suspended
-	for {
-		if !gomu.isSuspend {
-			break
-		}
-	}
-
 	if width == 0 && height == 0 {
 		width = 70
 		height = 7
