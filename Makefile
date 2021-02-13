@@ -12,9 +12,6 @@ GO           = go
 
 default: build
 
-run: format test build
-	$(BIN_DIR)/$(BIN_NAME)
-
 test:
 	@echo === TESTING ===
 	go test
@@ -32,6 +29,9 @@ $(INSTALL_DIR):
 build: $(BIN_DIR) 
 	@echo === BUILDING ===
 	${GO} build -ldflags "-X main.VERSION=${VERSION}" -v -o $(BIN_DIR)/$(BIN_NAME)
+
+run: build $(BIN_DIR)
+	bin/gomu -config ./test/config
 
 install: build $(INSTALL_DIR)
 	@echo === INSTALLING ===
