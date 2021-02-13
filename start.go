@@ -3,12 +3,14 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"reflect"
 	"strings"
 	"syscall"
 
@@ -30,21 +32,78 @@ type Panel interface {
 }
 
 const (
-	configPath  = ".config/gomu/config"
+	configPath  = "~/.config/gomu/config"
 	musicPath   = "~/music"
 )
 
 func execConfig() error {
 
-	gomu.env.Define("echo", func(text string) {
-		defaultTimedPopup(" Debug ", text)
-	})
+	const defaultConfig = `
 
-	content, err := ioutil.ReadFile("/home/terra/.config/gomu/config.anko")
+// confirmation popup to add the whole playlist to the queue
+confirm_bulk_add    = true
+confirm_on_exit     = true
+queue_loop          = false
+load_prev_queue     = true
+popup_timeout       = "5s"
+// change this to directory that contains mp3 files
+music_dir           = "~/music"
+// url history of downloaded audio will be saved here
+history_path        = "~/.local/share/gomu/urls"
+// some of the terminal supports unicode character
+// you can set this to true to enable emojis
+use_emoji           = true
+// initial volume when gomu starts up
+volume              = 80
+// if you experiencing error using this invidious instance, you can change it
+// to another instance from this list:
+// https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
+invidious_instance  = "https://vid.puffyan.us"
+
+// default emoji here is using awesome-terminal-fonts
+// you can change these to your liking
+emoji_playlist     = ""
+emoji_file         = ""
+emoji_loop         = "ﯩ"
+emoji_noloop       = ""
+
+// not all colors can be reproducible in terminal
+// changing hex colors may or may not produce expected result
+color_accent            = "#008B8B"
+color_background        = "none"
+color_foreground        = "#FFFFFF"
+color_now_playing_title = "#017702"
+color_playlist          = "#008B8B"
+color_popup             = "#0A0F14"
+
+// vim: syntax=go
+`
+
+	gomu.env.DefineGlobal("debug_popup", debugPopup)
+	gomu.env.DefineGlobal("input_popup", inputPopup)
+
+	cfg := expandTilde(configPath)
+
+	_, err := os.Stat(cfg)
+	if os.IsNotExist(err) {
+		err = appendFile(cfg, defaultConfig)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+	}
+
+	content, err := ioutil.ReadFile(cfg)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
 
+	// execute default config
+	_, err = vm.Execute(gomu.env, nil, defaultConfig)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	// execute user config
 	_, err = vm.Execute(gomu.env, nil, string(content))
 	if err != nil {
 		return tracerr.Wrap(err)
@@ -177,6 +236,38 @@ func start(application *tview.Application, args Args) {
 			}
 			gomu.cyclePanels2()
 		}
+
+		// check for user defined keybindings
+		kb, err := gomu.env.Get("keybinds")	
+		if err == nil {
+			keybinds, ok := kb.(map[interface{}]interface{})
+			if !ok {
+				errorPopup(errors.New("invalid type; require {}"))
+				return e
+			}
+
+			cmd, ok := keybinds[string(e.Rune())]
+			if ok {
+
+				f, ok := cmd.(func(context.Context) (reflect.Value, reflect.Value))
+				if !ok {
+					errorPopup(errors.New("invalid type; require type func()"))
+					return e
+				}
+
+				go func() {
+					_, execErr := f(context.Background())
+					if err := execErr.Interface(); !execErr.IsNil() {
+						if err, ok := err.(error); ok {
+							errorPopup(err)
+						}
+					}
+				}()
+
+				return e
+			}
+		}
+
 
 		cmds := map[rune]string{
 			'q': "quit",

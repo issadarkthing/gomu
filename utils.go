@@ -192,7 +192,7 @@ func appendFile(path string, content string) error {
 		// create the neccessary parent directory
 		err = os.MkdirAll(filepath.Dir(expandFilePath(path)), os.ModePerm)
 		if err != nil {
-			return err
+			return tracerr.Wrap(err)
 		}
 	}
 	defer f.Close()

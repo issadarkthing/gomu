@@ -13,6 +13,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/sahilm/fuzzy"
+	"github.com/ztrue/tracerr"
 )
 
 // this is used to make the popup unique
@@ -526,4 +527,42 @@ func renamePopup(node *AudioFile) {
 
 		return e
 	})
+}
+
+func errorPopup(message error) {
+	defaultTimedPopup(" Error ", tracerr.Unwrap(message).Error())
+	logError(message)
+}
+
+func debugPopup(message string) {
+	defaultTimedPopup(" Debug ", message)
+	log.Println(message)
+}
+
+func inputPopup(prompt string) string {
+
+	popupID := "general-input-popup"
+	input := newInputPopup(popupID, "", prompt + ": ", "")
+	result := make(chan string)
+	input.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+
+		switch e.Key() {
+		case tcell.KeyEnter:
+			newName := input.GetText()
+			if newName == "" {
+				return e
+			}
+			result <-newName
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
+
+		case tcell.KeyEsc:
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
+		}
+
+		return e
+	})
+
+	return <-result
 }

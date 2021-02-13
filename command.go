@@ -466,4 +466,10 @@ func (c Command) defineCommands() {
 		}
 	})
 
+	for name, cmd := range c.commands {
+		err := gomu.env.DefineGlobal(name, cmd)
+		if err != nil {
+			log.Panicln(err)
+		}
+	}
 }

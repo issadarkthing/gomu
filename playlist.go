@@ -179,7 +179,7 @@ func newPlaylist(args Args) *Playlist {
 			}
 			fn, err := gomu.command.getFn(cmd)
 			if err != nil {
-				logError(err)
+				errorPopup(err)
 				return e
 			}
 			fn()
