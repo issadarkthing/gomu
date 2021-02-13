@@ -308,3 +308,12 @@ func (p *Player) seek(pos int) error {
 	p.i = pos - 1
 	return err
 }
+
+// isPaused is used to distinguish the player between pause and stop
+func (p *Player) isPaused() bool {
+	if p.ctrl == nil {
+		return false
+	}
+
+	return p.ctrl.Paused
+}

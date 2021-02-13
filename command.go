@@ -10,7 +10,6 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-
 type Command struct {
 	commands map[string]func()
 }
