@@ -7,6 +7,13 @@ import (
 func Test_NewPlayingBar(t *testing.T) {
 
 	gomu = newGomu()
+	err := execConfig(expandFilePath("./test/config"))
+	if err != nil {
+		t.Error(err)
+	}
+
+	gomu.colors = newColor()
+
 	p := newPlayingBar()
 
 	if p.progress == nil {

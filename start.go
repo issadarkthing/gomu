@@ -32,11 +32,11 @@ type Panel interface {
 }
 
 const (
-	configPath  = "~/.config/gomu/config"
-	musicPath   = "~/music"
+	configPath = "~/.config/gomu/config"
+	musicPath  = "~/music"
 )
 
-func execConfig() error {
+func execConfig(config string) error {
 
 	const defaultConfig = `
 
@@ -82,7 +82,7 @@ color_popup             = "#0A0F14"
 	gomu.env.DefineGlobal("debug_popup", debugPopup)
 	gomu.env.DefineGlobal("input_popup", inputPopup)
 
-	cfg := expandTilde(configPath)
+	cfg := expandTilde(config)
 
 	_, err := os.Stat(cfg)
 	if os.IsNotExist(err) {
@@ -111,8 +111,6 @@ color_popup             = "#0A0F14"
 
 	return nil
 }
-
-
 
 type Args struct {
 	config  *string
@@ -154,7 +152,7 @@ func start(application *tview.Application, args Args) {
 
 	// Assigning to global variable gomu
 	gomu = newGomu()
-	err := execConfig()
+	err := execConfig(expandFilePath(*args.config))
 	if err != nil {
 		panic(err)
 	}
@@ -184,20 +182,12 @@ func start(application *tview.Application, args Args) {
 
 	gomu.playingBar.setDefault()
 
-	isQueueLoop, err := getBool(gomu.env, "queue_loop")
-	if err != nil {
-		logError(err)
-		return
-	}
+	isQueueLoop := getBool(gomu.env, "queue_loop")
 
 	gomu.player.isLoop = isQueueLoop
 	gomu.queue.isLoop = gomu.player.isLoop
 
-	loadQueue, err := getBool(gomu.env, "load_prev_queue")
-	if err != nil {
-		logError(err)
-		return
-	}
+	loadQueue := getBool(gomu.env, "load_prev_queue")
 
 	if !*args.empty && loadQueue {
 		// load saved queue from previous session
@@ -238,7 +228,7 @@ func start(application *tview.Application, args Args) {
 		}
 
 		// check for user defined keybindings
-		kb, err := gomu.env.Get("keybinds")	
+		kb, err := gomu.env.Get("keybinds")
 		if err == nil {
 			keybinds, ok := kb.(map[interface{}]interface{})
 			if !ok {
@@ -267,7 +257,6 @@ func start(application *tview.Application, args Args) {
 				return e
 			}
 		}
-
 
 		cmds := map[rune]string{
 			'q': "quit",

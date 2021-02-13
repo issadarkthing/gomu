@@ -86,15 +86,12 @@ func getRequest(url string, v interface{}) error {
 func getSearchResult(query string) ([]YoutubeVideo, error) {
 
 	query = url.QueryEscape(query)
-	domain, err := getString(gomu.env, "invidious_instance")
-	if err != nil {
-		return nil, err
-	}
+	domain := getString(gomu.env, "invidious_instance")
 
 	targetUrl := domain + `/api/v1/search?q=` + query
 	yt := []YoutubeVideo{}
 
-	err = getRequest(targetUrl, &yt)
+	err := getRequest(targetUrl, &yt)
 	if err != nil {
 		return nil, err
 	}

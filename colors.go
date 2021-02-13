@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -31,11 +29,7 @@ func newColor() *Colors {
 	for k, v := range defaultColors {
 
 		// color from the config file
-		cfgColor, err := getString(gomu.env, k)
-		if err != nil {
-			log.Fatal(err)
-		}
-
+		cfgColor := getString(gomu.env, k)
 		if validHexColor(cfgColor) {
 			continue
 		}
@@ -46,10 +40,7 @@ func newColor() *Colors {
 
 	// handle none background color
 	var bgColor tcell.Color
-	bg, err := getString(gomu.env, "color_background")
-	if err != nil {
-		log.Fatal(err)
-	}
+	bg := getString(gomu.env, "color_background")
 
 	if bg == "none" {
 		bgColor = tcell.ColorDefault
@@ -57,30 +48,11 @@ func newColor() *Colors {
 		bgColor = tcell.GetColor(bg)
 	}
 
-	accent, err := getString(gomu.env, "color_accent")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	foreground, err := getString(gomu.env, "color_foreground")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	popup, err := getString(gomu.env, "color_popup")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	title, err := getString(gomu.env, "color_now_playing_title")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	playlist, err := getString(gomu.env, "color_playlist")
-	if err != nil {
-		log.Fatal(err)
-	}
+	accent := getString(gomu.env, "color_accent")
+	foreground := getString(gomu.env, "color_foreground")
+	popup := getString(gomu.env, "color_popup")
+	title := getString(gomu.env, "color_now_playing_title")
+	playlist := getString(gomu.env, "color_playlist")
 
 	color := &Colors{
 		accent:     tcell.GetColor(accent),

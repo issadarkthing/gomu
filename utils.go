@@ -202,44 +202,44 @@ func appendFile(path string, content string) error {
 	return nil
 }
 
-func getInt(e *env.Env, symbol string) (int, error) {
+func getInt(e *env.Env, symbol string) int {
 	v, err := e.Get(symbol)
 	if err != nil {
-		return 0, err
+		return 0
 	}
 
 	val, ok := v.(int64)
 	if !ok {
-		return 0, tracerr.New("expected int")
+		return 0
 	}
 
-	return int(val), nil
+	return int(val)
 }
 
-func getString(e *env.Env, symbol string) (string, error) {
+func getString(e *env.Env, symbol string) string {
 	v, err := e.Get(symbol)
 	if err != nil {
-		return "", err
+		return ""
 	}
 
 	val, ok := v.(string)
 	if !ok {
-		return "", tracerr.New("expected string")
+		return ""
 	}
 
-	return val, nil
+	return val
 }
 
-func getBool(e *env.Env, symbol string) (bool, error) {
+func getBool(e *env.Env, symbol string) bool {
 	v, err := e.Get(symbol)
 	if err != nil {
-		return false, err
+		return false
 	}
 
 	val, ok := v.(bool)
 	if !ok {
-		return false, tracerr.New("expected bool")
+		return false
 	}
 
-	return val, nil
+	return val
 }

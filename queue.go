@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"os"
 	"path"
@@ -98,27 +97,20 @@ func (q *Queue) updateTitle() string {
 
 	var loop string
 
-	isEmoji, err := getBool(gomu.env, "use_emoji")
-	if err != nil {
-		log.Fatal(err)
-	}
+	isEmoji := getBool(gomu.env, "use_emoji")
 
 	if q.isLoop {
 		if isEmoji {
-			loop, err = getString(gomu.env, "emoji_loop")
+			loop = getString(gomu.env, "emoji_loop")
 		} else {
 			loop = "Loop"
 		}
 	} else {
 		if isEmoji {
-			loop, err = getString(gomu.env, "emoji_noloop")
+			loop = getString(gomu.env, "emoji_noloop")
 		} else {
 			loop = "No loop"
 		}
-	}
-
-	if err != nil {
-		log.Fatal(err)
 	}
 
 	title := fmt.Sprintf("─ Queue ───┤ %d %s | %s | %s ├",

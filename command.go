@@ -204,10 +204,7 @@ func (c Command) defineCommands() {
 
 	c.define("bulk_add", func() {
 		currNode := gomu.playlist.GetCurrentNode()
-		bulkAdd, err := getBool(gomu.env, "confirm_bulk_add")
-		if err != nil {
-			log.Fatal(err)
-		}
+		bulkAdd := getBool(gomu.env, "confirm_bulk_add")
 
 		if !bulkAdd {
 			gomu.playlist.addAllToQueue(currNode)
@@ -323,10 +320,7 @@ func (c Command) defineCommands() {
 	/* Global */
 	c.define("quit", func() {
 
-		confirmOnExit, err := getBool(gomu.env, "confirm_on_exit")
-		if err != nil {
-			log.Fatal(err)
-		}
+		confirmOnExit := getBool(gomu.env, "confirm_on_exit")
 
 		if !confirmOnExit {
 			err := gomu.quit(gomu.args)

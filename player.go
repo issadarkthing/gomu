@@ -4,7 +4,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -38,10 +37,7 @@ type Player struct {
 
 func newPlayer() *Player {
 
-	volume, err := getInt(gomu.env, "volume")
-	if err != nil {
-		log.Fatal(err)
-	}
+	volume := getInt(gomu.env, "volume")
 	// Read initial volume from config
 	initVol := absVolume(volume)
 

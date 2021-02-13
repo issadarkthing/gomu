@@ -68,10 +68,7 @@ func (s *Stack) pop() tview.Primitive {
 // Gets popup timeout from config file
 func getPopupTimeout() time.Duration {
 
-	dur, err := getString(gomu.env, "popup_timeout")
-	if err != nil {
-		log.Fatal(err)
-	}
+	dur := getString(gomu.env, "popup_timeout")
 
 	m, err := time.ParseDuration(dur)
 
@@ -542,7 +539,7 @@ func debugPopup(message string) {
 func inputPopup(prompt string) string {
 
 	popupID := "general-input-popup"
-	input := newInputPopup(popupID, "", prompt + ": ", "")
+	input := newInputPopup(popupID, "", prompt+": ", "")
 	result := make(chan string)
 	input.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
@@ -552,7 +549,7 @@ func inputPopup(prompt string) string {
 			if newName == "" {
 				return e
 			}
-			result <-newName
+			result <- newName
 			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 

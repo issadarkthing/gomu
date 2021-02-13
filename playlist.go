@@ -742,20 +742,12 @@ func (p *Playlist) paste() error {
 }
 
 func setDisplayText(songName string) string {
-	useEmoji, err := getBool(gomu.env, "use_emoji")
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	useEmoji := getBool(gomu.env, "use_emoji")
 	if !useEmoji {
 		return songName
 	}
 
-	emojiFile, err := getString(gomu.env, "emoji_file")
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	emojiFile := getString(gomu.env, "emoji_file")
 	return fmt.Sprintf(" %s %s", emojiFile, songName)
 }
 
