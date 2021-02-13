@@ -321,7 +321,6 @@ func (q *Queue) getSavedQueue() ([]string, error) {
 	return records, nil
 }
 
-
 func (q *Queue) help() []string {
 
 	return []string{

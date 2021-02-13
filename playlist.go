@@ -356,7 +356,7 @@ func (p *Playlist) addSongToPlaylist(
 	displayText := songName
 
 	if viper.GetBool("general.emoji") {
-		displayText = fmt.Sprintf(" %s %s", 
+		displayText = fmt.Sprintf(" %s %s",
 			viper.GetString("emoji.file"), songName)
 	}
 
@@ -459,7 +459,6 @@ func (p *Playlist) findAudioFile(audioName string) (*AudioFile, error) {
 	return selNode, nil
 }
 
-
 func (p *Playlist) rename(newName string) error {
 
 	currentNode := p.GetCurrentNode()
@@ -523,7 +522,6 @@ Download:
 	}
 
 }
-
 
 // Download audio from youtube audio and adds the song to the selected playlist
 func ytdl(url string, selPlaylist *tview.TreeNode) error {
