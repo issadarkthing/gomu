@@ -83,6 +83,7 @@ color_popup             = "#0A0F14"
 	gomu.env.DefineGlobal("debug_popup", debugPopup)
 	gomu.env.DefineGlobal("input_popup", inputPopup)
 	gomu.env.DefineGlobal("show_popup", defaultTimedPopup)
+	gomu.env.DefineGlobal("shell", shell)
 
 	cfg := expandTilde(config)
 

@@ -39,7 +39,12 @@ color_popup             = "#0A0F14"
 // use also can access internal command as function, for example yank command
 keybinds = {
 	"b": func() {
-		yank()
+		out, err = shell(`"bruhh"`);
+		if err != nil {
+			debug_popup("an error occurred")
+			return
+		}
+		debug_popup(out)
 	},
 	"u": func() {
 		refresh()

@@ -3,10 +3,13 @@
 package main
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -242,4 +245,29 @@ func getBool(e *env.Env, symbol string) bool {
 	}
 
 	return val
+}
+
+func shell(input string) (string, error) {
+
+	args := strings.Split(input, " ")
+	for i, arg := range args {
+		args[i] = strings.Trim(arg, " ")
+	}
+
+	cmd := exec.Command(args[0], args[1:]...)
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+
+	if stderr.Len() != 0 {
+		return "", errors.New(stderr.String())
+	}
+
+	return stdout.String(), nil
 }
