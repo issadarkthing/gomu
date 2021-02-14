@@ -13,7 +13,6 @@ import (
 	"syscall"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/issadarkthing/gomu/anko"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
 )
@@ -233,15 +232,14 @@ func start(application *tview.Application, args Args) {
 			gomu.cyclePanels2()
 		}
 
-		// check for user defined keybindings
-		err := gomu.anko.ExecKeybind("global", string(e.Rune()), func (err error) {
-			if err != nil {
-				errorPopup(tracerr.Wrap(err))
-			}
-		})
+		if gomu.anko.KeybindExists("global", string(e.Rune())) {
+			// check for user defined keybindings
+			gomu.anko.ExecKeybind("global", string(e.Rune()), func (err error) {
+				if err != nil {
+					errorPopup(tracerr.Wrap(err))
+				}
+			})
 
-		if err != nil && !errors.Is(err, anko.ErrNoKeybind) {
-			errorPopup(tracerr.Wrap(err))
 			return e
 		}
 

@@ -2,8 +2,6 @@ package anko
 
 import (
 	"errors"
-	"context"
-	"reflect"
 	"fmt"
 
 	"github.com/mattn/anko/core"
@@ -27,23 +25,23 @@ func NewAnko() Anko {
 	}
 }
 
-// define defines new symbol and value to the Anko env
+// Define defines new symbol and value to the Anko env.
 func (a *Anko) Define(symbol string, value interface{}) error {
 	return a.env.DefineGlobal(symbol, value)
 }
 
-// set sets new value to existing symbol. Use this when change value under an
+// Set sets new value to existing symbol. Use this when change value under an
 // existing symbol.
 func (a *Anko) Set(symbol string, value interface{}) error {
 	return a.env.Set(symbol, value)
 }
 
-// get gets value from anko env, returns error if symbol is not found.
+// Get gets value from anko env, returns error if symbol is not found.
 func (a *Anko) Get(symbol string) (interface{}, error) {
 	return a.env.Get(symbol)
 }
 
-// getInt gets int value from symbol, returns golang default value if not found
+// GetInt gets int value from symbol, returns golang default value if not found.
 func (a *Anko) GetInt(symbol string) int {
 	v, err := a.env.Get(symbol)
 	if err != nil {
@@ -58,8 +56,8 @@ func (a *Anko) GetInt(symbol string) int {
 	return int(val)
 }
 
-// getString gets string value from symbol, returns golang default value if not
-// found
+// GetString gets string value from symbol, returns golang default value if not
+// found.
 func (a *Anko) GetString(symbol string) string {
 	v, err := a.env.Get(symbol)
 	if err != nil {
@@ -74,8 +72,8 @@ func (a *Anko) GetString(symbol string) string {
 	return val
 }
 
-// getBool gets bool value from symbol, returns golang default value if not
-// found
+// GetBool gets bool value from symbol, returns golang default value if not
+// found.
 func (a *Anko) GetBool(symbol string) bool {
 	v, err := a.env.Get(symbol)
 	if err != nil {
@@ -90,52 +88,29 @@ func (a *Anko) GetBool(symbol string) bool {
 	return val
 }
 
-// execute executes anko script
+// Execute executes anko script.
 func (a *Anko) Execute(src string) (interface{}, error) {
 	return vm.Execute(a.env, nil, src)
 }
 
-func (a *Anko) ExecKeybind(panel string, keybind string, cb func(error)) error {
-
-	kb, err := a.Get("keybinds")
+// KeybindExists checks if keybinding is defined.
+func (a *Anko) KeybindExists(panel string, keybind string) bool {
+	src := fmt.Sprintf("keybinds.%s.%s", panel, keybind)
+	val, err := a.Execute(src)
 	if err != nil {
-		return err
+		return false
 	}
 
-	p, ok := kb.(map[interface{}]interface{})
-	if !ok {
-		return fmt.Errorf("%w: require type {} got %T", ErrInvalidType, kb)
-	}
+	return val != nil
+}
 
-	k, ok := p[panel]
-	if !ok {
-		return ErrNoKeybind
-	}
+// ExecKeybind executes function bounded by the keybinding.
+func (a *Anko) ExecKeybind(panel string, keybind string, cb func(error)) {
 
-	keybinds, ok := k.(map[interface{}]interface{})
-	if !ok {
-		return fmt.Errorf("%w: require type {} got %T", ErrInvalidType, k)
-	}
-
-	cmd, ok := keybinds[keybind]
-	if !ok {
-		return ErrNoKeybind
-	}
-
-	f, ok := cmd.(func(context.Context) (reflect.Value, reflect.Value))
-	if !ok {
-		return fmt.Errorf("%w: require type func()", ErrInvalidType)
-	}
+	src := fmt.Sprintf("keybinds.%s.%s()", panel, keybind)
 
 	go func() {
-		_, execErr := f(context.Background())
-		if err := execErr.Interface(); !execErr.IsNil() {
-			if err, ok := err.(error); ok {
-				cb(err)
-			}
-		}
+		_, err := a.Execute(src)
+		cb(err)
 	}()
-
-
-	return nil
 }
