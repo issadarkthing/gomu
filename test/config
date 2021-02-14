@@ -53,10 +53,18 @@ global = {
 	}
 }
 
+playlist = {
+	"c": func() {
+		x = 10 + 10	
+		debug_popup(x)
+	}
+}
+
 // this struct holds pressed key and function to be executed
 // use also can access internal command as function, for example yank command
 keybinds = {
-	"global": global
+	"global": global,
+	"playlist": playlist
 }
 
-// vim: syntax=go
+// vim: syntax=cpp

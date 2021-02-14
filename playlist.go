@@ -147,6 +147,18 @@ func newPlaylist(args Args) *Playlist {
 
 	playlist.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
+		kb := string(e.Rune())
+
+		if gomu.anko.KeybindExists("playlist", kb) {
+			gomu.anko.ExecKeybind("playlist", kb, func (err error) {
+				if err != nil {
+					errorPopup(err)
+				}
+			})
+
+			return e
+		}
+
 		cmds := map[rune]string{
 			'a': "create_playlist",
 			'D': "delete_playlist",
