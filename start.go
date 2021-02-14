@@ -3,7 +3,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -12,9 +11,9 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
-	"reflect"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/issadarkthing/gomu/anko"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
 )
@@ -235,34 +234,15 @@ func start(application *tview.Application, args Args) {
 		}
 
 		// check for user defined keybindings
-		kb, err := gomu.anko.Get("keybinds")
-		if err == nil {
-			keybinds, ok := kb.(map[interface{}]interface{})
-			if !ok {
-				errorPopup(errors.New("invalid type; require {}"))
-				return e
+		err := gomu.anko.ExecKeybind("global", string(e.Rune()), func (err error) {
+			if err != nil {
+				errorPopup(tracerr.Wrap(err))
 			}
+		})
 
-			cmd, ok := keybinds[string(e.Rune())]
-			if ok {
-
-				f, ok := cmd.(func(context.Context) (reflect.Value, reflect.Value))
-				if !ok {
-					errorPopup(errors.New("invalid type; require type func()"))
-					return e
-				}
-
-				go func() {
-					_, execErr := f(context.Background())
-					if err := execErr.Interface(); !execErr.IsNil() {
-						if err, ok := err.(error); ok {
-							errorPopup(err)
-						}
-					}
-				}()
-
-				return e
-			}
+		if err != nil && !errors.Is(err, anko.ErrNoKeybind) {
+			errorPopup(tracerr.Wrap(err))
+			return e
 		}
 
 		cmds := map[rune]string{

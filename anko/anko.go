@@ -1,12 +1,21 @@
 package anko
 
 import (
+	"errors"
+	"context"
+	"reflect"
+	"fmt"
+
 	"github.com/mattn/anko/core"
 	"github.com/mattn/anko/env"
 	"github.com/mattn/anko/vm"
 	_ "github.com/mattn/anko/packages"
 )
 
+var (
+	ErrNoKeybind   = errors.New("no keybinding")
+	ErrInvalidType = errors.New("invalid type")
+)
 
 type Anko struct {
 	env *env.Env
@@ -84,4 +93,49 @@ func (a *Anko) GetBool(symbol string) bool {
 // execute executes anko script
 func (a *Anko) Execute(src string) (interface{}, error) {
 	return vm.Execute(a.env, nil, src)
+}
+
+func (a *Anko) ExecKeybind(panel string, keybind string, cb func(error)) error {
+
+	kb, err := a.Get("keybinds")
+	if err != nil {
+		return err
+	}
+
+	p, ok := kb.(map[interface{}]interface{})
+	if !ok {
+		return fmt.Errorf("%w: require type {} got %T", ErrInvalidType, kb)
+	}
+
+	k, ok := p[panel]
+	if !ok {
+		return ErrNoKeybind
+	}
+
+	keybinds, ok := k.(map[interface{}]interface{})
+	if !ok {
+		return fmt.Errorf("%w: require type {} got %T", ErrInvalidType, k)
+	}
+
+	cmd, ok := keybinds[keybind]
+	if !ok {
+		return ErrNoKeybind
+	}
+
+	f, ok := cmd.(func(context.Context) (reflect.Value, reflect.Value))
+	if !ok {
+		return fmt.Errorf("%w: require type func()", ErrInvalidType)
+	}
+
+	go func() {
+		_, execErr := f(context.Background())
+		if err := execErr.Interface(); !execErr.IsNil() {
+			if err, ok := err.(error); ok {
+				cb(err)
+			}
+		}
+	}()
+
+
+	return nil
 }
