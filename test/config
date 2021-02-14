@@ -35,14 +35,12 @@ color_now_playing_title = "#017702"
 color_playlist          = "#008B8B"
 color_popup             = "#0A0F14"
 
-// this struct holds pressed key and function to be executed
-// use also can access internal command as function, for example yank command
-keybinds = {
+global = {
 	"b": func() {
 		out, err = shell(`"bruhh"`);
 		if err != nil {
 			debug_popup("an error occurred")
-			return
+				return
 		}
 		debug_popup(out)
 	},
@@ -53,6 +51,12 @@ keybinds = {
 		result = input_popup("text")
 		debug_popup(result)
 	}
+}
+
+// this struct holds pressed key and function to be executed
+// use also can access internal command as function, for example yank command
+keybinds = {
+	"global": global
 }
 
 // vim: syntax=go
