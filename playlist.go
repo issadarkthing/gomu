@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -73,38 +72,29 @@ func (p *Playlist) help() []string {
 // on root music directory.
 func newPlaylist(args Args) *Playlist {
 
-	m, err := gomu.env.Get("music_dir")
-	if err != nil {
-		log.Fatal(err)
-	}
+	anko := gomu.anko
 
-	rootDir, err := filepath.Abs(expandTilde(m.(string)))
+	m := anko.getString("music_dir")
+	rootDir, err := filepath.Abs(expandTilde(m))
+	if err != nil {
+		err = tracerr.Errorf("unable to find music directory: %e", err)
+		die(err)
+	}
 
 	// if not default value was given
 	if *args.music != "~/music" {
 		rootDir = expandFilePath(*args.music)
 	}
 
-	if err != nil {
-		log.Fatalf("Unable to find music directory: %e", err)
-	}
 
 	var rootTextView string
 
-	useEmoji, err := gomu.env.Get("use_emoji")
-	if err != nil {
-		log.Fatal(err)
-	}
+	useEmoji := anko.getBool("use_emoji")
 
-	if useEmoji.(bool) {
+	if useEmoji {
 
-		emojiPlaylist, err := gomu.env.Get("emoji_playlist")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		rootTextView =
-			fmt.Sprintf("%s %s", emojiPlaylist.(string), path.Base(rootDir))
+		emojiPlaylist := anko.getString("emoji_playlist")
+		rootTextView = fmt.Sprintf("%s %s", emojiPlaylist, path.Base(rootDir))
 
 	} else {
 		rootTextView = path.Base(rootDir)
@@ -582,12 +572,9 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	playlistPath := dir
 	audioPath := extractFilePath(stdout.Bytes(), playlistPath)
 
-	historyPath, err := gomu.env.Get("history_path")
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
+	historyPath := gomu.anko.getString("history_path")
 
-	err = appendFile(expandTilde(historyPath.(string)), url+"\n")
+	err = appendFile(expandTilde(historyPath), url+"\n")
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -742,12 +729,12 @@ func (p *Playlist) paste() error {
 }
 
 func setDisplayText(songName string) string {
-	useEmoji := getBool(gomu.env, "use_emoji")
+	useEmoji := gomu.anko.getBool("use_emoji")
 	if !useEmoji {
 		return songName
 	}
 
-	emojiFile := getString(gomu.env, "emoji_file")
+	emojiFile := gomu.anko.getString("emoji_file")
 	return fmt.Sprintf(" %s %s", emojiFile, songName)
 }
 

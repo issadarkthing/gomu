@@ -68,8 +68,7 @@ func (s *Stack) pop() tview.Primitive {
 // Gets popup timeout from config file
 func getPopupTimeout() time.Duration {
 
-	dur := getString(gomu.env, "popup_timeout")
-
+	dur := gomu.anko.getString("popup_timeout")
 	m, err := time.ParseDuration(dur)
 
 	if err != nil {

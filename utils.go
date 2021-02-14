@@ -16,13 +16,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mattn/anko/env"
 	"github.com/ztrue/tracerr"
 )
 
 // Logs erros to /tmp/gomu.log
 func logError(err error) {
-	log.Println(tracerr.Sprint(err))
+	log.Println("[ERROR]", tracerr.Sprint(err))
+}
+
+// die logs the error message and call os.Exit(1)
+func die(err error) {
+	logError(err)
+	os.Exit(1)
+}
+
+func logDebug(msg string) {
+	log.Println("[DEBUG]", msg)
 }
 
 // Formats duration to my desired output mm:ss
@@ -203,48 +212,6 @@ func appendFile(path string, content string) error {
 		return tracerr.Wrap(err)
 	}
 	return nil
-}
-
-func getInt(e *env.Env, symbol string) int {
-	v, err := e.Get(symbol)
-	if err != nil {
-		return 0
-	}
-
-	val, ok := v.(int64)
-	if !ok {
-		return 0
-	}
-
-	return int(val)
-}
-
-func getString(e *env.Env, symbol string) string {
-	v, err := e.Get(symbol)
-	if err != nil {
-		return ""
-	}
-
-	val, ok := v.(string)
-	if !ok {
-		return ""
-	}
-
-	return val
-}
-
-func getBool(e *env.Env, symbol string) bool {
-	v, err := e.Get(symbol)
-	if err != nil {
-		return false
-	}
-
-	val, ok := v.(bool)
-	if !ok {
-		return false
-	}
-
-	return val
 }
 
 func shell(input string) (string, error) {

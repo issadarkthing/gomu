@@ -25,22 +25,24 @@ func newColor() *Colors {
 		"color_playlist":          "#008B8B",
 	}
 
+	anko := gomu.anko
+
 	// Validate hex color
 	for k, v := range defaultColors {
 
 		// color from the config file
-		cfgColor := getString(gomu.env, k)
+		cfgColor := anko.getString(k)
 		if validHexColor(cfgColor) {
 			continue
 		}
 
 		// use default value if invalid hex color was given
-		gomu.env.Set(k, v)
+		anko.set(k, v)
 	}
 
 	// handle none background color
 	var bgColor tcell.Color
-	bg := getString(gomu.env, "color_background")
+	bg := anko.getString("color_background")
 
 	if bg == "none" {
 		bgColor = tcell.ColorDefault
@@ -48,11 +50,11 @@ func newColor() *Colors {
 		bgColor = tcell.GetColor(bg)
 	}
 
-	accent := getString(gomu.env, "color_accent")
-	foreground := getString(gomu.env, "color_foreground")
-	popup := getString(gomu.env, "color_popup")
-	title := getString(gomu.env, "color_now_playing_title")
-	playlist := getString(gomu.env, "color_playlist")
+	accent := anko.getString("color_accent")
+	foreground := anko.getString("color_foreground")
+	popup := anko.getString("color_popup")
+	title := anko.getString("color_now_playing_title")
+	playlist := anko.getString("color_playlist")
 
 	color := &Colors{
 		accent:     tcell.GetColor(accent),

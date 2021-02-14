@@ -7,18 +7,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
-	"reflect"
 	"strings"
 	"syscall"
+	"reflect"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/ztrue/tracerr"
-
-	"github.com/mattn/anko/vm"
 )
 
 // Panel is used to keep track of childrens in slices
@@ -36,84 +32,7 @@ const (
 	musicPath  = "~/music"
 )
 
-func execConfig(config string) error {
 
-	const defaultConfig = `
-
-// confirmation popup to add the whole playlist to the queue
-confirm_bulk_add    = true
-confirm_on_exit     = true
-queue_loop          = false
-load_prev_queue     = true
-popup_timeout       = "5s"
-// change this to directory that contains mp3 files
-music_dir           = "~/music"
-// url history of downloaded audio will be saved here
-history_path        = "~/.local/share/gomu/urls"
-// some of the terminal supports unicode character
-// you can set this to true to enable emojis
-use_emoji           = true
-// initial volume when gomu starts up
-volume              = 80
-// if you experiencing error using this invidious instance, you can change it
-// to another instance from this list:
-// https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
-invidious_instance  = "https://vid.puffyan.us"
-
-// default emoji here is using awesome-terminal-fonts
-// you can change these to your liking
-emoji_playlist     = ""
-emoji_file         = ""
-emoji_loop         = "ﯩ"
-emoji_noloop       = ""
-
-// not all colors can be reproducible in terminal
-// changing hex colors may or may not produce expected result
-color_accent            = "#008B8B"
-color_background        = "none"
-color_foreground        = "#FFFFFF"
-color_now_playing_title = "#017702"
-color_playlist          = "#008B8B"
-color_popup             = "#0A0F14"
-
-// vim: syntax=go
-`
-
-	// built-in functions
-	gomu.env.DefineGlobal("debug_popup", debugPopup)
-	gomu.env.DefineGlobal("input_popup", inputPopup)
-	gomu.env.DefineGlobal("show_popup", defaultTimedPopup)
-	gomu.env.DefineGlobal("shell", shell)
-
-	cfg := expandTilde(config)
-
-	_, err := os.Stat(cfg)
-	if os.IsNotExist(err) {
-		err = appendFile(cfg, defaultConfig)
-		if err != nil {
-			return tracerr.Wrap(err)
-		}
-	}
-
-	content, err := ioutil.ReadFile(cfg)
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-
-	// execute default config
-	_, err = vm.Execute(gomu.env, nil, defaultConfig)
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-
-	// execute user config
-	_, err = vm.Execute(gomu.env, nil, string(content))
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-
-	return nil
-}
 
 type Args struct {
 	config  *string
@@ -185,12 +104,12 @@ func start(application *tview.Application, args Args) {
 
 	gomu.playingBar.setDefault()
 
-	isQueueLoop := getBool(gomu.env, "queue_loop")
+	isQueueLoop := gomu.anko.getBool("queue_loop")
 
 	gomu.player.isLoop = isQueueLoop
 	gomu.queue.isLoop = gomu.player.isLoop
 
-	loadQueue := getBool(gomu.env, "load_prev_queue")
+	loadQueue := gomu.anko.getBool("load_prev_queue")
 
 	if !*args.empty && loadQueue {
 		// load saved queue from previous session
@@ -231,7 +150,7 @@ func start(application *tview.Application, args Args) {
 		}
 
 		// check for user defined keybindings
-		kb, err := gomu.env.Get("keybinds")
+		kb, err := gomu.anko.get("keybinds")
 		if err == nil {
 			keybinds, ok := kb.(map[interface{}]interface{})
 			if !ok {

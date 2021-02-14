@@ -37,7 +37,7 @@ type Player struct {
 
 func newPlayer() *Player {
 
-	volume := getInt(gomu.env, "volume")
+	volume := gomu.anko.getInt("volume")
 	// Read initial volume from config
 	initVol := absVolume(volume)
 

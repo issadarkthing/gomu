@@ -47,8 +47,7 @@ keybinds = {
 		debug_popup(out)
 	},
 	"u": func() {
-		refresh()
-		show_popup("example", "refreshed successfully")
+		command_search()
 	},
 	"v": func() {
 		result = input_popup("text")

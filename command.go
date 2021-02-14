@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -33,6 +32,8 @@ func (c Command) getFn(name string) (func(), error) {
 }
 
 func (c Command) defineCommands() {
+
+	anko := gomu.anko
 
 	/* Playlist */
 
@@ -204,7 +205,7 @@ func (c Command) defineCommands() {
 
 	c.define("bulk_add", func() {
 		currNode := gomu.playlist.GetCurrentNode()
-		bulkAdd := getBool(gomu.env, "confirm_bulk_add")
+		bulkAdd := anko.getBool("confirm_bulk_add")
 
 		if !bulkAdd {
 			gomu.playlist.addAllToQueue(currNode)
@@ -320,7 +321,7 @@ func (c Command) defineCommands() {
 	/* Global */
 	c.define("quit", func() {
 
-		confirmOnExit := getBool(gomu.env, "confirm_on_exit")
+		confirmOnExit := anko.getBool("confirm_on_exit")
 
 		if !confirmOnExit {
 			err := gomu.quit(gomu.args)
@@ -461,9 +462,9 @@ func (c Command) defineCommands() {
 	})
 
 	for name, cmd := range c.commands {
-		err := gomu.env.DefineGlobal(name, cmd)
+		err := gomu.anko.define(name, cmd)
 		if err != nil {
-			log.Panicln(err)
+			logError(err)
 		}
 	}
 }
