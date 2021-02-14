@@ -79,8 +79,10 @@ color_popup             = "#0A0F14"
 // vim: syntax=go
 `
 
+	// built-in functions
 	gomu.env.DefineGlobal("debug_popup", debugPopup)
 	gomu.env.DefineGlobal("input_popup", inputPopup)
+	gomu.env.DefineGlobal("show_popup", defaultTimedPopup)
 
 	cfg := expandTilde(config)
 
