@@ -86,7 +86,7 @@ func getRequest(url string, v interface{}) error {
 func getSearchResult(query string) ([]YoutubeVideo, error) {
 
 	query = url.QueryEscape(query)
-	domain := gomu.anko.getString("invidious_instance")
+	domain := gomu.anko.GetString("invidious_instance")
 
 	targetUrl := domain + `/api/v1/search?q=` + query
 	yt := []YoutubeVideo{}

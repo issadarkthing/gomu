@@ -31,18 +31,18 @@ func newColor() *Colors {
 	for k, v := range defaultColors {
 
 		// color from the config file
-		cfgColor := anko.getString(k)
+		cfgColor := anko.GetString(k)
 		if validHexColor(cfgColor) {
 			continue
 		}
 
 		// use default value if invalid hex color was given
-		anko.set(k, v)
+		anko.Set(k, v)
 	}
 
 	// handle none background color
 	var bgColor tcell.Color
-	bg := anko.getString("color_background")
+	bg := anko.GetString("color_background")
 
 	if bg == "none" {
 		bgColor = tcell.ColorDefault
@@ -50,11 +50,11 @@ func newColor() *Colors {
 		bgColor = tcell.GetColor(bg)
 	}
 
-	accent := anko.getString("color_accent")
-	foreground := anko.getString("color_foreground")
-	popup := anko.getString("color_popup")
-	title := anko.getString("color_now_playing_title")
-	playlist := anko.getString("color_playlist")
+	accent := anko.GetString("color_accent")
+	foreground := anko.GetString("color_foreground")
+	popup := anko.GetString("color_popup")
+	title := anko.GetString("color_now_playing_title")
+	playlist := anko.GetString("color_playlist")
 
 	color := &Colors{
 		accent:     tcell.GetColor(accent),
