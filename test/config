@@ -42,6 +42,7 @@ module keybinds {
 	module global {
 
 		b = func () {
+			# execute shell function and capture stdout and stderr
 			out, err = shell(`echo "bruhh"`)
 			if err != nil {
 				debug_popup("an error occurred")
@@ -50,9 +51,7 @@ module keybinds {
 			debug_popup(out)
 		}
 
-		u = func() {
-			command_search()
-		}
+		c = command_search
 
 		v = func() {
 			result = input_popup("text")
@@ -62,17 +61,18 @@ module keybinds {
 
 
 	module playlist {
-		c = func() {
+		e = func() {
 			val = 10 + 10
 			debug_popup(val)
 		}
 	}
 
 	module queue {
-		o = func() {
-			debug_popup("in queue")
-		}
+		# override default loop keybinding
+		o = toggle_loop
 	}
 }
 
+# you can get the syntax highlighting for this language here:
+# https://github.com/mattn/anko/tree/master/misc/vim
 # vim: ft=anko
