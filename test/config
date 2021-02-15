@@ -35,7 +35,13 @@ color_now_playing_title = "#017702"
 color_playlist          = "#008B8B"
 color_popup             = "#0A0F14"
 
+func fib(x) {
+	if x <= 1 {
+		return 1
+	}
 
+	return fib(x - 1) + fib(x - 2)
+}
 
 module Keybinds {
 
@@ -54,8 +60,13 @@ module Keybinds {
 		c = command_search
 
 		v = func() {
-			input_popup("text", func(result) {
-				debug_popup(result)
+			input_popup("fib calculator", func(result) {
+				x = to_int(result)
+
+				go func() {
+					result = fib(x)
+					debug_popup(to_string(result))
+				}()
 			})
 		}
 
