@@ -371,6 +371,17 @@ func newQueue() *Queue {
 
 	queue.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
+		keybind := string(e.Rune())
+		if gomu.anko.KeybindExists("queue", keybind) {
+			gomu.anko.ExecKeybind("queue", keybind, func(err error) {
+				if err != nil {
+					errorPopup(err)
+				}
+			})
+
+			return e
+		}
+
 		cmds := map[rune]string{
 			'j': "move_down",
 			'k': "move_up",
