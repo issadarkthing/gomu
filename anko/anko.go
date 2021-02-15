@@ -44,12 +44,14 @@ func (a *Anko) GetInt(symbol string) int {
 		return 0
 	}
 
-	val, ok := v.(int64)
-	if !ok {
-		return 0
+	switch val := v.(type) {
+	case int: 
+		return val
+	case int64:
+		return int(val)
 	}
 
-	return int(val)
+	return 0
 }
 
 // GetString gets string value from symbol, returns golang default value if not
