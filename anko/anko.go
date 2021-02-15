@@ -1,18 +1,12 @@
 package anko
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/mattn/anko/core"
 	"github.com/mattn/anko/env"
 	"github.com/mattn/anko/vm"
 	_ "github.com/mattn/anko/packages"
-)
-
-var (
-	ErrNoKeybind   = errors.New("no keybinding")
-	ErrInvalidType = errors.New("invalid type")
 )
 
 type Anko struct {
