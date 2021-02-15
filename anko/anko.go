@@ -20,9 +20,11 @@ type Anko struct {
 }
 
 func NewAnko() Anko {
-	return Anko{
-		core.Import(env.NewEnv()),
-	}
+
+	env := core.Import(env.NewEnv())
+	importToX(env)
+
+	return Anko{env}
 }
 
 // Define defines new symbol and value to the Anko env.

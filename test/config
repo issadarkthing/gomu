@@ -65,7 +65,7 @@ module keybinds {
 	module playlist {
 		e = func() {
 			val = 10 + 10
-			debug_popup(val)
+			debug_popup(to_string(val))
 		}
 	}
 
