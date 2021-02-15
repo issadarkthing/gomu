@@ -54,8 +54,9 @@ module keybinds {
 		c = command_search
 
 		v = func() {
-			result = input_popup("text")
-			debug_popup(result)
+			input_popup("text", func(result) {
+				debug_popup(result)
+			})
 		}
 
 		x = reload_config
@@ -66,6 +67,12 @@ module keybinds {
 		e = func() {
 			val = 10 + 10
 			debug_popup(to_string(val))
+		}
+
+		t = func() {
+			search_popup("test", ["a", "b", "c"], func(x) {
+				debug_popup(x)
+			})
 		}
 	}
 
