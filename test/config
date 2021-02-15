@@ -1,4 +1,3 @@
-
 # confirmation popup to add the whole playlist to the queue
 confirm_bulk_add    = true
 confirm_on_exit     = true
@@ -95,4 +94,4 @@ module Keybinds {
 
 # you can get the syntax highlighting for this language here:
 # https://github.com/mattn/anko/tree/master/misc/vim
-# vim: ft=anko
+# vim: ft=anko cindent
