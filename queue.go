@@ -366,7 +366,7 @@ func newQueue() *Queue {
 
 	queue := &Queue{
 		List:           list,
-		savedQueuePath: "~/.local/share/gomu/queue.cache",
+		savedQueuePath: cacheQueuePath,
 	}
 
 	queue.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {

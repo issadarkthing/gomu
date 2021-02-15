@@ -29,11 +29,10 @@ type Panel interface {
 
 // Default values for command line arguments.
 const (
-	configPath = "~/.config/gomu/config"
-	musicPath  = "~/music"
+	configPath     = "~/.config/gomu/config"
+	cacheQueuePath = "~/.local/share/gomu/queue.cache"
+	musicPath      = "~/music"
 )
-
-
 
 type Args struct {
 	config  *string
@@ -52,7 +51,6 @@ func getArgs() Args {
 	flag.Parse()
 	return ar
 }
-
 
 // executes user config with default config is executed first in order to apply
 // default values
@@ -177,7 +175,6 @@ func start(application *tview.Application, args Args) {
 	tview.Styles.PrimitiveBackgroundColor = gomu.colors.background
 
 	gomu.initPanels(application, args)
-	gomu.command.defineCommands()
 
 	flex := layout(gomu)
 	gomu.pages.AddPage("main", flex, true, true)
@@ -235,7 +232,7 @@ func start(application *tview.Application, args Args) {
 
 		if gomu.anko.KeybindExists("global", string(e.Rune())) {
 			// check for user defined keybindings
-			gomu.anko.ExecKeybind("global", string(e.Rune()), func (err error) {
+			gomu.anko.ExecKeybind("global", string(e.Rune()), func(err error) {
 				if err != nil {
 					errorPopup(tracerr.Wrap(err))
 				}
