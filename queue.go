@@ -427,7 +427,7 @@ func sha1Hex(input string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-//Modify the title of songs in queue
+// Modify the title of songs in queue
 func (q *Queue) updateQueueNames() error {
 	q.saveQueue(false)
 	q.clearQueue()
