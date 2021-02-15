@@ -60,9 +60,9 @@ module Keybinds {
 
 		v = func() {
 			input_popup("fib calculator", func(result) {
-				x = to_int(result)
+				x = int(result)
 				result = fib(x)
-				debug_popup(to_string(result))
+				debug_popup(string(result))
 			})
 		}
 
@@ -73,7 +73,7 @@ module Keybinds {
 	module Playlist {
 		e = func() {
 			val = 10 + 10
-			debug_popup(to_string(val))
+			debug_popup(string(val))
 		}
 
 		t = func() {

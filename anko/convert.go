@@ -5,15 +5,14 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/mattn/anko/env"
 )
 
-// importToX adds all the toX to the env given
+// importToX defines type coercion functions
 func importToX(e *env.Env) {
 
-	e.Define("to_bool", func(v interface{}) bool {
+	e.Define("bool", func(v interface{}) bool {
 		rv := reflect.ValueOf(v)
 		if !rv.IsValid() {
 			return false
@@ -38,14 +37,14 @@ func importToX(e *env.Env) {
 		return false
 	})
 
-	e.Define("to_string", func(v interface{}) string {
+	e.Define("string", func(v interface{}) string {
 		if b, ok := v.([]byte); ok {
 			return string(b)
 		}
 		return fmt.Sprint(v)
 	})
 
-	e.Define("to_int", func(v interface{}) int64 {
+	e.Define("int", func(v interface{}) int64 {
 		rv := reflect.ValueOf(v)
 		if !rv.IsValid() {
 			return 0
@@ -72,7 +71,7 @@ func importToX(e *env.Env) {
 		return 0
 	})
 
-	e.Define("to_float", func(v interface{}) float64 {
+	e.Define("float", func(v interface{}) float64 {
 		rv := reflect.ValueOf(v)
 		if !rv.IsValid() {
 			return 0
@@ -95,77 +94,14 @@ func importToX(e *env.Env) {
 		return 0.0
 	})
 
-	e.Define("to_char", func(s rune) string {
+	e.Define("char", func(s rune) string {
 		return string(s)
 	})
 
-	e.Define("to_rune", func(s string) rune {
+	e.Define("rune", func(s string) rune {
 		if len(s) == 0 {
 			return 0
 		}
 		return []rune(s)[0]
 	})
-
-	e.Define("to_bool_slice", func(v []interface{}) []bool {
-		var result []bool
-		toSlice(v, &result)
-		return result
-	})
-
-	e.Define("to_string_slice", func(v []interface{}) []string {
-		var result []string
-		toSlice(v, &result)
-		return result
-	})
-
-	e.Define("to_int_slice", func(v []interface{}) []int64 {
-		var result []int64
-		toSlice(v, &result)
-		return result
-	})
-
-	e.Define("to_float_slice", func(v []interface{}) []float64 {
-		var result []float64
-		toSlice(v, &result)
-		return result
-	})
-
-	e.Define("to_byte_slice", func(s string) []byte {
-		return []byte(s)
-	})
-
-	e.Define("to_runeSlice", func(s string) []rune {
-		return []rune(s)
-	})
-
-	e.Define("to_duration", func(v int64) time.Duration {
-		return time.Duration(v)
-	})
-
-}
-
-// toSlice takes in a "generic" slice and converts and copies
-// it's elements into the typed slice pointed at by ptr.
-// Note that this is a costly operation.
-func toSlice(from []interface{}, ptr interface{}) {
-	// Value of the pointer to the target
-	obj := reflect.Indirect(reflect.ValueOf(ptr))
-	// We can't just convert from interface{} to whatever the target is (diff memory layout),
-	// so we need to create a New slice of the proper type and copy the values individually
-	t := reflect.TypeOf(ptr).Elem()
-	tt := t.Elem()
-	slice := reflect.MakeSlice(t, len(from), len(from))
-	// Copying the data, val is an addressable Pointer of the actual target type
-	val := reflect.Indirect(reflect.New(tt))
-	for i := 0; i < len(from); i++ {
-		v := reflect.ValueOf(from[i])
-		if v.IsValid() && v.Type().ConvertibleTo(tt) {
-			val.Set(v.Convert(tt))
-		} else {
-			val.Set(reflect.Zero(tt))
-		}
-		slice.Index(i).Set(val)
-	}
-	// Ok now assign our slice to the target pointer
-	obj.Set(slice)
 }
