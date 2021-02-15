@@ -35,36 +35,44 @@ color_now_playing_title = "#017702"
 color_playlist          = "#008B8B"
 color_popup             = "#0A0F14"
 
-global = {
-	"b": func() {
-		out, err = shell(`"bruhh"`);
-		if err != nil {
-			debug_popup("an error occurred")
+
+
+module keybinds {
+
+	module global {
+
+		b = func () {
+			out, err = shell(`echo "bruhh"`)
+			if err != nil {
+				debug_popup("an error occurred")
 				return
+			}
+			debug_popup(out)
 		}
-		debug_popup(out)
-	},
-	"u": func() {
-		command_search()
-	},
-	"v": func() {
-		result = input_popup("text")
-		debug_popup(result)
-	}
-}
 
-playlist = {
-	"c": func() {
-		x = 10 + 10	
-		debug_popup(x)
-	}
-}
+		u = func() {
+			command_search()
+		}
 
-// this struct holds pressed key and function to be executed
-// use also can access internal command as function, for example yank command
-keybinds = {
-	"global": global,
-	"playlist": playlist
+		v = func() {
+			result = input_popup("text")
+			debug_popup(result)
+		}
+	}
+
+
+	module playlist {
+		c = func() {
+			val = 10 + 10
+			debug_popup(val)
+		}
+	}
+
+	module queue {
+		o = func() {
+			debug_popup("in queue")
+		}
+	}
 }
 
 // vim: syntax=cpp
