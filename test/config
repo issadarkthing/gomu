@@ -61,11 +61,8 @@ module Keybinds {
 		v = func() {
 			input_popup("fib calculator", func(result) {
 				x = to_int(result)
-
-				go func() {
-					result = fib(x)
-					debug_popup(to_string(result))
-				}()
+				result = fib(x)
+				debug_popup(to_string(result))
 			})
 		}
 

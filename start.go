@@ -52,6 +52,15 @@ func getArgs() Args {
 	return ar
 }
 
+// built-in functions
+func defineBuiltins() {
+	gomu.anko.Define("debug_popup", debugPopup)
+	gomu.anko.Define("input_popup", inputPopup)
+	gomu.anko.Define("show_popup", defaultTimedPopup)
+	gomu.anko.Define("search_popup", searchPopup)
+	gomu.anko.Define("shell", shell)
+}
+
 // executes user config with default config is executed first in order to apply
 // default values
 func execConfig(config string) error {
@@ -97,12 +106,6 @@ color_popup             = "#0A0F14"
 // vim: syntax=go
 `
 
-	// built-in functions
-	gomu.anko.Define("debug_popup", debugPopup)
-	gomu.anko.Define("input_popup", inputPopup)
-	gomu.anko.Define("show_popup", defaultTimedPopup)
-	gomu.anko.Define("search_popup", searchPopup)
-	gomu.anko.Define("shell", shell)
 
 	cfg := expandTilde(config)
 
@@ -157,6 +160,7 @@ func start(application *tview.Application, args Args) {
 	// Assigning to global variable gomu
 	gomu = newGomu()
 	gomu.command.defineCommands()
+	defineBuiltins()
 	err := execConfig(expandFilePath(*args.config))
 	if err != nil {
 		die(err)
