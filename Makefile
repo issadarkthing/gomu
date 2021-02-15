@@ -14,7 +14,7 @@ default: build
 
 test:
 	@echo === TESTING ===
-	go test
+	go test ./...
 
 format:
 	@echo === FORMATTING ===

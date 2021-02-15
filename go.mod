@@ -13,6 +13,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/tview v0.0.0-20210125085121-dbc1f32bb1d0
 	github.com/sahilm/fuzzy v0.1.0
+	github.com/stretchr/testify v1.7.0
 	github.com/tj/go-spin v1.1.0
 	github.com/ztrue/tracerr v0.3.0
 	golang.org/x/exp v0.0.0-20201229011636-eab1b5eb1a03 // indirect
