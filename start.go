@@ -157,6 +157,7 @@ func start(application *tview.Application, args Args) {
 
 	// Assigning to global variable gomu
 	gomu = newGomu()
+	gomu.command.defineCommands()
 	err := execConfig(expandFilePath(*args.config))
 	if err != nil {
 		panic(err)
