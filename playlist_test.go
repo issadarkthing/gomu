@@ -20,7 +20,7 @@ func prepareTest() *Gomu {
 	}
 	gomu.app = tview.NewApplication()
 
-	err := execConfig(expandFilePath("./test/config"))
+	err := execConfig(expandFilePath(testConfigPath))
 	if err != nil {
 		panic(err)
 	}
@@ -48,7 +48,7 @@ func prepareTest() *Gomu {
 func TestPopulate(t *testing.T) {
 
 	gomu = newGomu()
-	err := execConfig(expandFilePath("./test/config"))
+	err := execConfig(expandFilePath(testConfigPath))
 	if err != nil {
 		t.Error(err)
 	}
@@ -97,8 +97,8 @@ func TestPopulate(t *testing.T) {
 		return true
 	})
 
-	// ignore config and arbitrary_file.txt
-	gotItems += 2
+	// ignore config, config.test and arbitrary_file.txt
+	gotItems += 3
 
 	if gotItems != expected {
 		t.Errorf("Invalid amount of file; expected %d got %d", expected, gotItems)
