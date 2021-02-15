@@ -252,6 +252,16 @@ func (c Command) defineCommands() {
 		})
 	})
 
+	c.define("reload_config", func() {
+		cfg := expandFilePath(*gomu.args.config)
+		err := execConfig(cfg)
+		if err != nil {
+			errorPopup(err)
+		}
+
+		infoPopup("successfully reload config file")
+	})
+
 	/* Queue */
 
 	c.define("move_down", func() {

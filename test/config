@@ -57,6 +57,8 @@ module keybinds {
 			result = input_popup("text")
 			debug_popup(result)
 		}
+
+		x = reload_config
 	}
 
 
