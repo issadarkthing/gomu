@@ -232,9 +232,9 @@ func start(application *tview.Application, args Args) {
 		}
 
 		kb := string(e.Rune())
-		if gomu.anko.KeybindExists("global", kb) {
+		if gomu.anko.KeybindExists("Global", kb) {
 			
-			err := gomu.anko.ExecKeybind("global", kb)
+			err := gomu.anko.ExecKeybind("Global", kb)
 			if err != nil {
 				errorPopup(err)
 			}

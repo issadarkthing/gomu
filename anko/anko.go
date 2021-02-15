@@ -91,7 +91,7 @@ func (a *Anko) Execute(src string) (interface{}, error) {
 
 // KeybindExists checks if keybinding is defined.
 func (a *Anko) KeybindExists(panel string, keybind string) bool {
-	src := fmt.Sprintf("keybinds.%s.%s", panel, keybind)
+	src := fmt.Sprintf("Keybinds.%s.%s", panel, keybind)
 	val, err := a.Execute(src)
 	if err != nil {
 		return false
@@ -102,7 +102,7 @@ func (a *Anko) KeybindExists(panel string, keybind string) bool {
 
 // ExecKeybind executes function bounded by the keybinding.
 func (a *Anko) ExecKeybind(panel string, keybind string) error {
-	src := fmt.Sprintf("keybinds.%s.%s()", panel, keybind)
+	src := fmt.Sprintf("Keybinds.%s.%s()", panel, keybind)
 	_, err := a.Execute(src)
 	return err
 }

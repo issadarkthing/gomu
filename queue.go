@@ -372,9 +372,9 @@ func newQueue() *Queue {
 	queue.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 		keybind := string(e.Rune())
-		if gomu.anko.KeybindExists("queue", keybind) {
+		if gomu.anko.KeybindExists("Queue", keybind) {
 
-			err := gomu.anko.ExecKeybind("queue", keybind)
+			err := gomu.anko.ExecKeybind("Queue", keybind)
 			if err != nil {
 				errorPopup(err)
 			}

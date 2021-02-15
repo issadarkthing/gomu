@@ -149,9 +149,9 @@ func newPlaylist(args Args) *Playlist {
 
 		kb := string(e.Rune())
 
-		if gomu.anko.KeybindExists("playlist", kb) {
+		if gomu.anko.KeybindExists("Playlist", kb) {
 			
-			err := gomu.anko.ExecKeybind("playlist", kb)
+			err := gomu.anko.ExecKeybind("Playlist", kb)
 			if err != nil {
 				errorPopup(err)
 			}

@@ -37,9 +37,9 @@ color_popup             = "#0A0F14"
 
 
 
-module keybinds {
+module Keybinds {
 
-	module global {
+	module Global {
 
 		b = func () {
 			# execute shell function and capture stdout and stderr
@@ -63,7 +63,7 @@ module keybinds {
 	}
 
 
-	module playlist {
+	module Playlist {
 		e = func() {
 			val = 10 + 10
 			debug_popup(to_string(val))
@@ -76,7 +76,7 @@ module keybinds {
 		}
 	}
 
-	module queue {
+	module Queue {
 		# override default loop keybinding
 		o = toggle_loop
 	}
