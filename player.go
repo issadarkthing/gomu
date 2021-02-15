@@ -151,6 +151,7 @@ next:
 			p.position = 0
 			p.isRunning = false
 			p.format = nil
+			// p.hasInit = false
 			gomu.playingBar.stop()
 
 			nextSong, err := gomu.queue.dequeue()
@@ -178,15 +179,21 @@ next:
 			}
 
 			p.i++
+			if p.i >= gomu.playingBar.full {
+				done <- struct{}{}
+				continue
+				// break next
+			}
+
 			gomu.playingBar.progress <- 1
 
 			speaker.Lock()
 			p.position = p.getPosition()
 			speaker.Unlock()
 
-			if p.i > gomu.playingBar.full {
+			/* if p.i > gomu.playingBar.full {
 				break next
-			}
+			} */
 
 		}
 
@@ -305,7 +312,7 @@ func (p *Player) seek(pos int) error {
 	speaker.Lock()
 	defer speaker.Unlock()
 	err := p.streamSeekCloser.Seek(pos * int(p.format.SampleRate))
-	p.i = pos - 1
+	p.i = pos
 	return err
 }
 
