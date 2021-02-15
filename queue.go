@@ -373,13 +373,13 @@ func newQueue() *Queue {
 
 		keybind := string(e.Rune())
 		if gomu.anko.KeybindExists("queue", keybind) {
-			gomu.anko.ExecKeybind("queue", keybind, func(err error) {
-				if err != nil {
-					errorPopup(err)
-				}
-			})
 
-			return e
+			err := gomu.anko.ExecKeybind("queue", keybind)
+			if err != nil {
+				errorPopup(err)
+			}
+
+			return nil
 		}
 
 		cmds := map[rune]string{

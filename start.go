@@ -101,6 +101,7 @@ color_popup             = "#0A0F14"
 	gomu.anko.Define("debug_popup", debugPopup)
 	gomu.anko.Define("input_popup", inputPopup)
 	gomu.anko.Define("show_popup", defaultTimedPopup)
+	gomu.anko.Define("search_popup", searchPopup)
 	gomu.anko.Define("shell", shell)
 
 	cfg := expandTilde(config)
@@ -230,15 +231,15 @@ func start(application *tview.Application, args Args) {
 			gomu.cyclePanels2()
 		}
 
-		if gomu.anko.KeybindExists("global", string(e.Rune())) {
-			// check for user defined keybindings
-			gomu.anko.ExecKeybind("global", string(e.Rune()), func(err error) {
-				if err != nil {
-					errorPopup(tracerr.Wrap(err))
-				}
-			})
+		kb := string(e.Rune())
+		if gomu.anko.KeybindExists("global", kb) {
+			
+			err := gomu.anko.ExecKeybind("global", kb)
+			if err != nil {
+				errorPopup(err)
+			}
 
-			return e
+			return nil
 		}
 
 		cmds := map[rune]string{

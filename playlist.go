@@ -150,13 +150,13 @@ func newPlaylist(args Args) *Playlist {
 		kb := string(e.Rune())
 
 		if gomu.anko.KeybindExists("playlist", kb) {
-			gomu.anko.ExecKeybind("playlist", kb, func (err error) {
-				if err != nil {
-					errorPopup(err)
-				}
-			})
+			
+			err := gomu.anko.ExecKeybind("playlist", kb)
+			if err != nil {
+				errorPopup(err)
+			}
 
-			return e
+			return nil
 		}
 
 		cmds := map[rune]string{

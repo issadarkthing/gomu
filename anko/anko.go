@@ -101,12 +101,8 @@ func (a *Anko) KeybindExists(panel string, keybind string) bool {
 }
 
 // ExecKeybind executes function bounded by the keybinding.
-func (a *Anko) ExecKeybind(panel string, keybind string, cb func(error)) {
-
+func (a *Anko) ExecKeybind(panel string, keybind string) error {
 	src := fmt.Sprintf("keybinds.%s.%s()", panel, keybind)
-
-	go func() {
-		_, err := a.Execute(src)
-		cb(err)
-	}()
+	_, err := a.Execute(src)
+	return err
 }
