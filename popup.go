@@ -352,7 +352,7 @@ func exitConfirmation(args Args) {
 	})
 }
 
-func searchPopup(stringsToMatch []string, handler func(selected string)) {
+func searchPopup(title string, stringsToMatch []string, handler func(selected string)) {
 
 	list := tview.NewList().ShowSecondaryText(false)
 	list.SetSelectedBackgroundColor(gomu.colors.accent)
@@ -449,7 +449,7 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 	popup.SetBorder(true).
 		SetBackgroundColor(gomu.colors.popup).
 		SetBorderPadding(1, 1, 2, 2).
-		SetTitle(" Finder ")
+		SetTitle(" " + title + " ")
 
 	gomu.pages.AddPage("search-input-popup", center(popup, 70, 40), true, true)
 	gomu.popups.push(popup)
@@ -543,20 +543,19 @@ func infoPopup(message string) {
 	defaultTimedPopup(" Info ", message)
 }
 
-func inputPopup(prompt string) string {
+func inputPopup(prompt string, handler func(string)) {
 
 	popupID := "general-input-popup"
 	input := newInputPopup(popupID, "", prompt+": ", "")
-	result := make(chan string)
 	input.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 		switch e.Key() {
 		case tcell.KeyEnter:
-			newName := input.GetText()
-			if newName == "" {
+			output := input.GetText()
+			if output == "" {
 				return e
 			}
-			result <- newName
+			handler(output)
 			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 
@@ -567,6 +566,4 @@ func inputPopup(prompt string) string {
 
 		return e
 	})
-
-	return <-result
 }

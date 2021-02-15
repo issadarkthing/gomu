@@ -123,7 +123,7 @@ func (c Command) defineCommands() {
 						titles = append(titles, title)
 					}
 
-					searchPopup(titles, func(title string) {
+					searchPopup("Youtube Videos", titles, func(title string) {
 
 						audioFile := gomu.playlist.getCurrentFile()
 
@@ -240,7 +240,7 @@ func (c Command) defineCommands() {
 			files[i] = file.name
 		}
 
-		searchPopup(files, func(text string) {
+		searchPopup("Search", files, func(text string) {
 
 			audio, err := gomu.playlist.findAudioFile(sha1Hex(text))
 			if err != nil {
@@ -315,7 +315,7 @@ func (c Command) defineCommands() {
 			audios = append(audios, file.name)
 		}
 
-		searchPopup(audios, func(selected string) {
+		searchPopup("Songs", audios, func(selected string) {
 
 			index := 0
 			for i, v := range queue.items {
@@ -383,7 +383,7 @@ func (c Command) defineCommands() {
 		for commandName := range c.commands {
 			names = append(names, commandName)
 		}
-		searchPopup(names, func(selected string) {
+		searchPopup("Commands", names, func(selected string) {
 
 			for name, fn := range c.commands {
 				if name == selected {
