@@ -19,19 +19,20 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-// Logs erros to /tmp/gomu.log
+// logError logs the error message.
 func logError(err error) {
 	log.Println("[ERROR]", tracerr.Sprint(err))
 }
 
+func logDebug(msg string) {
+	log.Println("[DEBUG]", msg)
+}
+
 // die logs the error message and call os.Exit(1)
+// prefer this instead of panic
 func die(err error) {
 	logError(err)
 	os.Exit(1)
-}
-
-func logDebug(msg string) {
-	log.Println("[DEBUG]", msg)
 }
 
 // Formats duration to my desired output mm:ss
@@ -88,7 +89,7 @@ func expandFilePath(path string) string {
 
 	p, err := filepath.Abs(p)
 	if err != nil {
-		panic(err)
+		die(err)
 	}
 
 	return p
@@ -103,7 +104,7 @@ func expandTilde(_path string) string {
 	home, err := os.UserHomeDir()
 
 	if err != nil {
-		log.Panicln(tracerr.SprintSource(err))
+		die(err)
 	}
 
 	return path.Join(home, strings.TrimPrefix(_path, "~"))

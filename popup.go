@@ -4,7 +4,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -525,14 +524,23 @@ func renamePopup(node *AudioFile) {
 	})
 }
 
+// Show error popup with error is logged. Prefer this when its related with user
+// interaction. Otherwise, use logError.
 func errorPopup(message error) {
 	defaultTimedPopup(" Error ", tracerr.Unwrap(message).Error())
 	logError(message)
 }
 
+// Show debug popup and log debug info. Mainly used when scripting.
 func debugPopup(message string) {
 	defaultTimedPopup(" Debug ", message)
-	log.Println(message)
+	logDebug(message)
+}
+
+// Show info popup and does not log anything. Prefer this when making simple
+// popup.
+func infoPopup(message string) {
+	defaultTimedPopup(" Info ", message)
 }
 
 func inputPopup(prompt string) string {
