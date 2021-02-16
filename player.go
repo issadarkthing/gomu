@@ -95,6 +95,7 @@ func (p *Player) run(currSong *AudioFile) error {
 
 	defaultTimedPopup(" Current Song ", popupMessage)
 
+	// resample to adapt to sample rate of new songs
 	resampled := beep.Resample(4, p.format.SampleRate, sr, p.streamSeekCloser)
 	done := make(chan struct{}, 1)
 	p.done = done
@@ -184,7 +185,6 @@ next:
 			if p.i >= gomu.playingBar.full {
 				done <- struct{}{}
 				continue
-				// break next
 			}
 
 			gomu.playingBar.progress <- 1
@@ -192,10 +192,6 @@ next:
 			speaker.Lock()
 			p.position = p.getPosition()
 			speaker.Unlock()
-
-			/* if p.i > gomu.playingBar.full {
-				break next
-			} */
 
 		}
 
