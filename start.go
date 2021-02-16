@@ -106,7 +106,6 @@ color_popup             = "#0A0F14"
 // vim: syntax=go
 `
 
-
 	cfg := expandTilde(config)
 
 	_, err := os.Stat(cfg)
@@ -219,6 +218,10 @@ func start(application *tview.Application, args Args) {
 	// global keybindings are handled here
 	application.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
+		if gomu.pages.HasPage("repl-input-popup") {
+			return e
+		}
+
 		popupName, _ := gomu.pages.GetFrontPage()
 
 		// disables keybindings when writing in input fields
@@ -237,7 +240,7 @@ func start(application *tview.Application, args Args) {
 
 		kb := string(e.Rune())
 		if gomu.anko.KeybindExists("Global", kb) {
-			
+
 			err := gomu.anko.ExecKeybind("Global", kb)
 			if err != nil {
 				errorPopup(err)
