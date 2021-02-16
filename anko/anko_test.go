@@ -106,3 +106,61 @@ func TestExecute(t *testing.T) {
 	got := a.GetInt("x")
 	assert.Equal(t, expect, got)
 }
+
+func TestKeybindExists(t *testing.T) {
+	
+	src := `
+module Keybinds {
+	module Global {
+		a = func() {}
+		C = func() {}
+	}
+}
+`
+
+	a := anko.NewAnko()
+	_, err := a.Execute(src)
+	if err != nil {
+		t.Error(err)
+	}
+
+	assert.Equal(t, true, a.KeybindExists("Global", "a"))
+	assert.Equal(t, true, a.KeybindExists("Global", "C"))
+
+	assert.Equal(t, false, a.KeybindExists("Global", "z"))
+	assert.Equal(t, false, a.KeybindExists("Playlist", "a"))
+}
+
+func TestExecKeybind(t *testing.T) {
+
+	src := `
+module Keybinds {
+	module Global {
+		a = func() { return 1 }
+		C = func() { 
+			x = 10 + 10
+			return x
+		}
+	}
+}
+`
+
+	a := anko.NewAnko()
+	_, err := a.Execute(src)
+	if err != nil {
+		t.Error(err)
+	}
+
+	assert.Equal(t, true, a.KeybindExists("Global", "a"))
+	assert.Equal(t, true, a.KeybindExists("Global", "C"))
+
+	err = a.ExecKeybind("Global", "a")
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = a.ExecKeybind("Global", "C")
+	if err != nil {
+		t.Error(err)
+	}
+}
