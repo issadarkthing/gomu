@@ -67,6 +67,8 @@ module Keybinds {
 		}
 
 		x = reload_config
+
+		m = repl
 	}
 
 

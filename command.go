@@ -471,6 +471,10 @@ func (c Command) defineCommands() {
 		}
 	})
 
+	c.define("repl", func() {
+		replPopup()
+	})
+
 	for name, cmd := range c.commands {
 		err := gomu.anko.Define(name, cmd)
 		if err != nil {

@@ -567,3 +567,91 @@ func inputPopup(prompt string, handler func(string)) {
 		return e
 	})
 }
+
+func replPopup() {
+
+	popupId := "repl-input-popup"
+
+	textview := tview.NewTextView()
+	input := tview.NewInputField().
+		SetFieldBackgroundColor(gomu.colors.popup).
+		SetLabel("> ")
+
+	// to store input history
+	history := []string{}
+	upCount := 0
+
+	gomu.anko.Define("println", func(x ...interface{}) {
+		fmt.Fprintln(textview, x...)
+	})
+	gomu.anko.Define("print", func(x ...interface{}) {
+		fmt.Fprint(textview, x...)
+	})
+	gomu.anko.Define("printf", func(format string, x ...interface{}) {
+		fmt.Fprintf(textview, format, x...)
+	})
+
+	input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+
+		switch event.Key() {
+		case tcell.KeyUp:
+			if upCount > 0 {
+				upCount--
+				input.SetText(history[upCount])
+			}
+
+		case tcell.KeyDown:
+			if upCount < len(history)-1 {
+				upCount++
+				input.SetText(history[upCount])
+			}
+
+		case tcell.KeyCtrlL:
+			textview.SetText("")
+
+		case tcell.KeyEsc:
+			gomu.pages.RemovePage(popupId)
+			gomu.popups.pop()
+			return nil
+
+		case tcell.KeyEnter:
+			text := input.GetText()
+			history = append(history, text)
+			upCount++
+
+			input.SetText("")
+
+			res, err := gomu.anko.Execute(text)
+			if err != nil {
+				errorPopup(err)
+			}
+
+			if res != nil {
+				fmt.Fprintf(textview, "%v\n", res)
+			}
+		}
+
+		switch event.Rune() {
+		case 'q':
+			gomu.pages.RemovePage(popupId)
+			gomu.popups.pop()
+			return nil
+		}
+
+		return event
+	})
+
+	flex := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(input, 3, 1, true).
+		AddItem(textview, 0, 1, false)
+
+	flex.
+		SetBackgroundColor(gomu.colors.popup).
+		SetBorder(true).
+		SetBorderPadding(1, 1, 2, 2).
+		SetTitle(" REPL ")
+
+	gomu.pages.AddPage(popupId, center(flex, 100, 30), true, true)
+	gomu.popups.push(flex)
+}
