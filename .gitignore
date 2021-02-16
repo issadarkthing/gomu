@@ -19,3 +19,5 @@ message.log
 race.txt
 dist/
 bin/
+
+coverage.html
