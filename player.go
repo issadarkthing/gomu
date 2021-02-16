@@ -74,10 +74,11 @@ func (p *Player) run(currSong *AudioFile) error {
 	// song duration
 	p.length = p.format.SampleRate.D(p.streamSeekCloser.Len())
 
+	sr := beep.SampleRate(48000)
 	if !p.hasInit {
 
 		err := speaker.
-			Init(p.format.SampleRate, p.format.SampleRate.N(time.Second/10))
+			Init(sr, sr.N(time.Second/10))
 
 		if err != nil {
 			return tracerr.Wrap(err)
@@ -93,10 +94,12 @@ func (p *Player) run(currSong *AudioFile) error {
 
 	defaultTimedPopup(" Current Song ", popupMessage)
 
+	// resample to adapt to sample rate of new songs
+	resampled := beep.Resample(4, p.format.SampleRate, sr, p.streamSeekCloser)
 	done := make(chan struct{}, 1)
 	p.done = done
 
-	sstreamer := beep.Seq(p.streamSeekCloser, beep.Callback(func() {
+	sstreamer := beep.Seq(resampled, beep.Callback(func() {
 		done <- struct{}{}
 	}))
 
@@ -150,6 +153,7 @@ next:
 			p.position = 0
 			p.isRunning = false
 			p.format = nil
+			// p.hasInit = false
 			gomu.playingBar.stop()
 
 			nextSong, err := gomu.queue.dequeue()
@@ -177,15 +181,16 @@ next:
 			}
 
 			p.i++
+			if p.i >= gomu.playingBar.full {
+				done <- struct{}{}
+				continue
+			}
+
 			gomu.playingBar.progress <- 1
 
 			speaker.Lock()
 			p.position = p.getPosition()
 			speaker.Unlock()
-
-			if p.i > gomu.playingBar.full {
-				break next
-			}
 
 		}
 
@@ -298,7 +303,7 @@ func (p *Player) seek(pos int) error {
 	speaker.Lock()
 	defer speaker.Unlock()
 	err := p.streamSeekCloser.Seek(pos * int(p.format.SampleRate))
-	p.i = pos - 1
+	p.i = pos
 	return err
 }
 

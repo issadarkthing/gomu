@@ -41,3 +41,4 @@ release: build
 	@echo === RELEASING ===
 	mkdir -p dist
 	tar czf dist/gomu-${VERSION}-amd64.tar.gz bin/${BIN_NAME}
+	./aur-build.sh

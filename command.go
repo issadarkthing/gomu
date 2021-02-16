@@ -401,7 +401,7 @@ func (c Command) defineCommands() {
 				if err != nil {
 					logError(err)
 				}
-				gomu.playingBar._progress = position - 1
+				gomu.playingBar._progress = position
 			}
 		}
 	})
@@ -414,7 +414,7 @@ func (c Command) defineCommands() {
 				if err != nil {
 					logError(err)
 				}
-				gomu.playingBar._progress = position - 1
+				gomu.playingBar._progress = position
 			} else {
 				err := gomu.player.seek(0)
 				if err != nil {
@@ -433,7 +433,7 @@ func (c Command) defineCommands() {
 				if err != nil {
 					logError(err)
 				}
-				gomu.playingBar._progress = position - 1
+				gomu.playingBar._progress = position
 			}
 		}
 	})
@@ -446,7 +446,7 @@ func (c Command) defineCommands() {
 				if err != nil {
 					logError(err)
 				}
-				gomu.playingBar._progress = position - 1
+				gomu.playingBar._progress = position
 			} else {
 				err := gomu.player.seek(0)
 				if err != nil {
