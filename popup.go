@@ -160,13 +160,9 @@ func timedPopup(
 
 	popupCounter++
 	gomu.pages.AddPage(popupID, topRight(box, width, height), true, true)
-	gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+	// gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 
-	go func() {
-		time.Sleep(timeout)
-		gomu.pages.RemovePage(popupID)
-		gomu.app.Draw()
-
+	resetFocus := func() {
 		// timed popup shouldn't get focused
 		// this here check if another popup exists and focus that instead of panel
 		// if none continue focus panel
@@ -176,6 +172,16 @@ func timedPopup(
 		} else {
 			gomu.app.SetFocus(topPopup)
 		}
+	}
+
+	resetFocus()
+
+	go func() {
+		time.Sleep(timeout)
+		gomu.pages.RemovePage(popupID)
+		gomu.app.Draw()
+
+		resetFocus()
 	}()
 }
 
