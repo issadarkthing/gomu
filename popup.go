@@ -577,11 +577,12 @@ func inputPopup(prompt string, handler func(string)) {
 func replPopup() {
 
 	popupId := "repl-input-popup"
+	prompt := "> "
 
 	textview := tview.NewTextView()
 	input := tview.NewInputField().
 		SetFieldBackgroundColor(gomu.colors.popup).
-		SetLabel("> ")
+		SetLabel(prompt)
 
 	// to store input history
 	history := []string{}
@@ -599,18 +600,24 @@ func replPopup() {
 
 	input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 
+
 		switch event.Key() {
 		case tcell.KeyUp:
-			if upCount > 0 {
-				upCount--
-				input.SetText(history[upCount])
+			input.SetText(history[upCount])
+
+			if upCount < len(history)-1 {
+				upCount++
 			}
 
 		case tcell.KeyDown:
-			if upCount < len(history)-1 {
-				upCount++
+
+			if upCount > 0 {
+				upCount--
 				input.SetText(history[upCount])
+			} else if upCount == 0 {
+				input.SetText("")
 			}
+
 
 		case tcell.KeyCtrlL:
 			textview.SetText("")
@@ -622,18 +629,18 @@ func replPopup() {
 
 		case tcell.KeyEnter:
 			text := input.GetText()
-			history = append(history, text)
-			upCount++
+			// most recent is placed the most front
+			history = append([]string{text}, history...)
 
 			input.SetText("")
 
 			res, err := gomu.anko.Execute(text)
 			if err != nil {
-				errorPopup(err)
+				fmt.Fprintf(textview, "%s%s\n%v\n", prompt, text, err)
 			}
 
 			if res != nil {
-				fmt.Fprintf(textview, "%v\n", res)
+				fmt.Fprintf(textview, "%s%s\n%v\n", prompt, text, res)
 			}
 		}
 
@@ -658,6 +665,6 @@ func replPopup() {
 		SetBorderPadding(1, 1, 2, 2).
 		SetTitle(" REPL ")
 
-	gomu.pages.AddPage(popupId, center(flex, 100, 30), true, true)
+	gomu.pages.AddPage(popupId, center(flex, 90, 30), true, true)
 	gomu.popups.push(flex)
 }
