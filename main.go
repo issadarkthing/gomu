@@ -30,5 +30,5 @@ func setupLog() {
 	}
 
 	log.SetOutput(file)
-	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 }
