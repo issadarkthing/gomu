@@ -42,55 +42,85 @@ func fib(x) {
 	return fib(x - 1) + fib(x - 2)
 }
 
+module List {
+
+	func collect(l, f) {
+		result = []
+		for x in l {
+			result += f(x)
+		}
+		return result
+	}
+
+	func filter(l, f) {
+		result = []
+		for x in l {
+			if f(x) {
+				result += x
+			}
+		}
+		return result
+	}
+
+	func reduce(l, f, acc) {
+		for x in l {
+			acc = f(acc, x)
+		}
+		return acc
+	}
+}
+
 module Keybinds {
 
-	module Global {
+	global = {}
+	playlist = {}
+	queue = {}
 
-		b = func () {
-			# execute shell function and capture stdout and stderr
-			out, err = shell(`echo "bruhh"`)
-			if err != nil {
-				debug_popup("an error occurred")
-				return
-			}
-			debug_popup(out)
+
+	global["b"] = func() {
+		# execute shell function and capture stdout and stderr
+		out, err = shell(`echo "bruhh"`)
+		if err != nil {
+			debug_popup("an error occurred")
+			return
 		}
+		debug_popup(out)
+	}
 
-		c = command_search
+	global["c"] = command_search
 
-		v = func() {
-			input_popup("fib calculator", func(result) {
-				x = int(result)
-				result = fib(x)
-				debug_popup(string(result))
-			})
-		}
+	global["v"] = func() {
+		input_popup("fib calculator", func(result) {
+			x = int(result)
+			result = fib(x)
+			debug_popup(string(result))
+		})
+	}
 
-		x = reload_config
+	global["x"] = reload_config
 
-		m = repl
+	global["m"] = repl
+
+	global["tab"] = func() {
+		info_popup("tab key was pressed")
 	}
 
 
-	module Playlist {
-		e = func() {
-			val = 10 + 10
-			debug_popup(string(val))
-		}
-
-		t = func() {
-			search_popup("test", ["a", "b", "c"], func(x) {
-				debug_popup(x)
-			})
-		}
+	playlist["ctrl_x"] = func() {
+		val = 10 + 10
+		debug_popup(string(val))
 	}
 
-	module Queue {
-		# override default loop keybinding
-		o = toggle_loop
+	playlist["alt_k"] = func() {
+		search_popup("test", ["a", "b", "c"], func(x) {
+			debug_popup(x)
+		})
 	}
+
+	# override default loop keybinding
+	queue["o"] = toggle_loop
 }
 
 # you can get the syntax highlighting for this language here:
 # https://github.com/mattn/anko/tree/master/misc/vim
-# vim: ft=anko cindent
+# vim: ft=anko
