@@ -2,12 +2,16 @@ package anko
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/mattn/anko/core"
 	"github.com/mattn/anko/env"
-	"github.com/mattn/anko/vm"
 	_ "github.com/mattn/anko/packages"
+	"github.com/mattn/anko/vm"
 )
+
 
 type Anko struct {
 	env *env.Env
@@ -45,7 +49,7 @@ func (a *Anko) GetInt(symbol string) int {
 	}
 
 	switch val := v.(type) {
-	case int: 
+	case int:
 		return val
 	case int64:
 		return int(val)
@@ -92,8 +96,27 @@ func (a *Anko) Execute(src string) (interface{}, error) {
 }
 
 // KeybindExists checks if keybinding is defined.
-func (a *Anko) KeybindExists(panel string, keybind string) bool {
-	src := fmt.Sprintf("Keybinds.%s.%s", panel, keybind)
+func (a *Anko) KeybindExists(panel string, eventKey *tcell.EventKey) bool {
+	var src string
+	name := eventKey.Name()
+
+	if strings.Contains(name, "Ctrl") {
+		key := extractCtrlRune(name)
+		src = fmt.Sprintf("Keybinds.%s.ctrl_%s", 
+			panel, strings.ToLower(string(key)))
+
+	} else if strings.Contains(name, "Alt") {
+		key := extractAltRune(name)
+		src = fmt.Sprintf("Keybinds.%s.alt_%c", panel, key)
+
+	} else if strings.Contains(name, "Rune") {
+		src = fmt.Sprintf("Keybinds.%s.%c", panel, eventKey.Rune())
+
+	} else {
+		src = fmt.Sprintf("Keybinds.%s.%s", panel, strings.ToLower(name))
+
+	}
+
 	val, err := a.Execute(src)
 	if err != nil {
 		return false
@@ -103,8 +126,44 @@ func (a *Anko) KeybindExists(panel string, keybind string) bool {
 }
 
 // ExecKeybind executes function bounded by the keybinding.
-func (a *Anko) ExecKeybind(panel string, keybind string) error {
-	src := fmt.Sprintf("Keybinds.%s.%s()", panel, keybind)
+func (a *Anko) ExecKeybind(panel string, eventKey *tcell.EventKey) error {
+
+	var src string
+	name := eventKey.Name()
+
+	if strings.Contains(name, "Ctrl") {
+		key := extractCtrlRune(name)
+		src = fmt.Sprintf("Keybinds.%s.ctrl_%s()", 
+			panel, strings.ToLower(string(key)))
+
+	} else if strings.Contains(name, "Alt") {
+		key := extractAltRune(name)
+		src = fmt.Sprintf("Keybinds.%s.alt_%c()", panel, key)
+
+	} else if strings.Contains(name, "Rune") {
+		src = fmt.Sprintf("Keybinds.%s.%c()", panel, eventKey.Rune())
+
+	} else {
+		src = fmt.Sprintf("Keybinds.%s.%s()", panel, strings.ToLower(name))
+
+	}
+
 	_, err := a.Execute(src)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func extractCtrlRune(str string) rune {
+	re := regexp.MustCompile(`\+(.)$`)
+	x := re.FindStringSubmatch(str)
+	return rune(x[0][1])
+}
+
+func extractAltRune(str string) rune {
+	re := regexp.MustCompile(`\[(.)\]`)
+	x := re.FindStringSubmatch(str)
+	return rune(x[0][1])
 }

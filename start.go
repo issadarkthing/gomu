@@ -55,6 +55,7 @@ func getArgs() Args {
 // built-in functions
 func defineBuiltins() {
 	gomu.anko.Define("debug_popup", debugPopup)
+	gomu.anko.Define("info_popup", infoPopup)
 	gomu.anko.Define("input_popup", inputPopup)
 	gomu.anko.Define("show_popup", defaultTimedPopup)
 	gomu.anko.Define("search_popup", searchPopup)
@@ -238,10 +239,9 @@ func start(application *tview.Application, args Args) {
 			gomu.cyclePanels2()
 		}
 
-		kb := string(e.Rune())
-		if gomu.anko.KeybindExists("Global", kb) {
+		if gomu.anko.KeybindExists("global", e) {
 
-			err := gomu.anko.ExecKeybind("Global", kb)
+			err := gomu.anko.ExecKeybind("global", e)
 			if err != nil {
 				errorPopup(err)
 			}

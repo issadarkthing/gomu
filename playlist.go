@@ -86,7 +86,6 @@ func newPlaylist(args Args) *Playlist {
 		rootDir = expandFilePath(*args.music)
 	}
 
-
 	var rootTextView string
 
 	useEmoji := anko.GetBool("use_emoji")
@@ -147,11 +146,9 @@ func newPlaylist(args Args) *Playlist {
 
 	playlist.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
-		kb := string(e.Rune())
+		if gomu.anko.KeybindExists("playlist", e) {
 
-		if gomu.anko.KeybindExists("Playlist", kb) {
-			
-			err := gomu.anko.ExecKeybind("Playlist", kb)
+			err := gomu.anko.ExecKeybind("playlist", e)
 			if err != nil {
 				errorPopup(err)
 			}

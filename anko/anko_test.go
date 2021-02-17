@@ -1,14 +1,13 @@
-package anko_test
+package anko
 
 import (
 	"testing"
 
-	"github.com/issadarkthing/gomu/anko"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDefine(t *testing.T) {
-	a := anko.NewAnko()
+	a := NewAnko()
 	err := a.Define("x", 12)
 	if err != nil {
 		t.Error(err)
@@ -16,7 +15,7 @@ func TestDefine(t *testing.T) {
 }
 
 func TestSet(t *testing.T) {
-	a := anko.NewAnko()
+	a := NewAnko()
 	err := a.Define("x", 12)
 	if err != nil {
 		t.Error(err)
@@ -29,7 +28,7 @@ func TestSet(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	a := anko.NewAnko()
+	a := NewAnko()
 
 	expect := 12
 	err := a.Define("x", expect)
@@ -51,7 +50,7 @@ func TestGet(t *testing.T) {
 
 func TestGetInt(t *testing.T) {
 	expect := 10
-	a := anko.NewAnko()
+	a := NewAnko()
 
 	_, err := a.Execute(`x = 10`)
 	if err != nil {
@@ -69,7 +68,7 @@ func TestGetInt(t *testing.T) {
 
 func TestGetString(t *testing.T) {
 	expect := "bruhh"
-	a := anko.NewAnko()
+	a := NewAnko()
 
 	_, err := a.Execute(`x = "bruhh"`)
 	if err != nil {
@@ -87,7 +86,7 @@ func TestGetString(t *testing.T) {
 
 func TestGetBool(t *testing.T) {
 	expect := true
-	a := anko.NewAnko()
+	a := NewAnko()
 	a.Define("x", expect)
 
 	result := a.GetBool("x")
@@ -96,7 +95,7 @@ func TestGetBool(t *testing.T) {
 
 func TestExecute(t *testing.T) {
 	expect := 12
-	a := anko.NewAnko()
+	a := NewAnko()
 
 	_, err := a.Execute(`x = 6 + 6`)
 	if err != nil {
@@ -107,60 +106,44 @@ func TestExecute(t *testing.T) {
 	assert.Equal(t, expect, got)
 }
 
+func TestExtractCtrlRune(t *testing.T) {
+	tests := []struct {
+		in  string
+		out rune
+	}{
+		{in: "Ctrl+x", out: 'x'},
+		{in: "Ctrl+]", out: ']'},
+		{in: "Ctrl+%", out: '%'},
+		{in: "Ctrl+^", out: '^'},
+		{in: "Ctrl+7", out: '7'},
+		{in: "Ctrl+B", out: 'B'},
+	}
+
+	for _, test := range tests {
+		got := extractCtrlRune(test.in)
+		assert.Equal(t, test.out, got)
+	}
+}
+
+func TestExtractAltRune(t *testing.T) {
+	tests := []struct {
+		in  string
+		out rune
+	}{
+		{in: "Alt+Rune[x]", out: 'x'},
+		{in: "Alt+Rune[]]", out: ']'},
+		{in: "Alt+Rune[%]", out: '%'},
+		{in: "Alt+Rune[^]", out: '^'},
+		{in: "Alt+Rune[7]", out: '7'},
+		{in: "Alt+Rune[B]", out: 'B'},
+	}
+
+	for _, test := range tests {
+		got := extractAltRune(test.in)
+		assert.Equal(t, test.out, got)
+	}
+}
+
 func TestKeybindExists(t *testing.T) {
-	
-	src := `
-module Keybinds {
-	module Global {
-		a = func() {}
-		C = func() {}
-	}
-}
-`
 
-	a := anko.NewAnko()
-	_, err := a.Execute(src)
-	if err != nil {
-		t.Error(err)
-	}
-
-	assert.Equal(t, true, a.KeybindExists("Global", "a"))
-	assert.Equal(t, true, a.KeybindExists("Global", "C"))
-
-	assert.Equal(t, false, a.KeybindExists("Global", "z"))
-	assert.Equal(t, false, a.KeybindExists("Playlist", "a"))
-}
-
-func TestExecKeybind(t *testing.T) {
-
-	src := `
-module Keybinds {
-	module Global {
-		a = func() { return 1 }
-		C = func() { 
-			x = 10 + 10
-			return x
-		}
-	}
-}
-`
-
-	a := anko.NewAnko()
-	_, err := a.Execute(src)
-	if err != nil {
-		t.Error(err)
-	}
-
-	assert.Equal(t, true, a.KeybindExists("Global", "a"))
-	assert.Equal(t, true, a.KeybindExists("Global", "C"))
-
-	err = a.ExecKeybind("Global", "a")
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = a.ExecKeybind("Global", "C")
-	if err != nil {
-		t.Error(err)
-	}
 }
