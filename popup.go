@@ -600,7 +600,6 @@ func replPopup() {
 
 	input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 
-
 		switch event.Key() {
 		case tcell.KeyUp:
 			input.SetText(history[upCount])
@@ -617,7 +616,6 @@ func replPopup() {
 			} else if upCount == 0 {
 				input.SetText("")
 			}
-
 
 		case tcell.KeyCtrlL:
 			textview.SetText("")
