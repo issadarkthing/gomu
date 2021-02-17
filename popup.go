@@ -642,13 +642,6 @@ func replPopup() {
 			}
 		}
 
-		switch event.Rune() {
-		case 'q':
-			gomu.pages.RemovePage(popupId)
-			gomu.popups.pop()
-			return nil
-		}
-
 		return event
 	})
 
