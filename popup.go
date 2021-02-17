@@ -635,6 +635,7 @@ func replPopup() {
 			res, err := gomu.anko.Execute(text)
 			if err != nil {
 				fmt.Fprintf(textview, "%s%s\n%v\n", prompt, text, err)
+				return nil
 			}
 
 			if res != nil {
