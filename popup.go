@@ -629,6 +629,7 @@ func replPopup() {
 			text := input.GetText()
 			// most recent is placed the most front
 			history = append([]string{text}, history...)
+			upCount = 0
 
 			input.SetText("")
 
