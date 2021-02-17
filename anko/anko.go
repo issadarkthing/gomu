@@ -12,7 +12,6 @@ import (
 	"github.com/mattn/anko/vm"
 )
 
-
 type Anko struct {
 	env *env.Env
 }
@@ -102,18 +101,18 @@ func (a *Anko) KeybindExists(panel string, eventKey *tcell.EventKey) bool {
 
 	if strings.Contains(name, "Ctrl") {
 		key := extractCtrlRune(name)
-		src = fmt.Sprintf("Keybinds.%s.ctrl_%s", 
+		src = fmt.Sprintf("Keybinds.%s[\"ctrl_%s\"]",
 			panel, strings.ToLower(string(key)))
 
 	} else if strings.Contains(name, "Alt") {
 		key := extractAltRune(name)
-		src = fmt.Sprintf("Keybinds.%s.alt_%c", panel, key)
+		src = fmt.Sprintf("Keybinds.%s[\"alt_%c\"]", panel, key)
 
 	} else if strings.Contains(name, "Rune") {
-		src = fmt.Sprintf("Keybinds.%s.%c", panel, eventKey.Rune())
+		src = fmt.Sprintf("Keybinds.%s[\"%c\"]", panel, eventKey.Rune())
 
 	} else {
-		src = fmt.Sprintf("Keybinds.%s.%s", panel, strings.ToLower(name))
+		src = fmt.Sprintf("Keybinds.%s[\"%s\"]", panel, strings.ToLower(name))
 
 	}
 
@@ -133,18 +132,18 @@ func (a *Anko) ExecKeybind(panel string, eventKey *tcell.EventKey) error {
 
 	if strings.Contains(name, "Ctrl") {
 		key := extractCtrlRune(name)
-		src = fmt.Sprintf("Keybinds.%s.ctrl_%s()", 
+		src = fmt.Sprintf("Keybinds.%s[\"ctrl_%s\"]()",
 			panel, strings.ToLower(string(key)))
 
 	} else if strings.Contains(name, "Alt") {
 		key := extractAltRune(name)
-		src = fmt.Sprintf("Keybinds.%s.alt_%c()", panel, key)
+		src = fmt.Sprintf("Keybinds.%s[\"alt_%c\"]()", panel, key)
 
 	} else if strings.Contains(name, "Rune") {
-		src = fmt.Sprintf("Keybinds.%s.%c()", panel, eventKey.Rune())
+		src = fmt.Sprintf("Keybinds.%s[\"%c\"]()", panel, eventKey.Rune())
 
 	} else {
-		src = fmt.Sprintf("Keybinds.%s.%s()", panel, strings.ToLower(name))
+		src = fmt.Sprintf("Keybinds.%s[\"%s\"]()", panel, strings.ToLower(name))
 
 	}
 

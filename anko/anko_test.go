@@ -1,8 +1,10 @@
 package anko
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -146,4 +148,96 @@ func TestExtractAltRune(t *testing.T) {
 
 func TestKeybindExists(t *testing.T) {
 
+	tests := []struct {
+		panel  string
+		key    *tcell.EventKey
+		exists bool
+	}{
+		{
+			panel:  "global",
+			key:    tcell.NewEventKey(tcell.KeyRune, 'b', tcell.ModNone),
+			exists: true,
+		},
+		{
+			panel:  "global",
+			key:    tcell.NewEventKey(tcell.KeyRune, 'x', tcell.ModNone),
+			exists: false,
+		},
+		{
+			panel:  "global",
+			key:    tcell.NewEventKey(tcell.KeyRune, ']', tcell.ModNone),
+			exists: true,
+		},
+		{
+			panel:  "global",
+			key:    tcell.NewEventKey(tcell.KeyRune, '[', tcell.ModNone),
+			exists: false,
+		},
+		{
+			panel:  "global",
+			key:    tcell.NewEventKey(tcell.KeyCtrlB, 'b', tcell.ModCtrl),
+			exists: true,
+		},
+		{
+			panel:  "global",
+			key:    tcell.NewEventKey(tcell.KeyCtrlC, 'c', tcell.ModCtrl),
+			exists: false,
+		},
+		{
+			panel:  "playlist",
+			key:    tcell.NewEventKey(tcell.KeyRune, '!', tcell.ModAlt),
+			exists: true,
+		},
+		{
+			panel:  "playlist",
+			key:    tcell.NewEventKey(tcell.KeyRune, '>', tcell.ModAlt),
+			exists: false,
+		},
+		{
+			panel:  "playlist",
+			key:    tcell.NewEventKey(tcell.KeyCtrlCarat, '^', tcell.ModCtrl),
+			exists: true,
+		},
+		{
+			panel:  "queue",
+			key:    tcell.NewEventKey(tcell.KeyRune, '>', tcell.ModAlt),
+			exists: true,
+		},
+		{
+			panel:  "queue",
+			key:    tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
+			exists: true,
+		},
+	}
+
+	src := `
+module Keybinds {
+	global = {}
+	playlist = {}
+	queue = {}
+
+	global["b"] = func() { return 0 }
+	global["]"] = func() { return 0 }
+	global["ctrl_b"] = func() { return 0 }
+	global["alt_b"] = func() { return 0 }
+
+	playlist["alt_!"] = func() { return 0 }
+	playlist["ctrl_^"] = func() { return 0 }
+
+	queue["alt_>"] = func() { return 0 }
+	queue["enter"] = func() { return 0 }
+}
+`
+	a := NewAnko()
+
+	_, err := a.Execute(src)
+	if err != nil {
+		t.Error(err)
+	}
+
+	for i, test := range tests {
+		got := a.KeybindExists(test.panel, test.key)
+		msg := fmt.Sprintf("error on test %d", i+1)
+		assert.Equal(t, test.exists, got, msg)
+	}
 }
