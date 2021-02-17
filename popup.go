@@ -538,9 +538,10 @@ func errorPopup(message error) {
 }
 
 // Show debug popup and log debug info. Mainly used when scripting.
-func debugPopup(message string) {
-	defaultTimedPopup(" Debug ", message)
-	logDebug(message)
+func debugPopup(message interface{}) {
+	m := fmt.Sprintf("%v", message)
+	defaultTimedPopup(" Debug ", m)
+	logDebug(m)
 }
 
 // Show info popup and does not log anything. Prefer this when making simple
