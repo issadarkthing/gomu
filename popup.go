@@ -393,7 +393,8 @@ func searchPopup(title string, stringsToMatch []string, handler func(selected st
 			matchrune := []rune(match.Str)
 			matchruneIndexes := match.MatchedIndexes
 			for i := 0; i < len(match.MatchedIndexes); i++ {
-				matchruneIndexes[i] = utf8.RuneCountInString(match.Str[0:match.MatchedIndexes[i]])
+				matchruneIndexes[i] = 
+					utf8.RuneCountInString(match.Str[0:match.MatchedIndexes[i]])
 			}
 			for i := 0; i < len(matchrune); i++ {
 				if contains(i, matchruneIndexes) {
@@ -506,13 +507,11 @@ func renamePopup(node *AudioFile) {
 			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 			gomu.playlist.refresh()
-			// gomu.queue.saveQueue()
-			// gomu.queue.clearQueue()
-			// gomu.queue.loadQueue()
+
 			gomu.queue.updateQueueNames()
 			gomu.setFocusPanel(gomu.playlist)
 			gomu.prevPanel = gomu.playlist
-			// gomu.playlist.setHighlight(node.node)
+
 			root := gomu.playlist.GetRoot()
 			root.Walk(func(node, _ *tview.TreeNode) bool {
 				if strings.Contains(node.GetText(), newName) {
