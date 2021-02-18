@@ -205,7 +205,7 @@ func (c Command) defineCommands() {
 
 	c.define("bulk_add", func() {
 		currNode := gomu.playlist.GetCurrentNode()
-		bulkAdd := anko.GetBool("confirm_bulk_add")
+		bulkAdd := anko.GetBool("General.confirm_bulk_add")
 
 		if !bulkAdd {
 			gomu.playlist.addAllToQueue(currNode)
@@ -331,7 +331,7 @@ func (c Command) defineCommands() {
 	/* Global */
 	c.define("quit", func() {
 
-		confirmOnExit := anko.GetBool("confirm_on_exit")
+		confirmOnExit := anko.GetBool("General.confirm_on_exit")
 
 		if !confirmOnExit {
 			err := gomu.quit(gomu.args)

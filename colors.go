@@ -17,12 +17,12 @@ type Colors struct {
 func newColor() *Colors {
 
 	defaultColors := map[string]string{
-		"color_accent":            "#008B8B",
-		"color_foreground":        "#FFFFFF",
-		"color_background":        "none",
-		"color_popup":             "#0A0F14",
-		"color_now_playing_title": "#017702",
-		"color_playlist":          "#008B8B",
+		"Color.accent":            "#008B8B",
+		"Color.foreground":        "#FFFFFF",
+		"Color.background":        "none",
+		"Color.popup":             "#0A0F14",
+		"Color.now_playing_title": "#017702",
+		"Color.playlist":          "#008B8B",
 	}
 
 	anko := gomu.anko
@@ -42,7 +42,7 @@ func newColor() *Colors {
 
 	// handle none background color
 	var bgColor tcell.Color
-	bg := anko.GetString("color_background")
+	bg := anko.GetString("Color.background")
 
 	if bg == "none" {
 		bgColor = tcell.ColorDefault
@@ -50,11 +50,11 @@ func newColor() *Colors {
 		bgColor = tcell.GetColor(bg)
 	}
 
-	accent := anko.GetString("color_accent")
-	foreground := anko.GetString("color_foreground")
-	popup := anko.GetString("color_popup")
-	title := anko.GetString("color_now_playing_title")
-	playlist := anko.GetString("color_playlist")
+	accent := anko.GetString("Color.accent")
+	foreground := anko.GetString("Color.foreground")
+	popup := anko.GetString("Color.popup")
+	title := anko.GetString("Color.now_playing_title")
+	playlist := anko.GetString("Color.playlist")
 
 	color := &Colors{
 		accent:     tcell.GetColor(accent),

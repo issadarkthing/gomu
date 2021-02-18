@@ -68,43 +68,51 @@ func execConfig(config string) error {
 
 	const defaultConfig = `
 
-// confirmation popup to add the whole playlist to the queue
-confirm_bulk_add    = true
-confirm_on_exit     = true
-queue_loop          = false
-load_prev_queue     = true
-popup_timeout       = "5s"
-// change this to directory that contains mp3 files
-music_dir           = "~/music"
-// url history of downloaded audio will be saved here
-history_path        = "~/.local/share/gomu/urls"
-// some of the terminal supports unicode character
-// you can set this to true to enable emojis
-use_emoji           = true
-// initial volume when gomu starts up
-volume              = 80
-// if you experiencing error using this invidious instance, you can change it
-// to another instance from this list:
-// https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
-invidious_instance  = "https://vid.puffyan.us"
+module General {
+	# confirmation popup to add the whole playlist to the queue
+	confirm_bulk_add    = true
+	confirm_on_exit     = true
+	queue_loop          = false
+	load_prev_queue     = true
+	popup_timeout       = "5s"
+	# change this to directory that contains mp3 files
+	music_dir           = "~/Music"
+	# url history of downloaded audio will be saved here
+	history_path        = "~/.local/share/gomu/urls"
+	# some of the terminal supports unicode character
+	# you can set this to true to enable emojis
+	use_emoji           = true
+	# initial volume when gomu starts up
+	volume              = 80
+	# if you experiencing error using this invidious instance, you can change it
+	# to another instance from this list:
+	# https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
+	invidious_instance  = "https://vid.puffyan.us"
+}
 
-// default emoji here is using awesome-terminal-fonts
-// you can change these to your liking
-emoji_playlist     = ""
-emoji_file         = ""
-emoji_loop         = "ﯩ"
-emoji_noloop       = ""
+module Emoji {
+	# default emoji here is using awesome-terminal-fonts
+	# you can change these to your liking
+	playlist     = ""
+	file         = ""
+	loop         = "ﯩ"
+	noloop       = ""
+}
 
-// not all colors can be reproducible in terminal
-// changing hex colors may or may not produce expected result
-color_accent            = "#008B8B"
-color_background        = "none"
-color_foreground        = "#FFFFFF"
-color_now_playing_title = "#017702"
-color_playlist          = "#008B8B"
-color_popup             = "#0A0F14"
+module Color {
+	# not all colors can be reproducible in terminal
+	# changing hex colors may or may not produce expected result
+	accent            = "#008B8B"
+	background        = "none"
+	foreground        = "#FFFFFF"
+	now_playing_title = "#017702"
+	playlist          = "#008B8B"
+	popup             = "#0A0F14"
+}
 
-// vim: syntax=go
+# you can get the syntax highlighting for this language here:
+# https://github.com/mattn/anko/tree/master/misc/vim
+# vim: ft=anko
 `
 
 	cfg := expandTilde(config)
@@ -190,12 +198,12 @@ func start(application *tview.Application, args Args) {
 
 	gomu.playingBar.setDefault()
 
-	isQueueLoop := gomu.anko.GetBool("queue_loop")
+	isQueueLoop := gomu.anko.GetBool("General.queue_loop")
 
 	gomu.player.isLoop = isQueueLoop
 	gomu.queue.isLoop = gomu.player.isLoop
 
-	loadQueue := gomu.anko.GetBool("load_prev_queue")
+	loadQueue := gomu.anko.GetBool("General.load_prev_queue")
 
 	if !*args.empty && loadQueue {
 		// load saved queue from previous session

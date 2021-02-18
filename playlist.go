@@ -74,7 +74,7 @@ func newPlaylist(args Args) *Playlist {
 
 	anko := gomu.anko
 
-	m := anko.GetString("music_dir")
+	m := anko.GetString("General.music_dir")
 	rootDir, err := filepath.Abs(expandTilde(m))
 	if err != nil {
 		err = tracerr.Errorf("unable to find music directory: %e", err)
@@ -88,11 +88,11 @@ func newPlaylist(args Args) *Playlist {
 
 	var rootTextView string
 
-	useEmoji := anko.GetBool("use_emoji")
+	useEmoji := anko.GetBool("General.use_emoji")
 
 	if useEmoji {
 
-		emojiPlaylist := anko.GetString("emoji_playlist")
+		emojiPlaylist := anko.GetString("Emoji.playlist")
 		rootTextView = fmt.Sprintf("%s %s", emojiPlaylist, path.Base(rootDir))
 
 	} else {
@@ -581,7 +581,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	playlistPath := dir
 	audioPath := extractFilePath(stdout.Bytes(), playlistPath)
 
-	historyPath := gomu.anko.GetString("history_path")
+	historyPath := gomu.anko.GetString("General.history_path")
 
 	err = appendFile(expandTilde(historyPath), url+"\n")
 	if err != nil {
@@ -738,12 +738,12 @@ func (p *Playlist) paste() error {
 }
 
 func setDisplayText(songName string) string {
-	useEmoji := gomu.anko.GetBool("use_emoji")
+	useEmoji := gomu.anko.GetBool("General.use_emoji")
 	if !useEmoji {
 		return songName
 	}
 
-	emojiFile := gomu.anko.GetString("emoji_file")
+	emojiFile := gomu.anko.GetString("Emoji.file")
 	return fmt.Sprintf(" %s %s", emojiFile, songName)
 }
 

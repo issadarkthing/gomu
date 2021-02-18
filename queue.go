@@ -97,17 +97,17 @@ func (q *Queue) updateTitle() string {
 
 	var loop string
 
-	isEmoji := gomu.anko.GetBool("use_emoji")
+	isEmoji := gomu.anko.GetBool("General.use_emoji")
 
 	if q.isLoop {
 		if isEmoji {
-			loop = gomu.anko.GetString("emoji_loop")
+			loop = gomu.anko.GetString("Emoji.loop")
 		} else {
 			loop = "Loop"
 		}
 	} else {
 		if isEmoji {
-			loop = gomu.anko.GetString("emoji_noloop")
+			loop = gomu.anko.GetString("Emoji.noloop")
 		} else {
 			loop = "No loop"
 		}
