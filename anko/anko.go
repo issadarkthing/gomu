@@ -21,6 +21,29 @@ func NewAnko() Anko {
 	env := core.Import(env.NewEnv())
 	importToX(env)
 
+	t, err := env.Get("typeOf")
+	if err != nil {
+		panic(err)
+	}
+
+	k, err := env.Get("kindOf")
+	if err != nil {
+		panic(err)
+	}
+
+	env.DeleteGlobal("typeOf")
+	env.DeleteGlobal("kindOf")
+
+	err = env.Define("type_of", t)
+	if err != nil {
+		panic(err)
+	}
+
+	err = env.Define("kind_of", k)
+	if err != nil {
+		panic(err)
+	}
+
 	return Anko{env}
 }
 
