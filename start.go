@@ -62,6 +62,68 @@ func defineBuiltins() {
 	gomu.anko.Define("shell", shell)
 }
 
+// execInit executes helper modules and default config that should only be
+// executed once
+func execInit() error {
+
+	const listModule = `
+module List {
+
+	func collect(l, f) {
+		result = []
+		for x in l {
+			result += f(x)
+		}
+		return result
+	}
+
+	func filter(l, f) {
+		result = []
+		for x in l {
+			if f(x) {
+				result += x
+			}
+		}
+		return result
+	}
+
+	func reduce(l, f, acc) {
+		for x in l {
+			acc = f(acc, x)
+		}
+		return acc
+	}
+}
+`
+
+	const keybindModule = `
+module Keybinds {
+	global = {}
+	playlist = {}
+	queue = {}
+
+	func def_g(kb, f) {
+		global[kb] = f
+	}
+
+	func def_p(kb, f) {
+		playlist[kb] = f
+	}
+
+	func def_q(kb, f) {
+		queue[kb] = f
+	}
+}
+`
+
+	_, err := gomu.anko.Execute(listModule + keybindModule)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	return nil
+}
+
 // executes user config with default config is executed first in order to apply
 // default values
 func execConfig(config string) error {
@@ -169,7 +231,12 @@ func start(application *tview.Application, args Args) {
 	gomu = newGomu()
 	gomu.command.defineCommands()
 	defineBuiltins()
-	err := execConfig(expandFilePath(*args.config))
+	err := execInit()
+	if err != nil {
+		die(err)
+	}
+
+	err = execConfig(expandFilePath(*args.config))
 	if err != nil {
 		die(err)
 	}
