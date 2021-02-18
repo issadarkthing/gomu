@@ -32,6 +32,7 @@ func logDebug(msg string) {
 // prefer this instead of panic
 func die(err error) {
 	logError(err)
+	fmt.Fprintln(os.Stderr, err)
 	os.Exit(1)
 }
 
