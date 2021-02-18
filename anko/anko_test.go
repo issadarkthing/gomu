@@ -62,6 +62,17 @@ func TestGetInt(t *testing.T) {
 	got := a.GetInt("x")
 	assert.Equal(t, expect, got)
 
+	_, err = a.Execute(`module S { x = 10 }`)
+	if err != nil {
+		t.Error(err)
+	}
+
+	got = a.GetInt("S.x")
+	assert.Equal(t, expect, got)
+
+	got = a.GetInt("S.y")
+	assert.Equal(t, 0, got)
+
 	a.Define("z", expect)
 	val := a.GetInt("z")
 
@@ -80,6 +91,17 @@ func TestGetString(t *testing.T) {
 	got := a.GetString("x")
 	assert.Equal(t, expect, got)
 
+	_, err = a.Execute(`module S { x = "bruhh" }`)
+	if err != nil {
+		t.Error(err)
+	}
+
+	got = a.GetString("S.x")
+	assert.Equal(t, expect, got)
+
+	got = a.GetString("S.y")
+	assert.Equal(t, "", got)
+
 	a.Define("z", expect)
 	val := a.GetString("z")
 
@@ -90,6 +112,17 @@ func TestGetBool(t *testing.T) {
 	expect := true
 	a := NewAnko()
 	a.Define("x", expect)
+
+	_, err := a.Execute(`module S { x = true }`)
+	if err != nil {
+		t.Error(err)
+	}
+
+	got := a.GetBool("S.x")
+	assert.Equal(t, expect, got)
+
+	got = a.GetBool("S.y")
+	assert.Equal(t, false, got)
 
 	result := a.GetBool("x")
 	assert.Equal(t, expect, result)

@@ -42,7 +42,7 @@ func (a *Anko) Get(symbol string) (interface{}, error) {
 
 // GetInt gets int value from symbol, returns golang default value if not found.
 func (a *Anko) GetInt(symbol string) int {
-	v, err := a.env.Get(symbol)
+	v, err := a.Execute(symbol)
 	if err != nil {
 		return 0
 	}
@@ -60,7 +60,7 @@ func (a *Anko) GetInt(symbol string) int {
 // GetString gets string value from symbol, returns golang default value if not
 // found.
 func (a *Anko) GetString(symbol string) string {
-	v, err := a.env.Get(symbol)
+	v, err := a.Execute(symbol)
 	if err != nil {
 		return ""
 	}
@@ -76,7 +76,7 @@ func (a *Anko) GetString(symbol string) string {
 // GetBool gets bool value from symbol, returns golang default value if not
 // found.
 func (a *Anko) GetBool(symbol string) bool {
-	v, err := a.env.Get(symbol)
+	v, err := a.Execute(symbol)
 	if err != nil {
 		return false
 	}
