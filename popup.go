@@ -12,7 +12,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/sahilm/fuzzy"
-	"github.com/spf13/viper"
+	"github.com/ztrue/tracerr"
 )
 
 // this is used to make the popup unique
@@ -67,7 +67,7 @@ func (s *Stack) pop() tview.Primitive {
 // Gets popup timeout from config file
 func getPopupTimeout() time.Duration {
 
-	dur := viper.GetString("general.popup_timeout")
+	dur := gomu.anko.GetString("General.popup_timeout")
 	m, err := time.ParseDuration(dur)
 
 	if err != nil {
@@ -160,13 +160,9 @@ func timedPopup(
 
 	popupCounter++
 	gomu.pages.AddPage(popupID, topRight(box, width, height), true, true)
-	gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+	// gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 
-	go func() {
-		time.Sleep(timeout)
-		gomu.pages.RemovePage(popupID)
-		gomu.app.Draw()
-
+	resetFocus := func() {
 		// timed popup shouldn't get focused
 		// this here check if another popup exists and focus that instead of panel
 		// if none continue focus panel
@@ -176,6 +172,16 @@ func timedPopup(
 		} else {
 			gomu.app.SetFocus(topPopup)
 		}
+	}
+
+	resetFocus()
+
+	go func() {
+		time.Sleep(timeout)
+		gomu.pages.RemovePage(popupID)
+		gomu.app.Draw()
+
+		resetFocus()
 	}()
 }
 
@@ -352,7 +358,7 @@ func exitConfirmation(args Args) {
 	})
 }
 
-func searchPopup(stringsToMatch []string, handler func(selected string)) {
+func searchPopup(title string, stringsToMatch []string, handler func(selected string)) {
 
 	list := tview.NewList().ShowSecondaryText(false)
 	list.SetSelectedBackgroundColor(gomu.colors.accent)
@@ -387,7 +393,8 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 			matchrune := []rune(match.Str)
 			matchruneIndexes := match.MatchedIndexes
 			for i := 0; i < len(match.MatchedIndexes); i++ {
-				matchruneIndexes[i] = utf8.RuneCountInString(match.Str[0:match.MatchedIndexes[i]])
+				matchruneIndexes[i] = 
+					utf8.RuneCountInString(match.Str[0:match.MatchedIndexes[i]])
 			}
 			for i := 0; i < len(matchrune); i++ {
 				if contains(i, matchruneIndexes) {
@@ -449,7 +456,7 @@ func searchPopup(stringsToMatch []string, handler func(selected string)) {
 	popup.SetBorder(true).
 		SetBackgroundColor(gomu.colors.popup).
 		SetBorderPadding(1, 1, 2, 2).
-		SetTitle(" Finder ")
+		SetTitle(" " + title + " ")
 
 	gomu.pages.AddPage("search-input-popup", center(popup, 70, 40), true, true)
 	gomu.popups.push(popup)
@@ -500,13 +507,11 @@ func renamePopup(node *AudioFile) {
 			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 			gomu.playlist.refresh()
-			// gomu.queue.saveQueue()
-			// gomu.queue.clearQueue()
-			// gomu.queue.loadQueue()
+
 			gomu.queue.updateQueueNames()
 			gomu.setFocusPanel(gomu.playlist)
 			gomu.prevPanel = gomu.playlist
-			// gomu.playlist.setHighlight(node.node)
+
 			root := gomu.playlist.GetRoot()
 			root.Walk(func(node, _ *tview.TreeNode) bool {
 				if strings.Contains(node.GetText(), newName) {
@@ -522,4 +527,137 @@ func renamePopup(node *AudioFile) {
 
 		return e
 	})
+}
+
+// Show error popup with error is logged. Prefer this when its related with user
+// interaction. Otherwise, use logError.
+func errorPopup(message error) {
+	defaultTimedPopup(" Error ", tracerr.Unwrap(message).Error())
+	logError(message)
+}
+
+// Show debug popup and log debug info. Mainly used when scripting.
+func debugPopup(message interface{}) {
+	m := fmt.Sprintf("%v", message)
+	defaultTimedPopup(" Debug ", m)
+	logDebug(m)
+}
+
+// Show info popup and does not log anything. Prefer this when making simple
+// popup.
+func infoPopup(message string) {
+	defaultTimedPopup(" Info ", message)
+}
+
+func inputPopup(prompt string, handler func(string)) {
+
+	popupID := "general-input-popup"
+	input := newInputPopup(popupID, "", prompt+": ", "")
+	input.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+
+		switch e.Key() {
+		case tcell.KeyEnter:
+			output := input.GetText()
+			if output == "" {
+				return e
+			}
+			handler(output)
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
+
+		case tcell.KeyEsc:
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
+		}
+
+		return e
+	})
+}
+
+func replPopup() {
+
+	popupId := "repl-input-popup"
+	prompt := "> "
+
+	textview := tview.NewTextView()
+	input := tview.NewInputField().
+		SetFieldBackgroundColor(gomu.colors.popup).
+		SetLabel(prompt)
+
+	// to store input history
+	history := []string{}
+	upCount := 0
+
+	gomu.anko.Define("println", func(x ...interface{}) {
+		fmt.Fprintln(textview, x...)
+	})
+	gomu.anko.Define("print", func(x ...interface{}) {
+		fmt.Fprint(textview, x...)
+	})
+	gomu.anko.Define("printf", func(format string, x ...interface{}) {
+		fmt.Fprintf(textview, format, x...)
+	})
+
+	input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+
+		switch event.Key() {
+		case tcell.KeyUp:
+			input.SetText(history[upCount])
+
+			if upCount < len(history)-1 {
+				upCount++
+			}
+
+		case tcell.KeyDown:
+
+			if upCount > 0 {
+				upCount--
+				input.SetText(history[upCount])
+			} else if upCount == 0 {
+				input.SetText("")
+			}
+
+		case tcell.KeyCtrlL:
+			textview.SetText("")
+
+		case tcell.KeyEsc:
+			gomu.pages.RemovePage(popupId)
+			gomu.popups.pop()
+			return nil
+
+		case tcell.KeyEnter:
+			text := input.GetText()
+			// most recent is placed the most front
+			history = append([]string{text}, history...)
+			upCount = 0
+
+			input.SetText("")
+
+			res, err := gomu.anko.Execute(text)
+			if err != nil {
+				fmt.Fprintf(textview, "%s%s\n%v\n\n", prompt, text, err)
+				return nil
+			}
+
+			if res != nil {
+				fmt.Fprintf(textview, "%s%s\n%v\n\n", prompt, text, res)
+			}
+		}
+
+		return event
+	})
+
+	flex := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(input, 3, 1, true).
+		AddItem(textview, 0, 1, false)
+
+	flex.
+		SetBackgroundColor(gomu.colors.popup).
+		SetBorder(true).
+		SetBorderPadding(1, 1, 2, 2).
+		SetTitle(" REPL ")
+
+	gomu.pages.AddPage(popupId, center(flex, 90, 30), true, true)
+	gomu.popups.push(flex)
 }

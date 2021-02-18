@@ -1,0 +1,119 @@
+
+module General {
+	# confirmation popup to add the whole playlist to the queue
+	confirm_bulk_add    = true
+	confirm_on_exit     = true
+	queue_loop          = false
+	load_prev_queue     = true
+	popup_timeout       = "5s"
+	# change this to directory that contains mp3 files
+	music_dir           = "~/Music"
+	# url history of downloaded audio will be saved here
+	history_path        = "~/.local/share/gomu/urls"
+	# some of the terminal supports unicode character
+	# you can set this to true to enable emojis
+	use_emoji           = true
+	# initial volume when gomu starts up
+	volume              = 80
+	# if you experiencing error using this invidious instance, you can change it
+	# to another instance from this list:
+	# https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
+	invidious_instance  = "https://vid.puffyan.us"
+}
+
+module Emoji {
+	# default emoji here is using awesome-terminal-fonts
+	# you can change these to your liking
+	playlist     = ""
+	file         = ""
+	loop         = "ﯩ"
+	noloop       = ""
+}
+
+module Color {
+	# not all colors can be reproducible in terminal
+	# changing hex colors may or may not produce expected result
+	accent            = "#008B8B"
+	background        = "none"
+	foreground        = "#FFFFFF"
+	now_playing_title = "#017702"
+	playlist          = "#008B8B"
+	popup             = "#0A0F14"
+}
+
+func fib(x) {
+	if x <= 1 {
+		return 1
+	}
+
+	return fib(x - 1) + fib(x - 2)
+}
+
+module List {
+
+	func collect(l, f) {
+		result = []
+		for x in l {
+			result += f(x)
+		}
+		return result
+	}
+
+	func filter(l, f) {
+		result = []
+		for x in l {
+			if f(x) {
+				result += x
+			}
+		}
+		return result
+	}
+
+	func reduce(l, f, acc) {
+		for x in l {
+			acc = f(acc, x)
+		}
+		return acc
+	}
+}
+
+Keybinds.def_g("b", func() {
+	# execute shell function and capture stdout and stderr
+	out, err = shell(`echo "bruhh"`)
+	if err != nil {
+		debug_popup("an error occurred")
+		return
+	}
+	debug_popup(out)
+})
+
+Keybinds.def_g("c", command_search)
+
+Keybinds.def_g("v", func() {
+	input_popup("fib calculator", func(result) {
+		x = int(result)
+		result = fib(x)
+		debug_popup(string(result))
+	})
+})
+
+Keybinds.def_g("m", repl)
+Keybinds.def_g("alt_r", reload_config)
+
+Keybinds.def_p("ctrl_x", func() {
+	val = 10 + 10
+	debug_popup(string(val))
+})
+
+# override default loop keybinding
+Keybinds.def_q("o", toggle_loop)
+
+Keybinds.def_q("i", func() {
+	search_popup("test", ["a", "b", "c"], func(x) {
+		debug_popup(x)
+	})
+})
+
+# you can get the syntax highlighting for this language here:
+# https://github.com/mattn/anko/tree/master/misc/vim
+# vim: ft=anko

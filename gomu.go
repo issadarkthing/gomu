@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
+	"github.com/issadarkthing/gomu/anko"
 )
 
 var VERSION = "N/A"
@@ -23,14 +24,15 @@ type Gomu struct {
 	prevPanel Panel
 	panels    []Panel
 	args      Args
+	anko      anko.Anko
 }
 
 // Creates new instance of gomu with default values
 func newGomu() *Gomu {
 
 	gomu := &Gomu{
-		colors:  newColor(),
 		command: newCommand(),
+		anko:    anko.NewAnko(),
 	}
 
 	return gomu

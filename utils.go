@@ -3,10 +3,13 @@
 package main
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -16,9 +19,21 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-// Logs erros to /tmp/gomu.log
+// logError logs the error message.
 func logError(err error) {
-	log.Println(tracerr.Sprint(err))
+	log.Println("[ERROR]", tracerr.Sprint(err))
+}
+
+func logDebug(msg string) {
+	log.Println("[DEBUG]", msg)
+}
+
+// die logs the error message and call os.Exit(1)
+// prefer this instead of panic
+func die(err error) {
+	logError(err)
+	fmt.Fprintln(os.Stderr, err)
+	os.Exit(1)
 }
 
 // Formats duration to my desired output mm:ss
@@ -75,7 +90,7 @@ func expandFilePath(path string) string {
 
 	p, err := filepath.Abs(p)
 	if err != nil {
-		panic(err)
+		die(err)
 	}
 
 	return p
@@ -90,7 +105,7 @@ func expandTilde(_path string) string {
 	home, err := os.UserHomeDir()
 
 	if err != nil {
-		log.Panicln(tracerr.SprintSource(err))
+		die(err)
 	}
 
 	return path.Join(home, strings.TrimPrefix(_path, "~"))
@@ -191,7 +206,7 @@ func appendFile(path string, content string) error {
 		// create the neccessary parent directory
 		err = os.MkdirAll(filepath.Dir(expandFilePath(path)), os.ModePerm)
 		if err != nil {
-			return err
+			return tracerr.Wrap(err)
 		}
 	}
 	defer f.Close()
@@ -199,4 +214,29 @@ func appendFile(path string, content string) error {
 		return tracerr.Wrap(err)
 	}
 	return nil
+}
+
+func shell(input string) (string, error) {
+
+	args := strings.Split(input, " ")
+	for i, arg := range args {
+		args[i] = strings.Trim(arg, " ")
+	}
+
+	cmd := exec.Command(args[0], args[1:]...)
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+
+	if stderr.Len() != 0 {
+		return "", errors.New(stderr.String())
+	}
+
+	return stdout.String(), nil
 }

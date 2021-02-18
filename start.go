@@ -9,13 +9,12 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
-	"path"
 	"strings"
 	"syscall"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/spf13/viper"
+	"github.com/ztrue/tracerr"
 )
 
 // Panel is used to keep track of childrens in slices
@@ -28,112 +27,12 @@ type Panel interface {
 	help() []string
 }
 
+// Default values for command line arguments.
 const (
-	configPath  = ".config/gomu/config"
-	historyPath = "~/.local/share/gomu/urls"
-	musicPath   = "~/music"
+	configPath     = "~/.config/gomu/config"
+	cacheQueuePath = "~/.local/share/gomu/queue.cache"
+	musicPath      = "~/music"
 )
-
-// Reads config file and sets the options
-func readConfig(args Args) {
-
-	const config = `
-general:
-  # confirmation popup to add the whole playlist to the queue
-  confirm_bulk_add:   true
-  confirm_on_exit:    true
-  load_prev_queue:    true
-  queue_loop:         true
-  # change this to directory that contains mp3 files
-  music_dir:          ~/music
-  # url history of downloaded audio will be saved here
-  history_path:       ~/.local/share/gomu/urls
-  popup_timeout:      5s
-  # initial volume when gomu starts up
-  volume:             100
-  # some of the terminal supports unicode character
-  # you can set this to true to enable emojis
-  emoji:              false
-  # if you experiencing error using this invidious instance, you can change it
-  # to another instance from this list:
-  # https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
-  invidious_instance: "https://vid.puffyan.us"
-
-# not all colors can be reproducible in terminal
-# changing hex colors may or may not produce expected result
-color:
-  accent:            "#008B8B"
-  # none is transparent
-  # only background has none attribute
-  background:        none
-  foreground:        "#FFFFFF"
-  now_playing_title: "#017702"
-  playlist:          "#008B8B"
-  popup:             "#0A0F14"
-
-# default emoji here is using awesome-terminal-fonts
-# you can change these to your liking
-emoji:
-  playlist:          
-  file:              
-  loop:              ﯩ
-  noloop:            
- 
-# vi:ft=yaml
-`
-
-	// config path passed by flag
-	configPath := *args.config
-	home, err := os.UserHomeDir()
-
-	if err != nil {
-		logError(err)
-	}
-
-	defaultPath := path.Join(home, configPath)
-
-	if err != nil {
-		logError(err)
-	}
-
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(strings.TrimSuffix(expandFilePath(configPath), "/config"))
-	viper.AddConfigPath("$HOME/.config/gomu")
-
-	// General config
-	viper.SetDefault("general.music_dir", musicPath)
-	viper.SetDefault("general.history_path", historyPath)
-	viper.SetDefault("general.confirm_on_exit", true)
-	viper.SetDefault("general.confirm_bulk_add", true)
-	viper.SetDefault("general.popup_timeout", "5s")
-	viper.SetDefault("general.volume", 100)
-	viper.SetDefault("general.load_prev_queue", true)
-	viper.SetDefault("general.use_emoji", false)
-	viper.SetDefault("general.invidious_instance", "https://vid.puffyan.us")
-
-	if err := viper.ReadInConfig(); err != nil {
-
-		// creates gomu config dir if does not exist
-		if _, err := os.Stat(defaultPath); err != nil {
-			if err := os.MkdirAll(home+"/.config/gomu", 0755); err != nil {
-				logError(err)
-			}
-		}
-
-		// if config file was not found
-		// copy default config to default config path
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-
-			err = ioutil.WriteFile(defaultPath, []byte(config), 0644)
-			if err != nil {
-				logError(err)
-			}
-
-		}
-
-	}
-}
 
 type Args struct {
 	config  *string
@@ -151,6 +50,161 @@ func getArgs() Args {
 	}
 	flag.Parse()
 	return ar
+}
+
+// built-in functions
+func defineBuiltins() {
+	gomu.anko.Define("debug_popup", debugPopup)
+	gomu.anko.Define("info_popup", infoPopup)
+	gomu.anko.Define("input_popup", inputPopup)
+	gomu.anko.Define("show_popup", defaultTimedPopup)
+	gomu.anko.Define("search_popup", searchPopup)
+	gomu.anko.Define("shell", shell)
+}
+
+// execInit executes helper modules and default config that should only be
+// executed once
+func execInit() error {
+
+	const listModule = `
+module List {
+
+	func collect(l, f) {
+		result = []
+		for x in l {
+			result += f(x)
+		}
+		return result
+	}
+
+	func filter(l, f) {
+		result = []
+		for x in l {
+			if f(x) {
+				result += x
+			}
+		}
+		return result
+	}
+
+	func reduce(l, f, acc) {
+		for x in l {
+			acc = f(acc, x)
+		}
+		return acc
+	}
+}
+`
+
+	const keybindModule = `
+module Keybinds {
+	global = {}
+	playlist = {}
+	queue = {}
+
+	func def_g(kb, f) {
+		global[kb] = f
+	}
+
+	func def_p(kb, f) {
+		playlist[kb] = f
+	}
+
+	func def_q(kb, f) {
+		queue[kb] = f
+	}
+}
+`
+
+	_, err := gomu.anko.Execute(listModule + keybindModule)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	return nil
+}
+
+// executes user config with default config is executed first in order to apply
+// default values
+func execConfig(config string) error {
+
+	const defaultConfig = `
+
+module General {
+	# confirmation popup to add the whole playlist to the queue
+	confirm_bulk_add    = true
+	confirm_on_exit     = true
+	queue_loop          = false
+	load_prev_queue     = true
+	popup_timeout       = "5s"
+	# change this to directory that contains mp3 files
+	music_dir           = "~/Music"
+	# url history of downloaded audio will be saved here
+	history_path        = "~/.local/share/gomu/urls"
+	# some of the terminal supports unicode character
+	# you can set this to true to enable emojis
+	use_emoji           = true
+	# initial volume when gomu starts up
+	volume              = 80
+	# if you experiencing error using this invidious instance, you can change it
+	# to another instance from this list:
+	# https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
+	invidious_instance  = "https://vid.puffyan.us"
+}
+
+module Emoji {
+	# default emoji here is using awesome-terminal-fonts
+	# you can change these to your liking
+	playlist     = ""
+	file         = ""
+	loop         = "ﯩ"
+	noloop       = ""
+}
+
+module Color {
+	# not all colors can be reproducible in terminal
+	# changing hex colors may or may not produce expected result
+	accent            = "#008B8B"
+	background        = "none"
+	foreground        = "#FFFFFF"
+	now_playing_title = "#017702"
+	playlist          = "#008B8B"
+	popup             = "#0A0F14"
+}
+
+# you can get the syntax highlighting for this language here:
+# https://github.com/mattn/anko/tree/master/misc/vim
+# vim: ft=anko
+`
+
+	cfg := expandTilde(config)
+
+	_, err := os.Stat(cfg)
+	if os.IsNotExist(err) {
+		err = appendFile(cfg, defaultConfig)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+	}
+
+	content, err := ioutil.ReadFile(cfg)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	// execute default config
+	_, err = gomu.anko.Execute(defaultConfig)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	// execute user config
+	_, err = gomu.anko.Execute(string(content))
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	return nil
 }
 
 // Sets the layout of the application
@@ -175,7 +229,20 @@ func start(application *tview.Application, args Args) {
 
 	// Assigning to global variable gomu
 	gomu = newGomu()
+	gomu.command.defineCommands()
+	defineBuiltins()
+	err := execInit()
+	if err != nil {
+		die(err)
+	}
+
+	err = execConfig(expandFilePath(*args.config))
+	if err != nil {
+		die(err)
+	}
+
 	gomu.args = args
+	gomu.colors = newColor()
 
 	// override default border
 	// change double line border to one line border when focused
@@ -188,7 +255,6 @@ func start(application *tview.Application, args Args) {
 	tview.Styles.PrimitiveBackgroundColor = gomu.colors.background
 
 	gomu.initPanels(application, args)
-	gomu.command.defineCommands()
 
 	flex := layout(gomu)
 	gomu.pages.AddPage("main", flex, true, true)
@@ -199,10 +265,14 @@ func start(application *tview.Application, args Args) {
 
 	gomu.playingBar.setDefault()
 
-	gomu.player.isLoop = viper.GetBool("general.queue_loop")
+	isQueueLoop := gomu.anko.GetBool("General.queue_loop")
+
+	gomu.player.isLoop = isQueueLoop
 	gomu.queue.isLoop = gomu.player.isLoop
 
-	if !*args.empty && viper.GetBool("general.load_prev_queue") {
+	loadQueue := gomu.anko.GetBool("General.load_prev_queue")
+
+	if !*args.empty && loadQueue {
 		// load saved queue from previous session
 		if err := gomu.queue.loadQueue(); err != nil {
 			logError(err)
@@ -224,6 +294,10 @@ func start(application *tview.Application, args Args) {
 	// global keybindings are handled here
 	application.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
+		if gomu.pages.HasPage("repl-input-popup") {
+			return e
+		}
+
 		popupName, _ := gomu.pages.GetFrontPage()
 
 		// disables keybindings when writing in input fields
@@ -238,6 +312,16 @@ func start(application *tview.Application, args Args) {
 				return e
 			}
 			gomu.cyclePanels2()
+		}
+
+		if gomu.anko.KeybindExists("global", e) {
+
+			err := gomu.anko.ExecKeybind("global", e)
+			if err != nil {
+				errorPopup(err)
+			}
+
+			return nil
 		}
 
 		cmds := map[rune]string{

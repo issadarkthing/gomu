@@ -16,7 +16,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
 )
 
@@ -97,17 +96,18 @@ func (q *Queue) updateTitle() string {
 	}
 
 	var loop string
-	isEmoji := viper.GetBool("general.emoji")
+
+	isEmoji := gomu.anko.GetBool("General.use_emoji")
 
 	if q.isLoop {
 		if isEmoji {
-			loop = viper.GetString("emoji.loop")
+			loop = gomu.anko.GetString("Emoji.loop")
 		} else {
 			loop = "Loop"
 		}
 	} else {
 		if isEmoji {
-			loop = viper.GetString("emoji.noloop")
+			loop = gomu.anko.GetString("Emoji.noloop")
 		} else {
 			loop = "No loop"
 		}
@@ -305,8 +305,6 @@ func (q *Queue) getSavedQueue() ([]string, error) {
 		return nil, tracerr.Wrap(err)
 	}
 
-	defer f.Close()
-
 	records := []string{}
 	scanner := bufio.NewScanner(f)
 
@@ -368,10 +366,20 @@ func newQueue() *Queue {
 
 	queue := &Queue{
 		List:           list,
-		savedQueuePath: "~/.local/share/gomu/queue.cache",
+		savedQueuePath: cacheQueuePath,
 	}
 
 	queue.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+
+		if gomu.anko.KeybindExists("queue", e) {
+
+			err := gomu.anko.ExecKeybind("queue", e)
+			if err != nil {
+				errorPopup(err)
+			}
+
+			return nil
+		}
 
 		cmds := map[rune]string{
 			'j': "move_down",
@@ -418,7 +426,7 @@ func sha1Hex(input string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-//Modify the title of songs in queue
+// Modify the title of songs in queue
 func (q *Queue) updateQueueNames() error {
 	q.saveQueue(false)
 	q.clearQueue()

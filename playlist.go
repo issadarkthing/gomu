@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/spf13/viper"
 	spin "github.com/tj/go-spin"
 	"github.com/ztrue/tracerr"
 )
@@ -74,23 +72,29 @@ func (p *Playlist) help() []string {
 // on root music directory.
 func newPlaylist(args Args) *Playlist {
 
-	rootDir, err := filepath.Abs(expandTilde(viper.GetString("general.music_dir")))
+	anko := gomu.anko
+
+	m := anko.GetString("General.music_dir")
+	rootDir, err := filepath.Abs(expandTilde(m))
+	if err != nil {
+		err = tracerr.Errorf("unable to find music directory: %e", err)
+		die(err)
+	}
 
 	// if not default value was given
 	if *args.music != "~/music" {
 		rootDir = expandFilePath(*args.music)
 	}
 
-	if err != nil {
-		log.Fatalf("Unable to find music directory: %e", err)
-	}
-
 	var rootTextView string
 
-	if viper.GetBool("general.emoji") {
+	useEmoji := anko.GetBool("General.use_emoji")
 
-		rootTextView = fmt.Sprintf("%s %s",
-			viper.GetString("emoji.playlist"), path.Base(rootDir))
+	if useEmoji {
+
+		emojiPlaylist := anko.GetString("Emoji.playlist")
+		rootTextView = fmt.Sprintf("%s %s", emojiPlaylist, path.Base(rootDir))
+
 	} else {
 		rootTextView = path.Base(rootDir)
 	}
@@ -142,6 +146,16 @@ func newPlaylist(args Args) *Playlist {
 
 	playlist.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
+		if gomu.anko.KeybindExists("playlist", e) {
+
+			err := gomu.anko.ExecKeybind("playlist", e)
+			if err != nil {
+				errorPopup(err)
+			}
+
+			return nil
+		}
+
 		cmds := map[rune]string{
 			'a': "create_playlist",
 			'D': "delete_playlist",
@@ -164,7 +178,7 @@ func newPlaylist(args Args) *Playlist {
 			}
 			fn, err := gomu.command.getFn(cmd)
 			if err != nil {
-				logError(err)
+				errorPopup(err)
 				return e
 			}
 			fn()
@@ -328,18 +342,15 @@ func (p *Playlist) addSongToPlaylist(
 ) error {
 
 	f, err := os.Open(audioPath)
-
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
-
 	defer f.Close()
 
 	songName := getName(audioPath)
 	node := tview.NewTreeNode(songName)
 
 	audioLength, err := getLength(audioPath)
-
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -353,20 +364,13 @@ func (p *Playlist) addSongToPlaylist(
 		parent:      selPlaylist,
 	}
 
-	displayText := songName
-
-	if viper.GetBool("general.emoji") {
-		displayText = fmt.Sprintf(" %s %s",
-			viper.GetString("emoji.file"), songName)
-	}
+	displayText := setDisplayText(songName)
 
 	node.SetReference(audioFile)
 	node.SetText(displayText)
-
 	selPlaylist.AddChild(node)
 
 	return nil
-
 }
 
 // Gets all audio files walks from music root directory
@@ -577,7 +581,9 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	playlistPath := dir
 	audioPath := extractFilePath(stdout.Bytes(), playlistPath)
 
-	err = appendFile(expandTilde(viper.GetString("general.history_path")), url+"\n")
+	historyPath := gomu.anko.GetString("General.history_path")
+
+	err = appendFile(expandTilde(historyPath), url+"\n")
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -640,11 +646,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 				parent:      root,
 			}
 
-			displayText := songName
-			if viper.GetBool("general.emoji") {
-				displayText = fmt.Sprintf(" %s %s",
-					viper.GetString("emoji.file"), songName)
-			}
+			displayText := setDisplayText(songName)
 
 			child.SetReference(audioFile)
 			child.SetText(displayText)
@@ -662,11 +664,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 				parent:      root,
 			}
 
-			displayText := songName
-			if viper.GetBool("general.emoji") {
-				displayText = fmt.Sprintf(" %s %s",
-					viper.GetString("emoji.playlist"), songName)
-			}
+			displayText := setDisplayText(songName)
 
 			child.SetReference(audioFile)
 			child.SetColor(gomu.colors.accent)
@@ -737,6 +735,16 @@ func (p *Playlist) paste() error {
 	}
 
 	return nil
+}
+
+func setDisplayText(songName string) string {
+	useEmoji := gomu.anko.GetBool("General.use_emoji")
+	if !useEmoji {
+		return songName
+	}
+
+	emojiFile := gomu.anko.GetString("Emoji.file")
+	return fmt.Sprintf(" %s %s", emojiFile, songName)
 }
 
 //populateAudioLength is the most time consuming part of startup,

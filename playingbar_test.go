@@ -4,9 +4,20 @@ import (
 	"testing"
 )
 
+const (
+	testConfigPath = "./test/config-test"
+)
+
 func Test_NewPlayingBar(t *testing.T) {
 
 	gomu = newGomu()
+	err := execConfig(expandFilePath(testConfigPath))
+	if err != nil {
+		t.Error(err)
+	}
+
+	gomu.colors = newColor()
+
 	p := newPlayingBar()
 
 	if p.progress == nil {

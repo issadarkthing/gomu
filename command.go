@@ -6,7 +6,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/spf13/viper"
 	"github.com/ztrue/tracerr"
 )
 
@@ -33,6 +32,8 @@ func (c Command) getFn(name string) (func(), error) {
 }
 
 func (c Command) defineCommands() {
+
+	anko := gomu.anko
 
 	/* Playlist */
 
@@ -122,7 +123,7 @@ func (c Command) defineCommands() {
 						titles = append(titles, title)
 					}
 
-					searchPopup(titles, func(title string) {
+					searchPopup("Youtube Videos", titles, func(title string) {
 
 						audioFile := gomu.playlist.getCurrentFile()
 
@@ -204,8 +205,9 @@ func (c Command) defineCommands() {
 
 	c.define("bulk_add", func() {
 		currNode := gomu.playlist.GetCurrentNode()
+		bulkAdd := anko.GetBool("General.confirm_bulk_add")
 
-		if !viper.GetBool("general.confirm_bulk_add") {
+		if !bulkAdd {
 			gomu.playlist.addAllToQueue(currNode)
 			return
 		}
@@ -238,7 +240,7 @@ func (c Command) defineCommands() {
 			files[i] = file.name
 		}
 
-		searchPopup(files, func(text string) {
+		searchPopup("Search", files, func(text string) {
 
 			audio, err := gomu.playlist.findAudioFile(sha1Hex(text))
 			if err != nil {
@@ -248,6 +250,16 @@ func (c Command) defineCommands() {
 			gomu.playlist.setHighlight(audio.node)
 			gomu.playlist.refresh()
 		})
+	})
+
+	c.define("reload_config", func() {
+		cfg := expandFilePath(*gomu.args.config)
+		err := execConfig(cfg)
+		if err != nil {
+			errorPopup(err)
+		}
+
+		infoPopup("successfully reload config file")
 	})
 
 	/* Queue */
@@ -303,7 +315,7 @@ func (c Command) defineCommands() {
 			audios = append(audios, file.name)
 		}
 
-		searchPopup(audios, func(selected string) {
+		searchPopup("Songs", audios, func(selected string) {
 
 			index := 0
 			for i, v := range queue.items {
@@ -318,7 +330,10 @@ func (c Command) defineCommands() {
 
 	/* Global */
 	c.define("quit", func() {
-		if !viper.GetBool("general.confirm_on_exit") {
+
+		confirmOnExit := anko.GetBool("General.confirm_on_exit")
+
+		if !confirmOnExit {
 			err := gomu.quit(gomu.args)
 			if err != nil {
 				logError(err)
@@ -368,7 +383,7 @@ func (c Command) defineCommands() {
 		for commandName := range c.commands {
 			names = append(names, commandName)
 		}
-		searchPopup(names, func(selected string) {
+		searchPopup("Commands", names, func(selected string) {
 
 			for name, fn := range c.commands {
 				if name == selected {
@@ -456,4 +471,14 @@ func (c Command) defineCommands() {
 		}
 	})
 
+	c.define("repl", func() {
+		replPopup()
+	})
+
+	for name, cmd := range c.commands {
+		err := gomu.anko.Define(name, cmd)
+		if err != nil {
+			logError(err)
+		}
+	}
 }
