@@ -124,7 +124,7 @@ func (p *Player) run(currSong *AudioFile) error {
 
 	// starts playing the audio
 	speaker.Play(p._volume)
-	gomu.hook.RunHooks("playing")
+	gomu.hook.RunHooks("new_song")
 
 	p.isRunning = true
 
@@ -194,6 +194,7 @@ next:
 }
 
 func (p *Player) pause() {
+	gomu.hook.RunHooks("pause")
 	speaker.Lock()
 	p.ctrl.Paused = true
 	p.isRunning = false
@@ -201,6 +202,7 @@ func (p *Player) pause() {
 }
 
 func (p *Player) play() {
+	gomu.hook.RunHooks("play")
 	speaker.Lock()
 	p.ctrl.Paused = false
 	p.isRunning = true
@@ -238,6 +240,8 @@ func (p *Player) togglePause() {
 
 // skips current song
 func (p *Player) skip() {
+
+	gomu.hook.RunHooks("skip")
 
 	if p.currentSong == nil {
 		return

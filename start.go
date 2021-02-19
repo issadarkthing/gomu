@@ -63,13 +63,27 @@ func defineBuiltins() {
 }
 
 func setupHooks() {
-	gomu.hook.AddHook("playing", func() {
-		_, err := gomu.anko.Execute(`Event.run_hooks("playing")`)
-		if err != nil {
-			err = tracerr.Errorf("error execute hook: %w", err)
-			logError(err)
-		}
-	})
+
+	events := []string{
+		"enter",
+		"new_song",
+		"skip",
+		"play",
+		"pause",
+		"exit",
+	}
+
+	for _, event := range events {
+		name := event
+		gomu.hook.AddHook(name, func() {
+			src := fmt.Sprintf(`Event.run_hooks("%s")`, name)
+			_, err := gomu.anko.Execute(src)
+			if err != nil {
+				err = tracerr.Errorf("error execute hook: %w", err)
+				logError(err)
+			}
+		})
+	}
 }
 
 // loadModules executes helper modules and default config that should only be
@@ -150,7 +164,6 @@ module Keybinds {
 	}
 }
 `
-	setupHooks()
 	_, err := gomu.anko.Execute(eventModule + listModule + keybindModule)
 	if err != nil {
 		return tracerr.Wrap(err)
@@ -266,6 +279,7 @@ func start(application *tview.Application, args Args) {
 	gomu = newGomu()
 	gomu.command.defineCommands()
 	defineBuiltins()
+
 	err := loadModules()
 	if err != nil {
 		die(err)
@@ -276,6 +290,9 @@ func start(application *tview.Application, args Args) {
 		die(err)
 	}
 
+	setupHooks()
+
+	gomu.hook.RunHooks("enter")
 	gomu.args = args
 	gomu.colors = newColor()
 
@@ -413,4 +430,5 @@ func start(application *tview.Application, args Args) {
 		die(err)
 	}
 
+	gomu.hook.RunHooks("exit")
 }
