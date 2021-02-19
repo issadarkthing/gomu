@@ -121,7 +121,10 @@ func (p *Player) run(currSong *AudioFile) error {
 	// sets the volume of previous player
 	volume.Volume += p.volume
 	p._volume = volume
+
+	// starts playing the audio
 	speaker.Play(p._volume)
+	gomu.hook.RunHooks("playing")
 
 	p.isRunning = true
 

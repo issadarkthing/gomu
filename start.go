@@ -62,9 +62,19 @@ func defineBuiltins() {
 	gomu.anko.Define("shell", shell)
 }
 
-// execInit executes helper modules and default config that should only be
+func setupHooks() {
+	gomu.hook.AddHook("playing", func() {
+		_, err := gomu.anko.Execute(`Event.run_hooks("playing")`)
+		if err != nil {
+			err = tracerr.Errorf("error execute hook: %w", err)
+			logError(err)
+		}
+	})
+}
+
+// loadModules executes helper modules and default config that should only be
 // executed once
-func execInit() error {
+func loadModules() error {
 
 	const listModule = `
 module List {
@@ -95,6 +105,31 @@ module List {
 	}
 }
 `
+	const eventModule = `
+module Event {
+	events = {}
+
+	func add_hook(name, f) {
+		hooks = events[name]
+
+		if hooks == nil {
+			events[name] = [f]
+			return
+		}
+
+		hooks += f
+		events[name] = hooks
+	}
+
+	func run_hooks(name) {
+		hooks = events[name]
+
+		for hook in hooks {
+			hook()
+		}
+	}
+}
+`
 
 	const keybindModule = `
 module Keybinds {
@@ -115,8 +150,8 @@ module Keybinds {
 	}
 }
 `
-
-	_, err := gomu.anko.Execute(listModule + keybindModule)
+	setupHooks()
+	_, err := gomu.anko.Execute(eventModule + listModule + keybindModule)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -231,7 +266,7 @@ func start(application *tview.Application, args Args) {
 	gomu = newGomu()
 	gomu.command.defineCommands()
 	defineBuiltins()
-	err := execInit()
+	err := loadModules()
 	if err != nil {
 		die(err)
 	}
