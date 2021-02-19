@@ -9,6 +9,7 @@ import (
 	"github.com/mattn/anko/core"
 	"github.com/mattn/anko/env"
 	_ "github.com/mattn/anko/packages"
+	"github.com/mattn/anko/parser"
 	"github.com/mattn/anko/vm"
 )
 
@@ -114,7 +115,26 @@ func (a *Anko) GetBool(symbol string) bool {
 
 // Execute executes anko script.
 func (a *Anko) Execute(src string) (interface{}, error) {
-	return vm.Execute(a.env, nil, src)
+	parser.EnableErrorVerbose()
+	stmts, err := parser.ParseSrc(src)
+	if err != nil {
+		return nil, err
+	}
+
+	val, err := vm.Run(a.env, nil, stmts)
+	if err != nil {
+		if e, ok := err.(*vm.Error); ok {
+			err = fmt.Errorf("error on line %d column %d: %s\n",
+				e.Pos.Line, e.Pos.Column, err)
+		} else if e, ok := err.(*parser.Error); ok {
+			err = fmt.Errorf("error on line %d column %d: %s\n",
+				e.Pos.Line, e.Pos.Column, err)
+		}
+
+		return nil, err
+	}
+
+	return val, nil
 }
 
 // KeybindExists checks if keybinding is defined.
