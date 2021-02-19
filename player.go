@@ -16,18 +16,17 @@ import (
 
 type Player struct {
 	hasInit   bool
-	format    *beep.Format
 	isLoop    bool
 	isRunning bool
+	volume    float64
 	isSkipped chan struct{}
 	done      chan struct{}
 
 	// to control the _volume internally
 	_volume          *effects.Volume
 	ctrl             *beep.Ctrl
-	volume           float64
+	format           *beep.Format
 	resampler        *beep.Resampler
-	position         time.Duration
 	length           time.Duration
 	currentSong      *AudioFile
 	streamSeekCloser beep.StreamSeekCloser
@@ -77,8 +76,7 @@ func (p *Player) run(currSong *AudioFile) error {
 	sr := beep.SampleRate(48000)
 	if !p.hasInit {
 
-		err := speaker.
-			Init(sr, sr.N(time.Second/10))
+		err := speaker.Init(sr, sr.N(time.Second/10))
 
 		if err != nil {
 			return tracerr.Wrap(err)
@@ -125,7 +123,6 @@ func (p *Player) run(currSong *AudioFile) error {
 	p._volume = volume
 	speaker.Play(p._volume)
 
-	p.position = p.getPosition()
 	p.isRunning = true
 
 	gomu.playingBar.newProgress(currSong.name, int(p.length.Seconds()))
@@ -149,11 +146,8 @@ next:
 				gomu.app.Draw()
 			}
 
-			// close(done)
-			p.position = 0
 			p.isRunning = false
 			p.format = nil
-			// p.hasInit = false
 			gomu.playingBar.stop()
 
 			nextSong, err := gomu.queue.dequeue()
@@ -187,10 +181,6 @@ next:
 			}
 
 			gomu.playingBar.progress <- 1
-
-			speaker.Lock()
-			p.position = p.getPosition()
-			speaker.Unlock()
 
 		}
 
@@ -262,6 +252,28 @@ func (p *Player) toggleLoop() bool {
 	return p.isLoop
 }
 
+func (p *Player) getPosition() time.Duration {
+	return p.format.SampleRate.D(p.streamSeekCloser.Position())
+}
+
+//seek is the function to move forward and rewind
+func (p *Player) seek(pos int) error {
+	speaker.Lock()
+	defer speaker.Unlock()
+	err := p.streamSeekCloser.Seek(pos * int(p.format.SampleRate))
+	p.i = pos
+	return err
+}
+
+// isPaused is used to distinguish the player between pause and stop
+func (p *Player) isPaused() bool {
+	if p.ctrl == nil {
+		return false
+	}
+
+	return p.ctrl.Paused
+}
+
 // Gets the length of the song in the queue
 func getLength(audioPath string) (time.Duration, error) {
 	f, err := os.Open(audioPath)
@@ -292,26 +304,4 @@ func volToHuman(volume float64) int {
 // that is used by the audio library
 func absVolume(volume int) float64 {
 	return (float64(volume) - 100) / 10
-}
-
-func (p *Player) getPosition() time.Duration {
-	return p.format.SampleRate.D(p.streamSeekCloser.Position())
-}
-
-//seek is the function to move forward and rewind
-func (p *Player) seek(pos int) error {
-	speaker.Lock()
-	defer speaker.Unlock()
-	err := p.streamSeekCloser.Seek(pos * int(p.format.SampleRate))
-	p.i = pos
-	return err
-}
-
-// isPaused is used to distinguish the player between pause and stop
-func (p *Player) isPaused() bool {
-	if p.ctrl == nil {
-		return false
-	}
-
-	return p.ctrl.Paused
 }
