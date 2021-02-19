@@ -1,6 +1,9 @@
 
-## Gomu (Go Music Player) [![Go Report Card](https://goreportcard.com/badge/github.com/issadarkthing/gomu)](https://goreportcard.com/report/github.com/issadarkthing/gomu) [![Build Status](https://travis-ci.com/issadarkthing/gomu.svg?branch=master)](https://travis-ci.com/issadarkthing/gomu)
-Gomu is a Terminal User Interface **TUI** music player to play mp3 files from your local machine. 
+## Gomu (Go Music Player) 
+[![Go Report Card](https://goreportcard.com/badge/github.com/issadarkthing/gomu)](https://goreportcard.com/report/github.com/issadarkthing/gomu) [![Build Status](https://travis-ci.com/issadarkthing/gomu.svg?branch=master)](https://travis-ci.com/issadarkthing/gomu)
+
+Gomu is a Terminal User Interface **TUI** music player to play mp3 files from
+your local machine. 
 
 ![gomu](https://user-images.githubusercontent.com/50593529/107107772-37fdc000-686e-11eb-8c0f-c7d7f43f3c80.png)
 
@@ -47,7 +50,7 @@ $ sudo aura -A gomu
 
 ### Configuration
 By default, gomu will look for audio files in `~/music` directory. If you wish to change to your desired location, edit `~/.config/gomu/config` file
-and change `music_dir: path/to/your/musicDir`. 
+and change `music_dir = path/to/your/musicDir`. 
 
 
 ### Keybindings
@@ -97,21 +100,20 @@ Each panel has it's own additional keybinding. To view the available keybinding 
 | /               |                   find in queue |
 
 ### Scripting
-Gomu uses [anko](github.com/mattn/anko) as its scripting language.
-```
-module Keybinds {
-	module Global {
-		a = func() {
-			strings = import("strings")
-			out, err = shell(`echo "hello world"`)
-			if err != nil {
-				debugPopup("an error occured")
-			}
 
-			infoPopup(out)
-		}
-	}
-}
+Gomu uses [anko](github.com/mattn/anko) as its scripting language. You can read
+more about scripting at our [wiki](github.com/issadarkthing/gomu/wiki)
+
+``` go
+
+Keybinds.def_g("ctrl_x", func() {
+    out, err = shell(`echo "hello world"`)
+    if err != nil {
+        debug_popup("an error occured")
+    }
+    info_popup(out)
+})
+
 ```
 
 ### Project Background
