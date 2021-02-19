@@ -357,15 +357,21 @@ func start(application *tview.Application, args Args) {
 	})
 
 	// fix transparent background issue
-	application.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
+	gomu.app.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
 		screen.Clear()
 		return false
 	})
 
+	gomu.app.SetAfterDrawFunc(func(_ tcell.Screen) {
+		gomu.playingBar.setDefault()
+	})
+
 	go populateAudioLength(gomu.playlist.GetRoot())
+	gomu.app.SetRoot(gomu.pages, true).SetFocus(gomu.playlist)
+
 	// main loop
-	if err := application.SetRoot(gomu.pages, true).SetFocus(gomu.playlist).Run(); err != nil {
-		logError(err)
+	if err := gomu.app.Run(); err != nil {
+		die(err)
 	}
 
 }

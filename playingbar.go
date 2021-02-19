@@ -38,14 +38,6 @@ func newPlayingBar() *PlayingBar {
 		progress: make(chan int),
 	}
 
-	textView.SetChangedFunc(func() {
-		gomu.app.Draw()
-
-		if !gomu.player.isRunning {
-			p.setDefault()
-		}
-	})
-
 	return p
 }
 
