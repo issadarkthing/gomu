@@ -227,6 +227,7 @@ func helpPopup(panel Panel) {
 		"f/F    forward 10/60 seconds",
 		"b/B    rewind 10/60 seconds",
 		"?      toggle help",
+		"m      open repl",
 	}
 
 	list := tview.NewList().ShowSecondaryText(false)

@@ -338,6 +338,7 @@ func start(application *tview.Application, args Args) {
 			'F': "forward_fast",
 			'b': "rewind",
 			'B': "rewind_fast",
+			'm': "repl",
 		}
 
 		for key, cmd := range cmds {
