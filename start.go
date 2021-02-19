@@ -362,8 +362,12 @@ func start(application *tview.Application, args Args) {
 		return false
 	})
 
+	init := false
 	gomu.app.SetAfterDrawFunc(func(_ tcell.Screen) {
-		gomu.playingBar.setDefault()
+		if !init && !gomu.player.isRunning {
+			gomu.playingBar.setDefault()
+			init = true
+		}
 	})
 
 	go populateAudioLength(gomu.playlist.GetRoot())
