@@ -235,7 +235,7 @@ func (p *Player) togglePause() {
 // skips current song
 func (p *Player) skip() {
 
-	if gomu.queue.GetItemCount() < 1 {
+	if p.currentSong == nil {
 		return
 	}
 
