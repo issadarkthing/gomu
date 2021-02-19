@@ -3,6 +3,7 @@ module github.com/issadarkthing/gomu
 go 1.14
 
 require (
+	github.com/bogem/id3v2 v1.2.0
 	github.com/faiface/beep v1.0.2
 	github.com/gdamore/tcell/v2 v2.1.0
 	github.com/hajimehoshi/go-mp3 v0.3.1 // indirect

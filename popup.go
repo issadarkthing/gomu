@@ -4,11 +4,14 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
 
+	"github.com/bogem/id3v2"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/sahilm/fuzzy"
@@ -294,6 +297,11 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 			if re.MatchString(url) {
 				go func() {
 					if err := ytdl(url, selPlaylist); err != nil {
+						logError(err)
+					}
+				}()
+				go func() {
+					if err := ytdlSubtitle(url, selPlaylist); err != nil {
 						logError(err)
 					}
 				}()
@@ -661,4 +669,84 @@ func replPopup() {
 
 	gomu.pages.AddPage(popupId, center(flex, 90, 30), true, true)
 	gomu.popups.push(flex)
+}
+
+func tagPopup(node *AudioFile) bool {
+	var tag *id3v2.Tag
+	var err error
+	if node.isAudioFile {
+		tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+		if err != nil {
+			logError(err)
+			return false
+		}
+		defer tag.Close()
+	} else {
+		return false
+	}
+
+	popupID := "tag-input-popup"
+
+	var lyricsAvailable []string
+	pathToFile, _ := filepath.Split(node.path)
+
+	files, err := ioutil.ReadDir(pathToFile)
+
+	if err != nil {
+		logError(err)
+		return false
+	}
+
+	for _, file := range files {
+
+		if filepath.Ext(file.Name()) == ".lrc" {
+			lyricsAvailable = append(lyricsAvailable, file.Name())
+		}
+	}
+	form := tview.NewForm().
+		AddInputField("Artist", tag.Artist(), 20, nil, nil).
+		AddInputField("Title", tag.Title(), 20, nil, nil).
+		AddInputField("Album", tag.Album(), 20, nil, nil).
+		AddCheckbox("Embed Lyrics", false, nil).
+		AddDropDown("Lyrics Available", lyricsAvailable, 0, nil)
+
+	form.SetBackgroundColor(gomu.colors.popup).
+		SetBackgroundColor(gomu.colors.popup).
+		SetTitle(node.name).
+		SetTitleAlign(tview.AlignLeft).
+		SetBorder(true).
+		SetBorderPadding(1, 0, 2, 2)
+
+	gomu.pages.
+		AddPage(popupID, center(form, 60, 30), true, true)
+	gomu.popups.push(form)
+
+	form.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+		switch e.Key() {
+		case tcell.KeyEnter:
+			tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+			if err != nil {
+				logError(err)
+			}
+			defer tag.Close()
+			tag.SetArtist(form.GetFormItemByLabel("Artist").(*tview.InputField).GetText())
+			tag.SetTitle(form.GetFormItemByLabel("Title").(*tview.InputField).GetText())
+			tag.SetAlbum(form.GetFormItemByLabel("Album").(*tview.InputField).GetText())
+			// Write tag to mp3.
+			if err := tag.Save(); err != nil {
+				defaultTimedPopup(" Error ", err.Error())
+				logError(err)
+			}
+			defaultTimedPopup(" Success ", "Tag update successfully")
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
+
+		case tcell.KeyEsc:
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
+		}
+
+		return e
+	})
+	return true
 }

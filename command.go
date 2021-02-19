@@ -475,10 +475,17 @@ func (c Command) defineCommands() {
 		replPopup()
 	})
 
+	c.define("edit_tags", func() {
+		audioFile := gomu.playlist.getCurrentFile()
+		tagPopup(audioFile)
+
+	})
+
 	for name, cmd := range c.commands {
 		err := gomu.anko.Define(name, cmd)
 		if err != nil {
 			logError(err)
 		}
 	}
+
 }
