@@ -76,6 +76,7 @@ func (p *PlayingBar) run() error {
 			progressBar,
 			fmtDuration(end),
 		))
+		gomu.app.Draw()
 
 	}
 
