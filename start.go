@@ -138,6 +138,10 @@ module Event {
 	func run_hooks(name) {
 		hooks = events[name]
 
+		if hooks == nil {
+			return
+		}
+
 		for hook in hooks {
 			hook()
 		}
