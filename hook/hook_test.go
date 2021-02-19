@@ -29,27 +29,29 @@ func TestAddHook(t *testing.T) {
 func TestRunHooks(t *testing.T) {
 
 	h := NewEventHook()
-	i := 0
+	x := 0
 
-	h.AddHook("sample", func() {
-		i++
-	})
+	for i := 0; i < 100; i ++ {
+		h.AddHook("sample", func() {
+			x++
+		})
+	}
 
-	h.AddHook("sample", func() {
-		i++
+	h.AddHook("noop", func() {
+		x++
 	})
 
 	h.AddHook("noop", func() {
-		i++
+		x++
 	})
 
-	assert.Equal(t, i, 0, "should not execute any hook")
+	assert.Equal(t, x, 0, "should not execute any hook")
 
 	h.RunHooks("x")
 
-	assert.Equal(t, i, 0, "should not execute any hook")
+	assert.Equal(t, x, 0, "should not execute any hook")
 
 	h.RunHooks("sample")
 
-	assert.Equal(t, i, 2, "should only execute event 'sample'")
+	assert.Equal(t, x, 100, "should only execute event 'sample'")
 }
