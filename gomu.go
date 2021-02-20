@@ -1,9 +1,10 @@
 package main
 
 import (
+	"github.com/issadarkthing/gomu/anko"
+	"github.com/issadarkthing/gomu/hook"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
-	"github.com/issadarkthing/gomu/anko"
 )
 
 var VERSION = "N/A"
@@ -24,7 +25,8 @@ type Gomu struct {
 	prevPanel Panel
 	panels    []Panel
 	args      Args
-	anko      anko.Anko
+	anko      *anko.Anko
+	hook      *hook.EventHook
 }
 
 // Creates new instance of gomu with default values
@@ -33,6 +35,7 @@ func newGomu() *Gomu {
 	gomu := &Gomu{
 		command: newCommand(),
 		anko:    anko.NewAnko(),
+		hook:    hook.NewEventHook(),
 	}
 
 	return gomu

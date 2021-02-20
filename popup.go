@@ -638,11 +638,10 @@ func replPopup() {
 			if err != nil {
 				fmt.Fprintf(textview, "%s%s\n%v\n\n", prompt, text, err)
 				return nil
-			}
-
-			if res != nil {
+			} else {
 				fmt.Fprintf(textview, "%s%s\n%v\n\n", prompt, text, res)
 			}
+
 		}
 
 		return event

@@ -13,6 +13,8 @@ import (
 	"syscall"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/issadarkthing/gomu/anko"
+	"github.com/issadarkthing/gomu/hook"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
 )
@@ -62,9 +64,33 @@ func defineBuiltins() {
 	gomu.anko.Define("shell", shell)
 }
 
-// execInit executes helper modules and default config that should only be
+func setupHooks(hook *hook.EventHook, anko *anko.Anko) {
+
+	events := []string{
+		"enter",
+		"new_song",
+		"skip",
+		"play",
+		"pause",
+		"exit",
+	}
+
+	for _, event := range events {
+		name := event
+		hook.AddHook(name, func() {
+			src := fmt.Sprintf(`Event.run_hooks("%s")`, name)
+			_, err := anko.Execute(src)
+			if err != nil {
+				err = tracerr.Errorf("error execute hook: %w", err)
+				logError(err)
+			}
+		})
+	}
+}
+
+// loadModules executes helper modules and default config that should only be
 // executed once
-func execInit() error {
+func loadModules(env *anko.Anko) error {
 
 	const listModule = `
 module List {
@@ -95,6 +121,35 @@ module List {
 	}
 }
 `
+	const eventModule = `
+module Event {
+	events = {}
+
+	func add_hook(name, f) {
+		hooks = events[name]
+
+		if hooks == nil {
+			events[name] = [f]
+			return
+		}
+
+		hooks += f
+		events[name] = hooks
+	}
+
+	func run_hooks(name) {
+		hooks = events[name]
+
+		if hooks == nil {
+			return
+		}
+
+		for hook in hooks {
+			hook()
+		}
+	}
+}
+`
 
 	const keybindModule = `
 module Keybinds {
@@ -115,8 +170,7 @@ module Keybinds {
 	}
 }
 `
-
-	_, err := gomu.anko.Execute(listModule + keybindModule)
+	_, err := env.Execute(eventModule + listModule + keybindModule)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -231,7 +285,8 @@ func start(application *tview.Application, args Args) {
 	gomu = newGomu()
 	gomu.command.defineCommands()
 	defineBuiltins()
-	err := execInit()
+
+	err := loadModules(gomu.anko)
 	if err != nil {
 		die(err)
 	}
@@ -241,6 +296,9 @@ func start(application *tview.Application, args Args) {
 		die(err)
 	}
 
+	setupHooks(gomu.hook, gomu.anko)
+
+	gomu.hook.RunHooks("enter")
 	gomu.args = args
 	gomu.colors = newColor()
 
@@ -378,4 +436,5 @@ func start(application *tview.Application, args Args) {
 		die(err)
 	}
 
+	gomu.hook.RunHooks("exit")
 }
