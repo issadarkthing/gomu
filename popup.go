@@ -603,16 +603,20 @@ func replPopup() {
 
 		switch event.Key() {
 		case tcell.KeyUp:
-			input.SetText(history[upCount])
 
-			if upCount < len(history)-1 {
+			if upCount < len(history) {
+				input.SetText(history[upCount])
 				upCount++
 			}
 
 		case tcell.KeyDown:
 
 			if upCount > 0 {
-				upCount--
+				if upCount == len(history) {
+					upCount -= 2
+				} else {
+					upCount -= 1
+				}
 				input.SetText(history[upCount])
 			} else if upCount == 0 {
 				input.SetText("")
