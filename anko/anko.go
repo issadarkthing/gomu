@@ -17,7 +17,7 @@ type Anko struct {
 	env *env.Env
 }
 
-func NewAnko() Anko {
+func NewAnko() *Anko {
 
 	env := core.Import(env.NewEnv())
 	importToX(env)
@@ -45,7 +45,7 @@ func NewAnko() Anko {
 		panic(err)
 	}
 
-	return Anko{env}
+	return &Anko{env}
 }
 
 // Define defines new symbol and value to the Anko env.

@@ -25,7 +25,7 @@ type Gomu struct {
 	prevPanel Panel
 	panels    []Panel
 	args      Args
-	anko      anko.Anko
+	anko      *anko.Anko
 	hook      *hook.EventHook
 }
 
