@@ -13,6 +13,8 @@ import (
 	"syscall"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/issadarkthing/gomu/anko"
+	"github.com/issadarkthing/gomu/hook"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
 )
@@ -62,7 +64,7 @@ func defineBuiltins() {
 	gomu.anko.Define("shell", shell)
 }
 
-func setupHooks() {
+func setupHooks(hook *hook.EventHook, anko *anko.Anko) {
 
 	events := []string{
 		"enter",
@@ -75,9 +77,9 @@ func setupHooks() {
 
 	for _, event := range events {
 		name := event
-		gomu.hook.AddHook(name, func() {
+		hook.AddHook(name, func() {
 			src := fmt.Sprintf(`Event.run_hooks("%s")`, name)
-			_, err := gomu.anko.Execute(src)
+			_, err := anko.Execute(src)
 			if err != nil {
 				err = tracerr.Errorf("error execute hook: %w", err)
 				logError(err)
@@ -88,7 +90,7 @@ func setupHooks() {
 
 // loadModules executes helper modules and default config that should only be
 // executed once
-func loadModules() error {
+func loadModules(env *anko.Anko) error {
 
 	const listModule = `
 module List {
@@ -168,7 +170,7 @@ module Keybinds {
 	}
 }
 `
-	_, err := gomu.anko.Execute(eventModule + listModule + keybindModule)
+	_, err := env.Execute(eventModule + listModule + keybindModule)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -284,7 +286,7 @@ func start(application *tview.Application, args Args) {
 	gomu.command.defineCommands()
 	defineBuiltins()
 
-	err := loadModules()
+	err := loadModules(gomu.anko)
 	if err != nil {
 		die(err)
 	}
@@ -294,7 +296,7 @@ func start(application *tview.Application, args Args) {
 		die(err)
 	}
 
-	setupHooks()
+	setupHooks(gomu.hook, gomu.anko)
 
 	gomu.hook.RunHooks("enter")
 	gomu.args = args
