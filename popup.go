@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -664,4 +665,120 @@ func replPopup() {
 
 	gomu.pages.AddPage(popupId, center(flex, 90, 30), true, true)
 	gomu.popups.push(flex)
+}
+
+func ytSearchPopup() {
+
+	popupId := "youtube-search-input-popup"
+
+	input := newInputPopup(popupId, " Youtube Search ", "search: ", "")
+
+
+	var mutex sync.Mutex
+	prefixMap := make(map[string][]string)
+
+	// quick hack to change the autocomplete text color
+	tview.Styles.PrimitiveBackgroundColor = tcell.ColorBlack
+	input.SetAutocompleteFunc(func(currentText string) []string {
+
+		// Ignore empty text.
+		prefix := strings.TrimSpace(strings.ToLower(currentText))
+		if prefix == "" {
+			return nil
+		}
+
+		mutex.Lock()
+		defer mutex.Unlock()
+		entries, ok := prefixMap[prefix]
+		if ok {
+			return entries
+		}
+
+		go func() {
+			suggestions, err := getSuggestions(currentText)
+			if err != nil {
+				logError(err)
+				return
+			}
+
+			mutex.Lock()
+			prefixMap[prefix] = suggestions
+			mutex.Unlock()
+
+			input.Autocomplete()
+			gomu.app.Draw()
+		}()
+
+		return nil
+	})
+
+	input.SetDoneFunc(func(key tcell.Key) {
+
+		switch key {
+		case tcell.KeyEnter:
+			search := input.GetText()
+			defaultTimedPopup(" Youtube Search ", "Searching for "+search)
+			gomu.pages.RemovePage(popupId)
+			gomu.popups.pop()
+
+			go func() {
+
+				results, err := getSearchResult(search)
+				if err != nil {
+					logError(err)
+					defaultTimedPopup(" Error ", err.Error())
+					return
+				}
+
+				titles := []string{}
+				urls := make(map[string]string)
+
+				for _, result := range results {
+					duration, err := time.ParseDuration(fmt.Sprintf("%ds", result.LengthSeconds))
+					if err != nil {
+						logError(err)
+						return
+					}
+
+					durationText := fmt.Sprintf("[ %s ] ", fmtDuration(duration))
+					title := durationText + result.Title
+
+					urls[title] = `https://www.youtube.com/watch?v=` + result.VideoId
+
+					titles = append(titles, title)
+				}
+
+				searchPopup("Youtube Videos", titles, func(title string) {
+
+					audioFile := gomu.playlist.getCurrentFile()
+
+					var dir *tview.TreeNode
+
+					if audioFile.isAudioFile {
+						dir = audioFile.parent
+					} else {
+						dir = audioFile.node
+					}
+
+					go func() {
+						url := urls[title]
+						if err := ytdl(url, dir); err != nil {
+							logError(err)
+						}
+						gomu.playlist.refresh()
+					}()
+					gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+				})
+
+				gomu.app.Draw()
+			}()
+
+		case tcell.KeyEscape:
+			gomu.pages.RemovePage(popupId)
+			gomu.popups.pop()
+			gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+
+		}
+
+	})
 }
