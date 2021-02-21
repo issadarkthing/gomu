@@ -845,55 +845,57 @@ func tagPopup(node *AudioFile) bool {
 	form.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 		switch e.Key() {
 		case tcell.KeyEnter:
-			tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
-			if err != nil {
-				logError(err)
-			}
-			defer tag.Close()
-			tagArtist := form.GetFormItemByLabel("Artist").(*tview.InputField).GetText()
-			tagTitle := form.GetFormItemByLabel("Title").(*tview.InputField).GetText()
-			tag.SetArtist(tagArtist)
-			tag.SetTitle(tagTitle)
-			tag.SetAlbum(form.GetFormItemByLabel("Album").(*tview.InputField).GetText())
-
-			if form.GetFormItemByLabel("Embed Lyrics").(*tview.Checkbox).IsChecked() {
-				_, fileName := form.GetFormItemByLabel("Lyrics Available").(*tview.DropDown).GetCurrentOption()
-				lyricFileName := filepath.Join(pathToFile, fileName)
-				// Read entire file content, giving us little control but
-				// making it very simple. No need to close the file.
-				content, err := ioutil.ReadFile(lyricFileName)
+			if !form.GetFormItemByLabel("Lyrics Available").HasFocus() {
+				tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
 				if err != nil {
 					logError(err)
 				}
+				defer tag.Close()
+				tagArtist := form.GetFormItemByLabel("Artist").(*tview.InputField).GetText()
+				tagTitle := form.GetFormItemByLabel("Title").(*tview.InputField).GetText()
+				tag.SetArtist(tagArtist)
+				tag.SetTitle(tagTitle)
+				tag.SetAlbum(form.GetFormItemByLabel("Album").(*tview.InputField).GetText())
 
-				// Convert []byte to string and print to screen
-				lyric := string(content)
-				tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
-					Encoding:          id3v2.EncodingUTF8,
-					Language:          "eng",
-					ContentDescriptor: tagArtist + "-" + tagTitle,
-					Lyrics:            lyric,
-				})
-				// lyrics := "'first line',12343\n\r'secondline',23455\n\r"
-				/* tag.AddSynchronisedLyricsFrame(id3v2.SynchronisedLyricsFrame{
-					Encoding:             id3v2.EncodingUTF8,
-					Language:             "eng",
-					TimeStampFormat:      2,
-					ContentType:          1,
-					ContentDescriptor:    tagArtist + "-" + tagTitle,
-					SynchronizedTextSpec: lyric,
-				}) */
+				if form.GetFormItemByLabel("Embed Lyrics").(*tview.Checkbox).IsChecked() {
+					_, fileName := form.GetFormItemByLabel("Lyrics Available").(*tview.DropDown).GetCurrentOption()
+					lyricFileName := filepath.Join(pathToFile, fileName)
+					// Read entire file content, giving us little control but
+					// making it very simple. No need to close the file.
+					content, err := ioutil.ReadFile(lyricFileName)
+					if err != nil {
+						logError(err)
+					}
 
-			}
+					// Convert []byte to string and print to screen
+					lyric := string(content)
+					tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
+						Encoding:          id3v2.EncodingUTF8,
+						Language:          "eng",
+						ContentDescriptor: tagArtist + "-" + tagTitle,
+						Lyrics:            lyric,
+					})
+					// lyrics := "'first line',12343\n\r'secondline',23455\n\r"
+					/* tag.AddSynchronisedLyricsFrame(id3v2.SynchronisedLyricsFrame{
+						Encoding:             id3v2.EncodingUTF8,
+						Language:             "eng",
+						TimeStampFormat:      2,
+						ContentType:          1,
+						ContentDescriptor:    tagArtist + "-" + tagTitle,
+						SynchronizedTextSpec: lyric,
+					}) */
 
-			// Write tag to mp3.
-			if err := tag.Save(); err != nil {
-				defaultTimedPopup(" Error ", err.Error())
-				logError(err)
-			} else {
-				defaultTimedPopup(" Success ", "Tag update successfully")
-				gomu.pages.RemovePage(popupID)
-				gomu.popups.pop()
+				}
+
+				// Write tag to mp3.
+				if err := tag.Save(); err != nil {
+					defaultTimedPopup(" Error ", err.Error())
+					logError(err)
+				} else {
+					defaultTimedPopup(" Success ", "Tag update successfully")
+					gomu.pages.RemovePage(popupID)
+					gomu.popups.pop()
+				}
 			}
 
 		case tcell.KeyEsc:
