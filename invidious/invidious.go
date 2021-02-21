@@ -2,6 +2,7 @@ package invidious
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -66,6 +67,23 @@ func (_ *Invidious) GetSuggestions(prefix string) ([]string, error) {
 	}
 
 	return suggestions, nil
+}
+
+// GetTrendingMusic fetch music trending based on region. 
+// Region (ISO 3166 country code) can be provided in the argument.
+func (i *Invidious) GetTrendingMusic(region string) ([]YoutubeVideo, error) {
+
+	params := fmt.Sprintf("type=music&region=%s", region)
+	targetUrl := i.Domain + "/api/v1/trending?" + params
+
+	yt := []YoutubeVideo{}
+
+	err := getRequest(targetUrl, &yt)
+	if err != nil {
+		return nil, err
+	}
+
+	return yt, nil 
 }
 
 // getRequest is a helper function that simplifies GET request and parsing the
