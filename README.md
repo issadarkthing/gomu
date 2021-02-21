@@ -101,8 +101,8 @@ Each panel has it's own additional keybinding. To view the available keybinding 
 
 ### Scripting
 
-Gomu uses [anko](github.com/mattn/anko) as its scripting language. You can read
-more about scripting at our [wiki](github.com/issadarkthing/gomu/wiki)
+Gomu uses [anko](https://github.com/mattn/anko) as its scripting language. You can read
+more about scripting at our [wiki](https://github.com/issadarkthing/gomu/wiki)
 
 ``` go
 
