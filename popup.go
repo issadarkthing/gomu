@@ -183,10 +183,10 @@ func timedPopup(
 
 	go func() {
 		time.Sleep(timeout)
-		gomu.pages.RemovePage(popupID)
-		gomu.app.Draw()
-
-		resetFocus()
+		gomu.app.QueueUpdateDraw(func() {
+			gomu.pages.RemovePage(popupID)
+			resetFocus()
+		})
 	}()
 }
 
