@@ -51,6 +51,8 @@ func (s *Stack) pop() tview.Primitive {
 	}
 
 	last := s.popups[len(s.popups)-1]
+	s.popups[len(s.popups)-1] = nil // avoid memory leak
+
 	res := s.popups[:len(s.popups)-1]
 	s.popups = res
 
