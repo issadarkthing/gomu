@@ -26,15 +26,8 @@ type PlayingBar struct {
 	text      *tview.TextView
 	hasTag    bool
 	tag       *id3v2.Tag
+	subtitle  *subtitles.Subtitle
 }
-
-type lyricParsed struct {
-	timestart time.Duration
-	timeend   time.Duration
-	lyricText string
-}
-
-var lyricsParsed []lyricParsed
 
 func (p *PlayingBar) help() []string {
 	return []string{}
@@ -86,12 +79,28 @@ func (p *PlayingBar) run() error {
 		_, _, width, _ := p.GetInnerRect()
 		progressBar := progresStr(p._progress, p.full, width/2, "█", "━")
 		// our progress bar
-		if p.hasTag {
-			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n%s",
+		if p.hasTag && p.subtitle != nil {
+			var lyricText string
+			for i := range p.subtitle.Captions {
+				startTime := p.subtitle.Captions[i].Start
+				endTime := p.subtitle.Captions[i].End
+				currentTime := time.Date(0, 1, 1, 0, 0, p._progress, 0, time.UTC)
+				// fmt.Println(p.subtitle.Captions[8].Start.Date())
+				// fmt.Println(startHour, startMin, startSecond)
+				// if currentTime > startTime && currentTime < endTime {
+				if currentTime.After(startTime) && currentTime.Before(endTime) {
+					lyricText = strings.Join(p.subtitle.Captions[i].Text, " ")
+					break
+				} else {
+					lyricText = ""
+				}
+			}
+			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n%v",
 				fmtDuration(start),
 				progressBar,
 				fmtDuration(end),
-				p.tag.Title(),
+				// p.tag.Title(),
+				lyricText,
 			))
 		} else {
 			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s",
@@ -118,6 +127,8 @@ func (p *PlayingBar) newProgress(songTitle string, full int) {
 	p.full = full
 	p._progress = 0
 	p.setSongTitle(songTitle)
+
+	p.subtitle = nil
 	var tag *id3v2.Tag
 	var err error
 	tag, err = id3v2.Open(gomu.player.currentSong.path, id3v2.Options{Parse: true})
@@ -143,7 +154,8 @@ func (p *PlayingBar) newProgress(songTitle string, full int) {
 			if err != nil {
 				logError(err)
 			}
-			fmt.Println(res.Captions[3])
+			p.subtitle = &res
+			// fmt.Println(res.Captions[8].Start.Clock())
 		}
 	}
 	defer tag.Close()
