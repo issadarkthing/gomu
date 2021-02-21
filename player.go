@@ -128,7 +128,7 @@ func (p *Player) run(currSong *AudioFile) error {
 
 	p.isRunning = true
 
-	gomu.playingBar.newProgress(currSong.name, int(p.length.Seconds()))
+	gomu.playingBar.newProgress(currSong, int(p.length.Seconds()))
 
 	go func() {
 		if err := gomu.playingBar.run(); err != nil {

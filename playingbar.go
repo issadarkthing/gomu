@@ -85,10 +85,7 @@ func (p *PlayingBar) run() error {
 				startTime := p.subtitle.Captions[i].Start
 				endTime := p.subtitle.Captions[i].End
 				currentTime := time.Date(0, 1, 1, 0, 0, p._progress, 0, time.UTC)
-				// fmt.Println(p.subtitle.Captions[8].Start.Date())
-				// fmt.Println(startHour, startMin, startSecond)
-				// if currentTime > startTime && currentTime < endTime {
-				if currentTime.After(startTime) && currentTime.Before(endTime) {
+				if currentTime.After(startTime.Add(-1*time.Second)) && currentTime.Before(endTime.Add(-1*time.Second)) {
 					lyricText = strings.Join(p.subtitle.Captions[i].Text, " ")
 					break
 				} else {
@@ -123,15 +120,17 @@ func (p *PlayingBar) setSongTitle(title string) {
 }
 
 // Resets progress bar, ready for execution
-func (p *PlayingBar) newProgress(songTitle string, full int) {
+func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 	p.full = full
 	p._progress = 0
-	p.setSongTitle(songTitle)
-
+	p.setSongTitle(currentSong.name)
+	p.hasTag = false
 	p.subtitle = nil
+	p.tag = nil
+
 	var tag *id3v2.Tag
 	var err error
-	tag, err = id3v2.Open(gomu.player.currentSong.path, id3v2.Options{Parse: true})
+	tag, err = id3v2.Open(currentSong.path, id3v2.Options{Parse: true})
 	if tag == nil || err != nil {
 		logError(err)
 	} else {

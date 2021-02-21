@@ -26,7 +26,7 @@ func Test_NewPlayingBar(t *testing.T) {
 
 }
 
-func Test_NewProgress(t *testing.T) {
+/* func Test_NewProgress(t *testing.T) {
 
 	p := newPlayingBar()
 	full := 100
@@ -41,7 +41,7 @@ func Test_NewProgress(t *testing.T) {
 	}
 
 }
-
+*/
 func Test_Stop(t *testing.T) {
 
 	p := newPlayingBar()
