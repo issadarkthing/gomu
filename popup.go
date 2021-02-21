@@ -14,6 +14,8 @@ import (
 	"github.com/rivo/tview"
 	"github.com/sahilm/fuzzy"
 	"github.com/ztrue/tracerr"
+
+	"github.com/issadarkthing/gomu/invidious"
 )
 
 // this is used to make the popup unique
@@ -681,6 +683,8 @@ func ytSearchPopup() {
 
 	input := newInputPopup(popupId, " Youtube Search ", "search: ", "")
 
+	instance := gomu.anko.GetString("General.invidious_instance")
+	inv := invidious.Invidious{Domain: instance}
 
 	var mutex sync.Mutex
 	prefixMap := make(map[string][]string)
@@ -703,7 +707,7 @@ func ytSearchPopup() {
 		}
 
 		go func() {
-			suggestions, err := getSuggestions(currentText)
+			suggestions, err := inv.GetSuggestions(currentText)
 			if err != nil {
 				logError(err)
 				return
@@ -731,7 +735,7 @@ func ytSearchPopup() {
 
 			go func() {
 
-				results, err := getSearchResult(search)
+				results, err := inv.GetSearchQuery(search)
 				if err != nil {
 					logError(err)
 					defaultTimedPopup(" Error ", err.Error())
