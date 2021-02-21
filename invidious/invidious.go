@@ -29,6 +29,7 @@ type YoutubeVideo struct {
 	VideoId       string `json:"videoId"`
 }
 
+// GetSearchQuery fetches query result from an Invidious instance.
 func (i *Invidious) GetSearchQuery(query string) ([]YoutubeVideo, error) {
 
 	query = url.QueryEscape(query)
@@ -44,6 +45,8 @@ func (i *Invidious) GetSearchQuery(query string) ([]YoutubeVideo, error) {
 	return yt, nil
 }
 
+// GetSuggestions returns video suggestions based on prefix strings. This is the
+// same result as youtube search autocomplete.
 func (_ *Invidious) GetSuggestions(prefix string) ([]string, error) {
 
 	query := url.QueryEscape(prefix)
