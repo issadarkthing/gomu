@@ -3,11 +3,16 @@
 package main
 
 import (
+	// "bytes"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
 
+	// "github.com/asticode/go-astisub"
+	"github.com/bogem/id3v2"
+	"github.com/martinlindhe/subtitles"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
 )
@@ -19,7 +24,17 @@ type PlayingBar struct {
 	_progress int
 	skip      bool
 	text      *tview.TextView
+	hasTag    bool
+	tag       *id3v2.Tag
 }
+
+type lyricParsed struct {
+	timestart time.Duration
+	timeend   time.Duration
+	lyricText string
+}
+
+var lyricsParsed []lyricParsed
 
 func (p *PlayingBar) help() []string {
 	return []string{}
@@ -71,13 +86,21 @@ func (p *PlayingBar) run() error {
 		_, _, width, _ := p.GetInnerRect()
 		progressBar := progresStr(p._progress, p.full, width/2, "█", "━")
 		// our progress bar
-		p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s",
-			fmtDuration(start),
-			progressBar,
-			fmtDuration(end),
-		))
+		if p.hasTag {
+			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n%s",
+				fmtDuration(start),
+				progressBar,
+				fmtDuration(end),
+				p.tag.Title(),
+			))
+		} else {
+			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s",
+				fmtDuration(start),
+				progressBar,
+				fmtDuration(end),
+			))
+		}
 		gomu.app.Draw()
-
 	}
 
 	return nil
@@ -95,6 +118,35 @@ func (p *PlayingBar) newProgress(songTitle string, full int) {
 	p.full = full
 	p._progress = 0
 	p.setSongTitle(songTitle)
+	var tag *id3v2.Tag
+	var err error
+	tag, err = id3v2.Open(gomu.player.currentSong.path, id3v2.Options{Parse: true})
+	if tag == nil || err != nil {
+		logError(err)
+	} else {
+		p.hasTag = true
+		p.tag = tag
+
+		usltFrames := tag.GetFrames(tag.CommonID("Unsynchronised lyrics/text transcription"))
+
+		for _, f := range usltFrames {
+			uslf, ok := f.(id3v2.UnsynchronisedLyricsFrame)
+			if !ok {
+				log.Fatal("USLT error!")
+			}
+			/* subtitleLyric, err := astisub.ReadFromWebVTT(bytes.NewBufferString(uslf.Lyrics))
+			if err != nil {
+				logError(err)
+			}
+			_ = subtitleLyric */
+			res, err := subtitles.NewFromSRT(uslf.Lyrics)
+			if err != nil {
+				logError(err)
+			}
+			fmt.Println(res.Captions[3])
+		}
+	}
+	defer tag.Close()
 }
 
 // Sets default title and progress bar

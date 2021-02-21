@@ -553,6 +553,8 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 
 	metaData := fmt.Sprintf("%%(artist)s - %%(title)s")
 
+	langSubtitle := "en,zh-Hans"
+
 	args := []string{
 		"--extract-audio",
 		"--audio-format",
@@ -563,6 +565,11 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		"--embed-thumbnail",
 		"--metadata-from-title",
 		metaData,
+		"--write-sub",
+		"--sub-lang",
+		langSubtitle,
+		"--convert-subs",
+		"srt",
 		// "--cookies",
 		// "~/Downloads/youtube.com_cookies.txt",
 		url,
@@ -602,65 +609,6 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	}
 
 	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s", getName(audioPath))
-	defaultTimedPopup(" Ytdl ", downloadFinishedMessage)
-	gomu.app.Draw()
-
-	return nil
-}
-
-// Download audio subtitle from youtube audio
-func ytdlSubtitle(url string, selPlaylist *tview.TreeNode) error {
-
-	// lookup if youtube-dl exists
-	_, err := exec.LookPath("youtube-dl")
-
-	if err != nil {
-		defaultTimedPopup(" Error ", "youtube-dl is not in your $PATH")
-
-		return tracerr.Wrap(err)
-	}
-
-	selAudioFile := selPlaylist.GetReference().(*AudioFile)
-	dir := selAudioFile.path
-
-	// defaultTimedPopup(" Ytdl ", "Downloading subtitles")
-
-	// specify the output path for ytdl
-	outputDir := fmt.Sprintf(
-		"%s/%%(title)s.%%(ext)s",
-		dir)
-
-	langSubtitle := "en,zh-Hans"
-
-	args := []string{
-		"--skip-download",
-		"--output",
-		outputDir,
-		"--write-sub",
-		"--sub-lang",
-		langSubtitle,
-		"--convert-subs",
-		"lrc",
-		url,
-	}
-
-	cmd := exec.Command("youtube-dl", args...)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	// blocking
-	err = cmd.Run()
-
-	if err != nil {
-		defaultTimedPopup(" Error ", "Error running youtube-dl")
-		return tracerr.Wrap(err)
-	}
-
-	playlistPath := dir
-	audioPath := extractFilePath(stdout.Bytes(), playlistPath)
-
-	downloadFinishedMessage := fmt.Sprintf("Finished downloading subtitles\n%s", getName(audioPath))
 	defaultTimedPopup(" Ytdl ", downloadFinishedMessage)
 	gomu.app.Draw()
 
