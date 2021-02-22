@@ -889,7 +889,7 @@ func tagPopup(node *AudioFile) bool {
 
 				// Write tag to mp3.
 				if err := tag.Save(); err != nil {
-					defaultTimedPopup(" Error ", err.Error())
+					errorPopup(err)
 					logError(err)
 				} else {
 					defaultTimedPopup(" Success ", "Tag update successfully")
