@@ -4,8 +4,8 @@ package main
 
 import (
 	// "bytes"
+	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -142,7 +142,7 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 		for _, f := range usltFrames {
 			uslf, ok := f.(id3v2.UnsynchronisedLyricsFrame)
 			if !ok {
-				log.Fatal("USLT error!")
+				die(errors.New("USLT error!"))
 			}
 			/* subtitleLyric, err := astisub.ReadFromWebVTT(bytes.NewBufferString(uslf.Lyrics))
 			if err != nil {
