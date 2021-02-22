@@ -832,7 +832,8 @@ func tagPopup(node *AudioFile) bool {
 		AddDropDown("Lyrics Available", lyricsAvailable, 0, nil).
 		AddCheckbox("Embed Lyrics", true, nil)
 
-	form.SetBackgroundColor(gomu.colors.popup).
+
+	form.SetFieldBackgroundColor(gomu.colors.popup).
 		SetBackgroundColor(gomu.colors.popup).
 		SetTitle(node.name).
 		SetBorder(true).
