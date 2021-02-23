@@ -86,11 +86,30 @@ func (p *PlayingBar) run() error {
 		// our progress bar
 		if p.hasTag && p.subtitles != nil {
 			for i := range p.subtitles {
+				// First we check if the lyric language prefered is presented
 				if strings.Contains(p.langLyric, p.subtitles[i].langExt) {
 					p.subtitle = p.subtitles[i].subtitle
 					break
 				}
 			}
+
+			// Secondly we check if english lyric is available
+			if p.subtitle == nil {
+				for i := range p.subtitles {
+					if strings.Contains(p.langLyric, "en") {
+						p.subtitle = p.subtitles[i].subtitle
+						p.langLyric = "en"
+						break
+					}
+				}
+			}
+
+			//Finally we display the first lyric
+			if p.subtitle == nil {
+				p.subtitle = p.subtitles[0].subtitle
+				p.langLyric = p.subtitles[0].langExt
+			}
+
 			var lyricText string
 			if p.subtitle != nil {
 				for i := range p.subtitle.Captions {
