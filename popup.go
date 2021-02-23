@@ -17,6 +17,8 @@ import (
 	"github.com/rivo/tview"
 	"github.com/sahilm/fuzzy"
 	"github.com/ztrue/tracerr"
+
+	"github.com/issadarkthing/gomu/lyric"
 )
 
 // this is used to make the popup unique
@@ -907,4 +909,55 @@ func tagPopup(node *AudioFile) bool {
 		return e
 	})
 	return true
+}
+
+func lyricPopup(audioFile *AudioFile) error {
+
+	results, err := lyric.GetLyricOptions(audioFile.name)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	titles := make([]string, 0, len(results))
+
+	for result := range results {
+		titles = append(titles, result)
+	}
+
+	searchPopup(" Lyrics ", titles, func(selected string) {
+		if selected == "" {
+			return
+		}
+
+		go func() {
+			url := results[selected]
+			lyric, err := lyric.GetLyric(url)
+			if err != nil {
+				errorPopup(err)
+			}
+
+			tag, err := id3v2.Open(audioFile.path, id3v2.Options{Parse: true})
+			if err != nil {
+				errorPopup(err)
+			}
+			defer tag.Close()
+
+			tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
+				Encoding:          id3v2.EncodingUTF8,
+				Language:          "eng",
+				ContentDescriptor: tag.Artist() + "-" + tag.Title(),
+				Lyrics:            lyric,
+			})
+
+			err = tag.Save()
+			if err != nil {
+				errorPopup(err)
+			} else {
+				infoPopup("Lyric added successfully")
+			}
+
+		}()
+	})
+
+	return nil
 }
