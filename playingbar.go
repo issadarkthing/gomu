@@ -211,6 +211,11 @@ func (p *PlayingBar) stop() {
 }
 
 func (p *PlayingBar) switchLyrics() {
+
+	if len(p.subtitles) == 0 {
+		return
+	}
+
 	var langIndex int
 	for i := range p.subtitles {
 		if p.subtitles[i].langExt == p.langLyric {
