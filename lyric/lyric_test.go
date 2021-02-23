@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/martinlindhe/subtitles"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,5 +20,12 @@ func TestCleanHTML(t *testing.T) {
 		t.Error(err)
 	}
 
-	assert.Equal(t, string(clean), cleanHTML(string(unclean)))
+	got := cleanHTML(string(unclean))
+
+	assert.Equal(t, string(clean), got)
+
+	_, err = subtitles.NewFromSRT(got)
+	if err != nil {
+		t.Error(err)
+	}
 }
