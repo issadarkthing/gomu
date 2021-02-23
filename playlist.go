@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bogem/id3v2"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	spin "github.com/tj/go-spin"
@@ -60,8 +61,7 @@ func (p *Playlist) help() []string {
 		"Y      download audio from url",
 		"r      refresh",
 		"R      rename",
-		"y      yank file",
-		"p      paste file",
+		"y/p    yank/paste file",
 		"/      find in playlist",
 		"s      search audio from youtube",
 		"t      edit mp3 tags",
@@ -553,8 +553,6 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 
 	metaData := fmt.Sprintf("%%(artist)s - %%(title)s")
 
-	langSubtitle := "en,zh-Hans"
-
 	args := []string{
 		"--extract-audio",
 		"--audio-format",
@@ -566,8 +564,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		"--metadata-from-title",
 		metaData,
 		"--write-sub",
-		"--sub-lang",
-		langSubtitle,
+		"--all-subs",
 		"--convert-subs",
 		"srt",
 		// "--cookies",
@@ -589,7 +586,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	gomu.playlist.done <- struct{}{}
 
 	if err != nil {
-		defaultTimedPopup(" Error ", "Error running youtube-dl")
+		errorPopup(err)
 		return tracerr.Wrap(err)
 	}
 
@@ -608,7 +605,45 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		return tracerr.Wrap(err)
 	}
 
-	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s", getName(audioPath))
+	//Embed lyric to mp3 as uslt
+	var tag *id3v2.Tag
+	tag, err = id3v2.Open(audioPath, id3v2.Options{Parse: true})
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	defer tag.Close()
+
+	// langLyric := gomu.anko.GetString("General.lang_lyric")
+
+	pathToFile, _ := filepath.Split(audioPath)
+	files, err := ioutil.ReadDir(pathToFile)
+	if err != nil {
+		logError(err)
+	}
+	//i is used to decide which subtitle to write
+	var lyricWritten int = 0
+	for _, file := range files {
+		// songNameWithoutExt := getName(audioPath)
+		fileName := file.Name()
+		fileExt := filepath.Ext(fileName)
+		lyricFileName := filepath.Join(pathToFile, fileName)
+		if fileExt == ".srt" {
+			//Embed all lyrics and use langExt as content descriptor of uslt
+			fileNameWithoutExt := strings.TrimSuffix(fileName, fileExt)
+			langExt := strings.TrimPrefix(filepath.Ext(fileNameWithoutExt), ".")
+			err = EmbedLyric(audioPath, lyricFileName, langExt)
+			if err != nil {
+				return tracerr.Wrap(err)
+			}
+			err = os.Remove(lyricFileName)
+			if err != nil {
+				return tracerr.Wrap(err)
+			}
+			lyricWritten++
+		}
+	}
+
+	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s\n%v lyrics embeded", getName(audioPath), lyricWritten)
 	defaultTimedPopup(" Ytdl ", downloadFinishedMessage)
 	gomu.app.Draw()
 
@@ -780,4 +815,43 @@ func populateAudioLength(root *tview.TreeNode) error {
 
 	gomu.queue.updateTitle()
 	return nil
+}
+
+func EmbedLyric(songFile string, lyricFile string, usltContentDescriptor string) (err error) {
+	// Read entire file content, giving us little control but
+	// making it very simple. No need to close the file.
+	content, err := ioutil.ReadFile(lyricFile)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	// Convert []byte to string and print to screen
+	lyric := string(content)
+	var tag *id3v2.Tag
+	tag, err = id3v2.Open(songFile, id3v2.Options{Parse: true})
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	defer tag.Close()
+
+	tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
+		Encoding:          id3v2.EncodingUTF8,
+		Language:          "eng",
+		ContentDescriptor: usltContentDescriptor,
+		Lyrics:            lyric,
+	})
+	// lyrics := "'first line',12343\n\r'secondline',23455\n\r"
+	/* tag.AddSynchronisedLyricsFrame(id3v2.SynchronisedLyricsFrame{
+		Encoding:             id3v2.EncodingUTF8,
+		Language:             "eng",
+		TimeStampFormat:      2,
+		ContentType:          1,
+		ContentDescriptor:    tagArtist + "-" + tagTitle,
+		SynchronizedTextSpec: lyric,
+	}) */
+	err = tag.Save()
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	return err
 }

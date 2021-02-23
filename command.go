@@ -383,7 +383,10 @@ func (c Command) defineCommands() {
 	c.define("edit_tags", func() {
 		audioFile := gomu.playlist.getCurrentFile()
 		tagPopup(audioFile)
+	})
 
+	c.define("switch_lyric", func() {
+		gomu.playingBar.switchLyrics()
 	})
 
 	for name, cmd := range c.commands {

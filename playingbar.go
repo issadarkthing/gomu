@@ -3,9 +3,8 @@
 package main
 
 import (
-	// "bytes"
+	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -27,6 +26,13 @@ type PlayingBar struct {
 	hasTag    bool
 	tag       *id3v2.Tag
 	subtitle  *subtitles.Subtitle
+	subtitles []*GomuSubtitle
+	langLyric string
+}
+
+type GomuSubtitle struct {
+	langExt  string
+	subtitle *subtitles.Subtitle
 }
 
 func (p *PlayingBar) help() []string {
@@ -79,19 +85,27 @@ func (p *PlayingBar) run() error {
 		_, _, width, _ := p.GetInnerRect()
 		progressBar := progresStr(p._progress, p.full, width/2, "█", "━")
 		// our progress bar
-		if p.hasTag && p.subtitle != nil {
-			var lyricText string
-			for i := range p.subtitle.Captions {
-				startTime := p.subtitle.Captions[i].Start
-				endTime := p.subtitle.Captions[i].End
-				currentTime := time.Date(0, 1, 1, 0, 0, p._progress, 0, time.UTC)
-				if currentTime.After(startTime.Add(-1*time.Second)) && currentTime.Before(endTime.Add(-1*time.Second)) {
-					lyricText = strings.Join(p.subtitle.Captions[i].Text, " ")
-					break
-				} else {
-					lyricText = ""
+		if p.hasTag && p.subtitles != nil {
+			for i := range p.subtitles {
+				if p.subtitles[i].langExt == p.langLyric {
+					p.subtitle = p.subtitles[i].subtitle
 				}
 			}
+			var lyricText string
+			if p.subtitle != nil {
+				for i := range p.subtitle.Captions {
+					startTime := p.subtitle.Captions[i].Start
+					endTime := p.subtitle.Captions[i].End
+					currentTime := time.Date(0, 1, 1, 0, 0, p._progress, 0, time.UTC)
+					if currentTime.After(startTime.Add(-1*time.Second)) && currentTime.Before(endTime.Add(-1*time.Second)) {
+						lyricText = strings.Join(p.subtitle.Captions[i].Text, " ")
+						break
+					} else {
+						lyricText = ""
+					}
+				}
+			}
+
 			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n%v",
 				fmtDuration(start),
 				progressBar,
@@ -125,7 +139,7 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 	p._progress = 0
 	p.setSongTitle(currentSong.name)
 	p.hasTag = false
-	p.subtitle = nil
+	p.subtitles = nil
 	p.tag = nil
 
 	var tag *id3v2.Tag
@@ -142,19 +156,19 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 		for _, f := range usltFrames {
 			uslf, ok := f.(id3v2.UnsynchronisedLyricsFrame)
 			if !ok {
-				log.Fatal("USLT error!")
+				die(errors.New("USLT error!"))
 			}
-			/* subtitleLyric, err := astisub.ReadFromWebVTT(bytes.NewBufferString(uslf.Lyrics))
-			if err != nil {
-				logError(err)
-			}
-			_ = subtitleLyric */
 			res, err := subtitles.NewFromSRT(uslf.Lyrics)
 			if err != nil {
 				logError(err)
 			}
-			p.subtitle = &res
-			// fmt.Println(res.Captions[8].Start.Clock())
+			subtitle := &GomuSubtitle{
+				langExt:  uslf.ContentDescriptor,
+				subtitle: &res,
+			}
+			p.subtitles = append(p.subtitles, subtitle)
+			p.langLyric = "en"
+			p.langLyric = gomu.anko.GetString("General.lang_lyric")
 		}
 	}
 	defer tag.Close()
@@ -173,4 +187,22 @@ func (p *PlayingBar) setDefault() {
 // Skips the current playing song
 func (p *PlayingBar) stop() {
 	p.skip = true
+}
+
+func (p *PlayingBar) switchLyrics() {
+	var langIndex int
+	for i := range p.subtitles {
+		if p.subtitles[i].langExt == p.langLyric {
+			langIndex = i + 1
+			break
+		}
+	}
+
+	if langIndex >= len(p.subtitles) {
+		langIndex = 0
+	}
+
+	p.langLyric = p.subtitles[langIndex].langExt
+	defaultTimedPopup(" Success ", p.langLyric+" lyric switched successfully.")
+
 }
