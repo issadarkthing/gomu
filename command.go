@@ -391,10 +391,12 @@ func (c Command) defineCommands() {
 
 		if audioFile.isAudioFile {
 			go func() {
-				err := lyricPopup(audioFile)
-				if err != nil {
-					errorPopup(err)
-				}
+				gomu.app.QueueUpdateDraw(func() {
+					err := lyricPopup(audioFile)
+					if err != nil {
+						errorPopup(err)
+					}
+				})
 			}()
 		}
 	})
