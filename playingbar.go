@@ -97,7 +97,7 @@ func (p *PlayingBar) run() error {
 					startTime := p.subtitle.Captions[i].Start
 					endTime := p.subtitle.Captions[i].End
 					currentTime := time.Date(0, 1, 1, 0, 0, p._progress, 0, time.UTC)
-					if currentTime.After(startTime.Add(-1*time.Second)) && currentTime.Before(endTime.Add(-1*time.Second)) {
+					if currentTime.After(startTime.Add(-1*time.Second)) && currentTime.Before(endTime) {
 						lyricText = strings.Join(p.subtitle.Captions[i].Text, " ")
 						break
 					} else {
