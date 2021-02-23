@@ -86,7 +86,7 @@ func (p *PlayingBar) run() error {
 		// our progress bar
 		if p.hasTag && p.subtitles != nil {
 			for i := range p.subtitles {
-				if p.subtitles[i].langExt == p.langLyric {
+				if strings.Contains(p.langLyric, p.subtitles[i].langExt) {
 					p.subtitle = p.subtitles[i].subtitle
 					break
 				}
@@ -167,8 +167,10 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 				subtitle: &res,
 			}
 			p.subtitles = append(p.subtitles, subtitle)
-			p.langLyric = "en"
 			p.langLyric = gomu.anko.GetString("General.lang_lyric")
+			if p.langLyric == "" {
+				p.langLyric = "en"
+			}
 		}
 	}
 	defer tag.Close()

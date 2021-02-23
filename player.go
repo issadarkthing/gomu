@@ -207,6 +207,7 @@ func (p *Player) play() {
 	p.ctrl.Paused = false
 	p.isRunning = true
 	speaker.Unlock()
+	gomu.playingBar.setSongTitle(p.currentSong.name)
 }
 
 // volume up and volume down using -0.5 or +0.5
