@@ -88,6 +88,7 @@ func (p *PlayingBar) run() error {
 			for i := range p.subtitles {
 				if p.subtitles[i].langExt == p.langLyric {
 					p.subtitle = p.subtitles[i].subtitle
+					break
 				}
 			}
 			var lyricText string
