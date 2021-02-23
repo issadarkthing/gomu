@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	// "github.com/asticode/go-astisub"
 	"github.com/bogem/id3v2"
 	"github.com/martinlindhe/subtitles"
 	"github.com/rivo/tview"

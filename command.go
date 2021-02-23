@@ -389,6 +389,21 @@ func (c Command) defineCommands() {
 		gomu.playingBar.switchLyrics()
 	})
 
+	c.define("fetch_lyric", func() {
+		audioFile := gomu.playlist.getCurrentFile()
+
+		if audioFile.isAudioFile {
+			go func() {
+				gomu.app.QueueUpdateDraw(func() {
+					err := lyricPopup(audioFile)
+					if err != nil {
+						errorPopup(err)
+					}
+				})
+			}()
+		}
+	})
+
 	for name, cmd := range c.commands {
 		err := gomu.anko.Define(name, cmd)
 		if err != nil {

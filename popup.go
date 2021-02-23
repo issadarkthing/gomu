@@ -17,6 +17,9 @@ import (
 	"github.com/rivo/tview"
 	"github.com/sahilm/fuzzy"
 	"github.com/ztrue/tracerr"
+
+	"github.com/issadarkthing/gomu/invidious"
+	"github.com/issadarkthing/gomu/lyric"
 )
 
 // this is used to make the popup unique
@@ -184,10 +187,10 @@ func timedPopup(
 
 	go func() {
 		time.Sleep(timeout)
-		gomu.pages.RemovePage(popupID)
-		gomu.app.Draw()
-
-		resetFocus()
+		gomu.app.QueueUpdateDraw(func() {
+			gomu.pages.RemovePage(popupID)
+			resetFocus()
+		})
 	}()
 }
 
@@ -685,6 +688,9 @@ func ytSearchPopup() {
 
 	input := newInputPopup(popupId, " Youtube Search ", "search: ", "")
 
+	instance := gomu.anko.GetString("General.invidious_instance")
+	inv := invidious.Invidious{Domain: instance}
+
 	var mutex sync.Mutex
 	prefixMap := make(map[string][]string)
 
@@ -706,7 +712,7 @@ func ytSearchPopup() {
 		}
 
 		go func() {
-			suggestions, err := getSuggestions(currentText)
+			suggestions, err := inv.GetSuggestions(currentText)
 			if err != nil {
 				logError(err)
 				return
@@ -734,7 +740,7 @@ func ytSearchPopup() {
 
 			go func() {
 
-				results, err := getSearchResult(search)
+				results, err := inv.GetSearchQuery(search)
 				if err != nil {
 					logError(err)
 					defaultTimedPopup(" Error ", err.Error())
@@ -872,6 +878,7 @@ func tagPopup(node *AudioFile) bool {
 						errorPopup(err)
 						logError(err)
 					}
+
 				}
 				defaultTimedPopup(" Success ", "Tag update successfully")
 				gomu.pages.RemovePage(popupID)
@@ -886,4 +893,55 @@ func tagPopup(node *AudioFile) bool {
 		return e
 	})
 	return true
+}
+
+func lyricPopup(audioFile *AudioFile) error {
+
+	results, err := lyric.GetLyricOptions(audioFile.name)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	titles := make([]string, 0, len(results))
+
+	for result := range results {
+		titles = append(titles, result)
+	}
+
+	searchPopup(" Lyrics ", titles, func(selected string) {
+		if selected == "" {
+			return
+		}
+
+		go func() {
+			url := results[selected]
+			lyric, err := lyric.GetLyric(url)
+			if err != nil {
+				errorPopup(err)
+			}
+
+			tag, err := id3v2.Open(audioFile.path, id3v2.Options{Parse: true})
+			if err != nil {
+				errorPopup(err)
+			}
+			defer tag.Close()
+
+			tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
+				Encoding:          id3v2.EncodingUTF8,
+				Language:          "eng",
+				ContentDescriptor: tag.Artist() + "-" + tag.Title(),
+				Lyrics:            lyric,
+			})
+
+			err = tag.Save()
+			if err != nil {
+				errorPopup(err)
+			} else {
+				infoPopup("Lyric added successfully")
+			}
+
+		}()
+	})
+
+	return nil
 }

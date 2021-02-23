@@ -8,4 +8,4 @@ before_install:
   - sudo apt-get -y install libasound2-dev
 
 script:
-  - go test
+  - go test ./...
