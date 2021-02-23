@@ -929,7 +929,7 @@ func lyricPopup(audioFile *AudioFile) error {
 			tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
 				Encoding:          id3v2.EncodingUTF8,
 				Language:          "eng",
-				ContentDescriptor: tag.Artist() + "-" + tag.Title(),
+				ContentDescriptor: "en",
 				Lyrics:            lyric,
 			})
 
