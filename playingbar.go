@@ -104,7 +104,7 @@ func (p *PlayingBar) run() error {
 				}
 			}
 
-			//Finally we display the first lyric
+			// Finally we display the first lyric
 			if p.subtitle == nil {
 				p.subtitle = p.subtitles[0].subtitle
 				p.langLyric = p.subtitles[0].langExt
@@ -129,7 +129,6 @@ func (p *PlayingBar) run() error {
 				fmtDuration(start),
 				progressBar,
 				fmtDuration(end),
-				// p.tag.Title(),
 				lyricText,
 			))
 		} else {

@@ -265,7 +265,7 @@ func (p *Player) getPosition() time.Duration {
 	return p.format.SampleRate.D(p.streamSeekCloser.Position())
 }
 
-//seek is the function to move forward and rewind
+// seek is the function to move forward and rewind
 func (p *Player) seek(pos int) error {
 	speaker.Lock()
 	defer speaker.Unlock()

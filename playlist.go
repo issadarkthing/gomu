@@ -234,7 +234,7 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 					audioFile.name+"\nhas been deleted successfully")
 				p.refresh()
 
-				//Here we remove the song from queue
+				// Here we remove the song from queue
 				songPaths := gomu.queue.getItems()
 				if audioName == getName(gomu.player.currentSong.name) {
 					gomu.player.skip()
@@ -607,7 +607,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		return tracerr.Wrap(err)
 	}
 
-	//Embed lyric to mp3 as uslt
+	// Embed lyric to mp3 as uslt
 	var tag *id3v2.Tag
 	tag, err = id3v2.Open(audioPath, id3v2.Options{Parse: true})
 	if err != nil {
@@ -622,7 +622,6 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	if err != nil {
 		logError(err)
 	}
-	//i is used to decide which subtitle to write
 	var lyricWritten int = 0
 	for _, file := range files {
 		// songNameWithoutExt := getName(audioPath)
@@ -630,7 +629,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		fileExt := filepath.Ext(fileName)
 		lyricFileName := filepath.Join(pathToFile, fileName)
 		if fileExt == ".srt" {
-			//Embed all lyrics and use langExt as content descriptor of uslt
+			// Embed all lyrics and use langExt as content descriptor of uslt
 			fileNameWithoutExt := strings.TrimSuffix(fileName, fileExt)
 			langExt := strings.TrimPrefix(filepath.Ext(fileNameWithoutExt), ".")
 			err = EmbedLyric(audioPath, lyricFileName, langExt)
@@ -799,8 +798,8 @@ func setDisplayText(songName string) string {
 	return fmt.Sprintf(" %s %s", emojiFile, songName)
 }
 
-//populateAudioLength is the most time consuming part of startup,
-//so here we initialize it separately
+// populateAudioLength is the most time consuming part of startup,
+// so here we initialize it separately
 func populateAudioLength(root *tview.TreeNode) error {
 	root.Walk(func(node *tview.TreeNode, _ *tview.TreeNode) bool {
 		audioFile := node.GetReference().(*AudioFile)
