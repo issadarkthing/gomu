@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bogem/id3v2"
 	"github.com/ztrue/tracerr"
 )
 
@@ -239,4 +240,34 @@ func shell(input string) (string, error) {
 	}
 
 	return stdout.String(), nil
+}
+
+func embedLyric(songPath string, lyricContent string, usltContentDescriptor string) (err error) {
+	var tag *id3v2.Tag
+	tag, err = id3v2.Open(songPath, id3v2.Options{Parse: true})
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	defer tag.Close()
+
+	tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
+		Encoding:          id3v2.EncodingUTF8,
+		Language:          "eng",
+		ContentDescriptor: usltContentDescriptor,
+		Lyrics:            lyricContent,
+	})
+	// lyrics := "'first line',12343\n\r'secondline',23455\n\r"
+	/* tag.AddSynchronisedLyricsFrame(id3v2.SynchronisedLyricsFrame{
+		Encoding:             id3v2.EncodingUTF8,
+		Language:             "eng",
+		TimeStampFormat:      2,
+		ContentType:          1,
+		ContentDescriptor:    tagArtist + "-" + tagTitle,
+		SynchronizedTextSpec: lyric,
+	}) */
+	err = tag.Save()
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	return err
 }

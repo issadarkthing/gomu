@@ -25,11 +25,11 @@ type PlayingBar struct {
 	hasTag    bool
 	tag       *id3v2.Tag
 	subtitle  *subtitles.Subtitle
-	subtitles []*GomuSubtitle
+	subtitles []*gomuSubtitle
 	langLyric string
 }
 
-type GomuSubtitle struct {
+type gomuSubtitle struct {
 	langExt  string
 	subtitle *subtitles.Subtitle
 }
@@ -180,7 +180,7 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 			if err != nil {
 				logError(err)
 			}
-			subtitle := &GomuSubtitle{
+			subtitle := &gomuSubtitle{
 				langExt:  uslf.ContentDescriptor,
 				subtitle: &res,
 			}

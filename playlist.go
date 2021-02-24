@@ -632,7 +632,16 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 			// Embed all lyrics and use langExt as content descriptor of uslt
 			fileNameWithoutExt := strings.TrimSuffix(fileName, fileExt)
 			langExt := strings.TrimPrefix(filepath.Ext(fileNameWithoutExt), ".")
-			err = EmbedLyric(audioPath, lyricFileName, langExt)
+
+			// Read entire file content, giving us little control but
+			// making it very simple. No need to close the file.
+			byteContent, err := ioutil.ReadFile(lyricFileName)
+			if err != nil {
+				return tracerr.Wrap(err)
+			}
+			lyricContent := string(byteContent)
+
+			err = embedLyric(audioPath, lyricContent, langExt)
 			if err != nil {
 				return tracerr.Wrap(err)
 			}
@@ -757,28 +766,28 @@ func (p *Playlist) paste() error {
 			newPathDir, _ := filepath.Split(pasteFile.path)
 			if oldPathDir == newPathDir {
 				return nil
-			} else {
-				newPathFull := filepath.Join(newPathDir, oldPathFileName)
-				err := os.Rename(yankFile.path, newPathFull)
-				if err != nil {
-					defaultTimedPopup(" Error ", yankFile.name+"\n has not been pasted.")
-					return tracerr.Wrap(err)
-				}
-				defaultTimedPopup(" Success ", yankFile.name+"\n has been pasted to\n"+pasteFile.name)
 			}
+			newPathFull := filepath.Join(newPathDir, oldPathFileName)
+			err := os.Rename(yankFile.path, newPathFull)
+			if err != nil {
+				defaultTimedPopup(" Error ", yankFile.name+"\n has not been pasted.")
+				return tracerr.Wrap(err)
+			}
+			defaultTimedPopup(" Success ", yankFile.name+"\n has been pasted to\n"+pasteFile.name)
+
 		} else {
 			newPathDir := pasteFile.path
 			if oldPathDir == newPathDir {
 				return nil
-			} else {
-				newPathFull := filepath.Join(newPathDir, oldPathFileName)
-				err := os.Rename(yankFile.path, newPathFull)
-				if err != nil {
-					defaultTimedPopup(" Error ", yankFile.name+"\n has not been pasted.")
-					return tracerr.Wrap(err)
-				}
-				defaultTimedPopup(" Success ", yankFile.name+"\n has been pasted to\n"+pasteFile.name)
 			}
+			newPathFull := filepath.Join(newPathDir, oldPathFileName)
+			err := os.Rename(yankFile.path, newPathFull)
+			if err != nil {
+				defaultTimedPopup(" Error ", yankFile.name+"\n has not been pasted.")
+				return tracerr.Wrap(err)
+			}
+			defaultTimedPopup(" Success ", yankFile.name+"\n has been pasted to\n"+pasteFile.name)
+
 		}
 
 		p.refresh()
@@ -816,43 +825,4 @@ func populateAudioLength(root *tview.TreeNode) error {
 
 	gomu.queue.updateTitle()
 	return nil
-}
-
-func EmbedLyric(songFile string, lyricFile string, usltContentDescriptor string) (err error) {
-	// Read entire file content, giving us little control but
-	// making it very simple. No need to close the file.
-	content, err := ioutil.ReadFile(lyricFile)
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-
-	// Convert []byte to string and print to screen
-	lyric := string(content)
-	var tag *id3v2.Tag
-	tag, err = id3v2.Open(songFile, id3v2.Options{Parse: true})
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-	defer tag.Close()
-
-	tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
-		Encoding:          id3v2.EncodingUTF8,
-		Language:          "eng",
-		ContentDescriptor: usltContentDescriptor,
-		Lyrics:            lyric,
-	})
-	// lyrics := "'first line',12343\n\r'secondline',23455\n\r"
-	/* tag.AddSynchronisedLyricsFrame(id3v2.SynchronisedLyricsFrame{
-		Encoding:             id3v2.EncodingUTF8,
-		Language:             "eng",
-		TimeStampFormat:      2,
-		ContentType:          1,
-		ContentDescriptor:    tagArtist + "-" + tagTitle,
-		SynchronizedTextSpec: lyric,
-	}) */
-	err = tag.Save()
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-	return err
 }

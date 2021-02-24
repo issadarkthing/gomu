@@ -4,8 +4,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -277,12 +275,16 @@ func helpPopup(panel Panel) {
 		case tcell.KeyEsc:
 			gomu.pages.RemovePage("help-page")
 			gomu.popups.pop()
+		case tcell.KeyEnter:
+			gomu.pages.RemovePage("help-page")
+			gomu.popups.pop()
+
 		}
 
 		return nil
 	})
 
-	gomu.pages.AddPage("help-page", center(list, 50, 30), true, true)
+	gomu.pages.AddPage("help-page", center(list, 50, 32), true, true)
 	gomu.popups.push(list)
 }
 
@@ -816,28 +818,10 @@ func tagPopup(node *AudioFile) bool {
 
 	popupID := "tag-input-popup"
 
-	var lyricsAvailable []string
-	pathToFile, _ := filepath.Split(node.path)
-
-	files, err := ioutil.ReadDir(pathToFile)
-
-	if err != nil {
-		logError(err)
-		return false
-	}
-
-	for _, file := range files {
-
-		if filepath.Ext(file.Name()) == ".srt" {
-			lyricsAvailable = append(lyricsAvailable, file.Name())
-		}
-	}
 	form := tview.NewForm().
 		AddInputField("Artist", tag.Artist(), 20, nil, nil).
 		AddInputField("Title", tag.Title(), 20, nil, nil).
-		AddInputField("Album", tag.Album(), 20, nil, nil).
-		AddDropDown("Lyrics Available", lyricsAvailable, 0, nil).
-		AddCheckbox("Embed Lyrics", true, nil)
+		AddInputField("Album", tag.Album(), 20, nil, nil)
 
 	form.SetFieldBackgroundColor(gomu.colors.popup).
 		SetBackgroundColor(gomu.colors.popup).
@@ -846,44 +830,34 @@ func tagPopup(node *AudioFile) bool {
 		SetBorderPadding(1, 0, 2, 2)
 
 	gomu.pages.
-		AddPage(popupID, center(form, 60, 30), true, true)
+		AddPage(popupID, center(form, 60, 10), true, true)
 	gomu.popups.push(form)
 
 	form.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 		switch e.Key() {
 		case tcell.KeyEnter:
-			if !form.GetFormItemByLabel("Lyrics Available").HasFocus() {
-				tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
-				if err != nil {
-					logError(err)
-				}
-				tagArtist := form.GetFormItemByLabel("Artist").(*tview.InputField).GetText()
-				tagTitle := form.GetFormItemByLabel("Title").(*tview.InputField).GetText()
-				tag.SetArtist(tagArtist)
-				tag.SetTitle(tagTitle)
-				tag.SetAlbum(form.GetFormItemByLabel("Album").(*tview.InputField).GetText())
-				err := tag.Save()
-				if err != nil {
-					errorPopup(err)
-					gomu.pages.RemovePage(popupID)
-					gomu.popups.pop()
-					return e
-				}
-				tag.Close()
-				if form.GetFormItemByLabel("Embed Lyrics").(*tview.Checkbox).IsChecked() {
-					_, fileName := form.GetFormItemByLabel("Lyrics Available").(*tview.DropDown).GetCurrentOption()
-					lyricFileName := filepath.Join(pathToFile, fileName)
-					err := EmbedLyric(node.path, lyricFileName, "user")
-					if err != nil {
-						errorPopup(err)
-						logError(err)
-					}
-
-				}
-				defaultTimedPopup(" Success ", "Tag update successfully")
+			tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+			if err != nil {
+				errorPopup(err)
+				logError(err)
+			}
+			tagArtist := form.GetFormItemByLabel("Artist").(*tview.InputField).GetText()
+			tagTitle := form.GetFormItemByLabel("Title").(*tview.InputField).GetText()
+			tag.SetArtist(tagArtist)
+			tag.SetTitle(tagTitle)
+			tag.SetAlbum(form.GetFormItemByLabel("Album").(*tview.InputField).GetText())
+			err := tag.Save()
+			if err != nil {
+				errorPopup(err)
+				logError(err)
 				gomu.pages.RemovePage(popupID)
 				gomu.popups.pop()
+				return e
 			}
+
+			defaultTimedPopup(" Success ", "Tag update successfully")
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
 
 		case tcell.KeyEsc:
 			gomu.pages.RemovePage(popupID)
@@ -920,20 +894,8 @@ func lyricPopup(audioFile *AudioFile) error {
 				errorPopup(err)
 			}
 
-			tag, err := id3v2.Open(audioFile.path, id3v2.Options{Parse: true})
-			if err != nil {
-				errorPopup(err)
-			}
-			defer tag.Close()
-
-			tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
-				Encoding:          id3v2.EncodingUTF8,
-				Language:          "eng",
-				ContentDescriptor: "en",
-				Lyrics:            lyric,
-			})
-
-			err = tag.Save()
+			langExt := "en"
+			err = embedLyric(audioFile.path, lyric, langExt)
 			if err != nil {
 				errorPopup(err)
 			} else {
