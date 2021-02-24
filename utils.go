@@ -256,15 +256,7 @@ func embedLyric(songPath string, lyricContent string, usltContentDescriptor stri
 		ContentDescriptor: usltContentDescriptor,
 		Lyrics:            lyricContent,
 	})
-	// lyrics := "'first line',12343\n\r'secondline',23455\n\r"
-	/* tag.AddSynchronisedLyricsFrame(id3v2.SynchronisedLyricsFrame{
-		Encoding:             id3v2.EncodingUTF8,
-		Language:             "eng",
-		TimeStampFormat:      2,
-		ContentType:          1,
-		ContentDescriptor:    tagArtist + "-" + tagTitle,
-		SynchronizedTextSpec: lyric,
-	}) */
+
 	err = tag.Save()
 	if err != nil {
 		return tracerr.Wrap(err)
