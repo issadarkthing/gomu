@@ -68,6 +68,8 @@ Each panel has it's own additional keybinding. To view the available keybinding 
 | f/F             |           forward 10/60 seconds |
 | b/B             |            rewind 10/60 seconds |
 | ?               |                     toggle help |
+| m               |                       open repl |
+| T               |                   switch lyrics |
 
 
 | Key (Playlist)  |                     Description |
@@ -83,10 +85,11 @@ Each panel has it's own additional keybinding. To view the available keybinding 
 | Y               |                  download audio |
 | r               |                         refresh |
 | R               |                          rename |
-| y               |                       yank file |
-| p               |                      paste file |
+| y/p             |                 yank/paste file |
 | /               |                find in playlist |
 | s               |       search audio from youtube |
+| t               |                   edit mp3 tags |
+| 1               |         find lyric if available |
 
 | Key (Queue)     |                     Description |
 |:----------------|--------------------------------:|

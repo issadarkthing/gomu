@@ -128,7 +128,7 @@ func (p *Player) run(currSong *AudioFile) error {
 
 	p.isRunning = true
 
-	gomu.playingBar.newProgress(currSong.name, int(p.length.Seconds()))
+	gomu.playingBar.newProgress(currSong, int(p.length.Seconds()))
 
 	go func() {
 		if err := gomu.playingBar.run(); err != nil {
@@ -207,6 +207,7 @@ func (p *Player) play() {
 	p.ctrl.Paused = false
 	p.isRunning = true
 	speaker.Unlock()
+	gomu.playingBar.setSongTitle(p.currentSong.name)
 }
 
 // volume up and volume down using -0.5 or +0.5
@@ -264,7 +265,7 @@ func (p *Player) getPosition() time.Duration {
 	return p.format.SampleRate.D(p.streamSeekCloser.Position())
 }
 
-//seek is the function to move forward and rewind
+// seek is the function to move forward and rewind
 func (p *Player) seek(pos int) error {
 	speaker.Lock()
 	defer speaker.Unlock()

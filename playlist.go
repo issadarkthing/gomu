@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bogem/id3v2"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	spin "github.com/tj/go-spin"
@@ -60,10 +61,11 @@ func (p *Playlist) help() []string {
 		"Y      download audio from url",
 		"r      refresh",
 		"R      rename",
-		"y      yank file",
-		"p      paste file",
+		"y/p    yank/paste file",
 		"/      find in playlist",
 		"s      search audio from youtube",
+		"t      edit mp3 tags",
+		"1      find lyric if available",
 	}
 
 }
@@ -170,6 +172,8 @@ func newPlaylist(args Args) *Playlist {
 			'y': "yank",
 			'p': "paste",
 			'/': "playlist_search",
+			't': "edit_tags",
+			'1': "fetch_lyric",
 		}
 
 		for key, cmd := range cmds {
@@ -230,7 +234,7 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 					audioFile.name+"\nhas been deleted successfully")
 				p.refresh()
 
-				//Here we remove the song from queue
+				// Here we remove the song from queue
 				songPaths := gomu.queue.getItems()
 				if audioName == getName(gomu.player.currentSong.name) {
 					gomu.player.skip()
@@ -549,12 +553,22 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		"%s/%%(title)s.%%(ext)s",
 		dir)
 
+	metaData := fmt.Sprintf("%%(artist)s - %%(title)s")
+
 	args := []string{
 		"--extract-audio",
 		"--audio-format",
 		"mp3",
 		"--output",
 		outputDir,
+		"--add-metadata",
+		"--embed-thumbnail",
+		"--metadata-from-title",
+		metaData,
+		"--write-sub",
+		"--all-subs",
+		"--convert-subs",
+		"srt",
 		// "--cookies",
 		// "~/Downloads/youtube.com_cookies.txt",
 		url,
@@ -574,7 +588,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	gomu.playlist.done <- struct{}{}
 
 	if err != nil {
-		defaultTimedPopup(" Error ", "Error running youtube-dl")
+		errorPopup(err)
 		return tracerr.Wrap(err)
 	}
 
@@ -593,7 +607,53 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		return tracerr.Wrap(err)
 	}
 
-	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s", getName(audioPath))
+	// Embed lyric to mp3 as uslt
+	var tag *id3v2.Tag
+	tag, err = id3v2.Open(audioPath, id3v2.Options{Parse: true})
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	defer tag.Close()
+
+	// langLyric := gomu.anko.GetString("General.lang_lyric")
+
+	pathToFile, _ := filepath.Split(audioPath)
+	files, err := ioutil.ReadDir(pathToFile)
+	if err != nil {
+		logError(err)
+	}
+	var lyricWritten int = 0
+	for _, file := range files {
+		// songNameWithoutExt := getName(audioPath)
+		fileName := file.Name()
+		fileExt := filepath.Ext(fileName)
+		lyricFileName := filepath.Join(pathToFile, fileName)
+		if fileExt == ".srt" {
+			// Embed all lyrics and use langExt as content descriptor of uslt
+			fileNameWithoutExt := strings.TrimSuffix(fileName, fileExt)
+			langExt := strings.TrimPrefix(filepath.Ext(fileNameWithoutExt), ".")
+
+			// Read entire file content, giving us little control but
+			// making it very simple. No need to close the file.
+			byteContent, err := ioutil.ReadFile(lyricFileName)
+			if err != nil {
+				return tracerr.Wrap(err)
+			}
+			lyricContent := string(byteContent)
+
+			err = embedLyric(audioPath, lyricContent, langExt)
+			if err != nil {
+				return tracerr.Wrap(err)
+			}
+			err = os.Remove(lyricFileName)
+			if err != nil {
+				return tracerr.Wrap(err)
+			}
+			lyricWritten++
+		}
+	}
+
+	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s\n%v lyrics embeded", getName(audioPath), lyricWritten)
 	defaultTimedPopup(" Ytdl ", downloadFinishedMessage)
 	gomu.app.Draw()
 
@@ -706,28 +766,28 @@ func (p *Playlist) paste() error {
 			newPathDir, _ := filepath.Split(pasteFile.path)
 			if oldPathDir == newPathDir {
 				return nil
-			} else {
-				newPathFull := filepath.Join(newPathDir, oldPathFileName)
-				err := os.Rename(yankFile.path, newPathFull)
-				if err != nil {
-					defaultTimedPopup(" Error ", yankFile.name+"\n has not been pasted.")
-					return tracerr.Wrap(err)
-				}
-				defaultTimedPopup(" Success ", yankFile.name+"\n has been pasted to\n"+pasteFile.name)
 			}
+			newPathFull := filepath.Join(newPathDir, oldPathFileName)
+			err := os.Rename(yankFile.path, newPathFull)
+			if err != nil {
+				defaultTimedPopup(" Error ", yankFile.name+"\n has not been pasted.")
+				return tracerr.Wrap(err)
+			}
+			defaultTimedPopup(" Success ", yankFile.name+"\n has been pasted to\n"+pasteFile.name)
+
 		} else {
 			newPathDir := pasteFile.path
 			if oldPathDir == newPathDir {
 				return nil
-			} else {
-				newPathFull := filepath.Join(newPathDir, oldPathFileName)
-				err := os.Rename(yankFile.path, newPathFull)
-				if err != nil {
-					defaultTimedPopup(" Error ", yankFile.name+"\n has not been pasted.")
-					return tracerr.Wrap(err)
-				}
-				defaultTimedPopup(" Success ", yankFile.name+"\n has been pasted to\n"+pasteFile.name)
 			}
+			newPathFull := filepath.Join(newPathDir, oldPathFileName)
+			err := os.Rename(yankFile.path, newPathFull)
+			if err != nil {
+				defaultTimedPopup(" Error ", yankFile.name+"\n has not been pasted.")
+				return tracerr.Wrap(err)
+			}
+			defaultTimedPopup(" Success ", yankFile.name+"\n has been pasted to\n"+pasteFile.name)
+
 		}
 
 		p.refresh()
@@ -747,8 +807,8 @@ func setDisplayText(songName string) string {
 	return fmt.Sprintf(" %s %s", emojiFile, songName)
 }
 
-//populateAudioLength is the most time consuming part of startup,
-//so here we initialize it separately
+// populateAudioLength is the most time consuming part of startup,
+// so here we initialize it separately
 func populateAudioLength(root *tview.TreeNode) error {
 	root.Walk(func(node *tview.TreeNode, _ *tview.TreeNode) bool {
 		audioFile := node.GetReference().(*AudioFile)

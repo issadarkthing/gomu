@@ -10,12 +10,14 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/bogem/id3v2"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/sahilm/fuzzy"
 	"github.com/ztrue/tracerr"
 
 	"github.com/issadarkthing/gomu/invidious"
+	"github.com/issadarkthing/gomu/lyric"
 )
 
 // this is used to make the popup unique
@@ -233,6 +235,7 @@ func helpPopup(panel Panel) {
 		"b/B    rewind 10/60 seconds",
 		"?      toggle help",
 		"m      open repl",
+		"T      switch lyrics",
 	}
 
 	list := tview.NewList().ShowSecondaryText(false)
@@ -272,12 +275,16 @@ func helpPopup(panel Panel) {
 		case tcell.KeyEsc:
 			gomu.pages.RemovePage("help-page")
 			gomu.popups.pop()
+		case tcell.KeyEnter:
+			gomu.pages.RemovePage("help-page")
+			gomu.popups.pop()
+
 		}
 
 		return nil
 	})
 
-	gomu.pages.AddPage("help-page", center(list, 50, 30), true, true)
+	gomu.pages.AddPage("help-page", center(list, 50, 32), true, true)
 	gomu.popups.push(list)
 }
 
@@ -793,4 +800,110 @@ func ytSearchPopup() {
 		}
 
 	})
+}
+
+func tagPopup(node *AudioFile) bool {
+	var tag *id3v2.Tag
+	var err error
+	if node.isAudioFile {
+		tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+		if err != nil {
+			logError(err)
+			return false
+		}
+		defer tag.Close()
+	} else {
+		return false
+	}
+
+	popupID := "tag-input-popup"
+
+	form := tview.NewForm().
+		AddInputField("Artist", tag.Artist(), 20, nil, nil).
+		AddInputField("Title", tag.Title(), 20, nil, nil).
+		AddInputField("Album", tag.Album(), 20, nil, nil)
+
+	form.SetFieldBackgroundColor(gomu.colors.popup).
+		SetBackgroundColor(gomu.colors.popup).
+		SetTitle(node.name).
+		SetBorder(true).
+		SetBorderPadding(1, 0, 2, 2)
+
+	gomu.pages.
+		AddPage(popupID, center(form, 60, 10), true, true)
+	gomu.popups.push(form)
+
+	form.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+		switch e.Key() {
+		case tcell.KeyEnter:
+			tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+			if err != nil {
+				errorPopup(err)
+				logError(err)
+			}
+			tagArtist := form.GetFormItemByLabel("Artist").(*tview.InputField).GetText()
+			tagTitle := form.GetFormItemByLabel("Title").(*tview.InputField).GetText()
+			tag.SetArtist(tagArtist)
+			tag.SetTitle(tagTitle)
+			tag.SetAlbum(form.GetFormItemByLabel("Album").(*tview.InputField).GetText())
+			err := tag.Save()
+			if err != nil {
+				errorPopup(err)
+				logError(err)
+				gomu.pages.RemovePage(popupID)
+				gomu.popups.pop()
+				return e
+			}
+
+			defaultTimedPopup(" Success ", "Tag update successfully")
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
+
+		case tcell.KeyEsc:
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
+		}
+
+		return e
+	})
+	return true
+}
+
+func lyricPopup(audioFile *AudioFile) error {
+
+	results, err := lyric.GetLyricOptions(audioFile.name)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	titles := make([]string, 0, len(results))
+
+	for result := range results {
+		titles = append(titles, result)
+	}
+
+	searchPopup(" Lyrics ", titles, func(selected string) {
+		if selected == "" {
+			return
+		}
+
+		go func() {
+			url := results[selected]
+			lyric, err := lyric.GetLyric(url)
+			if err != nil {
+				errorPopup(err)
+			}
+
+			langExt := "en"
+			err = embedLyric(audioFile.path, lyric, langExt)
+			if err != nil {
+				errorPopup(err)
+			} else {
+				infoPopup("Lyric added successfully")
+			}
+
+		}()
+	})
+
+	return nil
 }

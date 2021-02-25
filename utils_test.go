@@ -4,6 +4,9 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/bogem/id3v2"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFmtDuration(t *testing.T) {
@@ -102,4 +105,45 @@ func TestExpandTilde(t *testing.T) {
 			t.Errorf("expected %s; got %s", v, got)
 		}
 	}
+}
+
+func TestEmbedLyric(t *testing.T) {
+
+	testFile := "./test/sample"
+	lyric := "sample"
+	descriptor := "en"
+
+	f, err := os.Create(testFile)
+	if err != nil {
+		t.Error(err)
+	}
+	f.Close()
+
+	defer func(){
+		err := os.Remove(testFile)
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+
+	err = embedLyric(testFile, lyric, descriptor)
+	if err != nil {
+		t.Error(err)
+	}
+
+	tag, err := id3v2.Open(testFile, id3v2.Options{Parse: true})
+	if err != nil {
+		t.Error(err)
+	} else if tag == nil {
+		t.Error("unable to read tag")
+	}
+
+	usltFrames := tag.GetFrames(tag.CommonID("Unsynchronised lyrics/text transcription"))
+	frame, ok := usltFrames[0].(id3v2.UnsynchronisedLyricsFrame)
+	if !ok {
+		t.Error("invalid type")
+	}
+
+	assert.Equal(t, lyric, frame.Lyrics)
+	assert.Equal(t, descriptor, frame.ContentDescriptor)
 }

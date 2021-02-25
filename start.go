@@ -204,6 +204,10 @@ module General {
 	# to another instance from this list:
 	# https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
 	invidious_instance  = "https://vid.puffyan.us"
+	# Prefered language for lyrics to be embeded, if not available, english version will be embeded.
+	# Available tags: en,el,ko,es,th,vi,zh-Hans,zh-Hant but only set 1 tag is working 
+	# find more tags: youtube-dl --skip-download --list-subs "url"
+	lang_lyric          = "en"
 }
 
 module Emoji {
@@ -397,6 +401,7 @@ func start(application *tview.Application, args Args) {
 			'b': "rewind",
 			'B': "rewind_fast",
 			'm': "repl",
+			'T': "switch_lyric",
 		}
 
 		for key, cmd := range cmds {

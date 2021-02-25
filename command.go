@@ -380,10 +380,35 @@ func (c Command) defineCommands() {
 		replPopup()
 	})
 
+	c.define("edit_tags", func() {
+		audioFile := gomu.playlist.getCurrentFile()
+		tagPopup(audioFile)
+	})
+
+	c.define("switch_lyric", func() {
+		gomu.playingBar.switchLyrics()
+	})
+
+	c.define("fetch_lyric", func() {
+		audioFile := gomu.playlist.getCurrentFile()
+
+		if audioFile.isAudioFile {
+			go func() {
+				gomu.app.QueueUpdateDraw(func() {
+					err := lyricPopup(audioFile)
+					if err != nil {
+						errorPopup(err)
+					}
+				})
+			}()
+		}
+	})
+
 	for name, cmd := range c.commands {
 		err := gomu.anko.Define(name, cmd)
 		if err != nil {
 			logError(err)
 		}
 	}
+
 }
