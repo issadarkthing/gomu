@@ -17,16 +17,17 @@ import (
 
 type PlayingBar struct {
 	*tview.Frame
-	full      int
-	progress  chan int
-	_progress int
-	skip      bool
-	text      *tview.TextView
-	hasTag    bool
-	tag       *id3v2.Tag
-	subtitle  *subtitles.Subtitle
-	subtitles []*gomuSubtitle
-	langLyric string
+	full                    int
+	progress                chan int
+	_progress               int
+	skip                    bool
+	text                    *tview.TextView
+	hasTag                  bool
+	tag                     *id3v2.Tag
+	subtitle                *subtitles.Subtitle
+	subtitles               []*gomuSubtitle
+	langConfigFromConfig    string
+	langLyricCurrentPlaying string
 }
 
 type gomuSubtitle struct {
@@ -87,8 +88,9 @@ func (p *PlayingBar) run() error {
 		if p.hasTag && p.subtitles != nil {
 			for i := range p.subtitles {
 				// First we check if the lyric language prefered is presented
-				if strings.Contains(p.langLyric, p.subtitles[i].langExt) {
+				if strings.Contains(p.langConfigFromConfig, p.subtitles[i].langExt) {
 					p.subtitle = p.subtitles[i].subtitle
+					p.langLyricCurrentPlaying = p.subtitles[i].langExt
 					break
 				}
 			}
@@ -96,9 +98,9 @@ func (p *PlayingBar) run() error {
 			// Secondly we check if english lyric is available
 			if p.subtitle == nil {
 				for i := range p.subtitles {
-					if strings.Contains(p.langLyric, "en") {
+					if p.subtitles[i].langExt == "en" {
 						p.subtitle = p.subtitles[i].subtitle
-						p.langLyric = "en"
+						p.langLyricCurrentPlaying = "en"
 						break
 					}
 				}
@@ -107,7 +109,7 @@ func (p *PlayingBar) run() error {
 			// Finally we display the first lyric
 			if p.subtitle == nil {
 				p.subtitle = p.subtitles[0].subtitle
-				p.langLyric = p.subtitles[0].langExt
+				p.langLyricCurrentPlaying = p.subtitles[0].langExt
 			}
 
 			var lyricText string
@@ -185,9 +187,9 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 				subtitle: &res,
 			}
 			p.subtitles = append(p.subtitles, subtitle)
-			p.langLyric = gomu.anko.GetString("General.lang_lyric")
-			if p.langLyric == "" {
-				p.langLyric = "en"
+			p.langConfigFromConfig = gomu.anko.GetString("General.lang_lyric")
+			if p.langConfigFromConfig == "" {
+				p.langConfigFromConfig = "en"
 			}
 		}
 	}
@@ -217,7 +219,7 @@ func (p *PlayingBar) switchLyrics() {
 
 	var langIndex int
 	for i := range p.subtitles {
-		if p.subtitles[i].langExt == p.langLyric {
+		if p.subtitles[i].langExt == p.langConfigFromConfig {
 			langIndex = i + 1
 			break
 		}
@@ -227,7 +229,17 @@ func (p *PlayingBar) switchLyrics() {
 		langIndex = 0
 	}
 
-	p.langLyric = p.subtitles[langIndex].langExt
-	defaultTimedPopup(" Success ", p.langLyric+" lyric switched successfully.")
+	p.langConfigFromConfig = p.subtitles[langIndex].langExt
+	defaultTimedPopup(" Success ", p.langConfigFromConfig+" lyric switched successfully.")
 
+}
+
+func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
+
+	p.subtitle.ResyncSubs(lyricDelay)
+	err = embedLyric(gomu.player.currentSong.path, p.subtitle.AsSRT(), p.langLyricCurrentPlaying)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	return nil
 }

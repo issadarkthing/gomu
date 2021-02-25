@@ -249,7 +249,19 @@ func embedLyric(songPath string, lyricContent string, usltContentDescriptor stri
 		return tracerr.Wrap(err)
 	}
 	defer tag.Close()
-
+	usltFrames := tag.GetFrames(tag.CommonID("Unsynchronised lyrics/text transcription"))
+	tag.DeleteFrames(tag.CommonID("Unsynchronised lyrics/text transcription"))
+	// We delete the lyric frame with same language by delete all and add others back
+	for _, f := range usltFrames {
+		uslf, ok := f.(id3v2.UnsynchronisedLyricsFrame)
+		if !ok {
+			die(errors.New("USLT error!"))
+		}
+		if uslf.ContentDescriptor == usltContentDescriptor {
+			continue
+		}
+		tag.AddUnsynchronisedLyricsFrame(uslf)
+	}
 	tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
 		Encoding:          id3v2.EncodingUTF8,
 		Language:          "eng",

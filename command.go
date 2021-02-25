@@ -404,6 +404,20 @@ func (c Command) defineCommands() {
 		}
 	})
 
+	c.define("lyric_delay_increase", func() {
+		err := gomu.playingBar.delayLyric(1000)
+		if err != nil {
+			logError(err)
+		}
+	})
+
+	c.define("lyric_delay_decrease", func() {
+		err := gomu.playingBar.delayLyric(-1000)
+		if err != nil {
+			logError(err)
+		}
+	})
+
 	for name, cmd := range c.commands {
 		err := gomu.anko.Define(name, cmd)
 		if err != nil {
