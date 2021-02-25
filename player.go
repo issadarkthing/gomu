@@ -26,7 +26,6 @@ type Player struct {
 	_volume          *effects.Volume
 	ctrl             *beep.Ctrl
 	format           *beep.Format
-	resampler        *beep.Resampler
 	length           time.Duration
 	currentSong      *AudioFile
 	streamSeekCloser beep.StreamSeekCloser
@@ -109,7 +108,6 @@ func (p *Player) run(currSong *AudioFile) error {
 	p.ctrl = ctrl
 
 	resampler := beep.ResampleRatio(4, 1, ctrl)
-	p.resampler = resampler
 
 	volume := &effects.Volume{
 		Streamer: resampler,
