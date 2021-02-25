@@ -103,6 +103,8 @@ Each panel has it's own additional keybinding. To view the available keybinding 
 | z               |                     toggle loop |
 | s               |                         shuffle |
 | /               |                   find in queue |
+| t               |   lyric delay increase 1 second |
+| r               |   lyric delay decrease 1 second |
 
 ### Scripting
 

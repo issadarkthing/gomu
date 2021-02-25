@@ -330,6 +330,8 @@ func (q *Queue) help() []string {
 		"z      toggle loop",
 		"s      shuffle",
 		"/      find in queue",
+		"t      lyric delay increase 1 second",
+		"r      lyric delay decrease 1 second",
 	}
 
 }
@@ -390,6 +392,8 @@ func newQueue() *Queue {
 			'z': "toggle_loop",
 			's': "shuffle_queue",
 			'/': "queue_search",
+			't': "lyric_delay_increase",
+			'r': "lyric_delay_decrease",
 		}
 
 		for key, cmd := range cmds {
