@@ -19,7 +19,7 @@ type PlayingBar struct {
 	*tview.Frame
 	full      int
 	progress  chan int
-	_progress int
+	progress  int
 	skip      bool
 	text      *tview.TextView
 	hasTag    bool
@@ -60,16 +60,16 @@ func (p *PlayingBar) run() error {
 	for {
 
 		// stop progressing if song ends or skipped
-		if p._progress > p.full || p.skip {
+		if p.progress > p.full || p.skip {
 			p.skip = false
-			p._progress = 0
+			p.progress = 0
 			break
 		}
 
 		p._progress += <-p.progress
 
 		p.text.Clear()
-		start, err := time.ParseDuration(strconv.Itoa(p._progress) + "s")
+		start, err := time.ParseDuration(strconv.Itoa(p.progress) + "s")
 
 		if err != nil {
 			return tracerr.Wrap(err)
@@ -82,7 +82,7 @@ func (p *PlayingBar) run() error {
 		}
 
 		_, _, width, _ := p.GetInnerRect()
-		progressBar := progresStr(p._progress, p.full, width/2, "█", "━")
+		progressBar := progresStr(p.progress, p.full, width/2, "█", "━")
 		// our progress bar
 		if p.hasTag && p.subtitles != nil {
 			for i := range p.subtitles {
@@ -115,7 +115,7 @@ func (p *PlayingBar) run() error {
 				for i := range p.subtitle.Captions {
 					startTime := p.subtitle.Captions[i].Start
 					endTime := p.subtitle.Captions[i].End
-					currentTime := time.Date(0, 1, 1, 0, 0, p._progress, 0, time.UTC)
+					currentTime := time.Date(0, 1, 1, 0, 0, p.progress, 0, time.UTC)
 					if currentTime.After(startTime.Add(-1*time.Second)) && currentTime.Before(endTime) {
 						lyricText = strings.Join(p.subtitle.Captions[i].Text, " ")
 						break
@@ -154,7 +154,7 @@ func (p *PlayingBar) setSongTitle(title string) {
 // Resets progress bar, ready for execution
 func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 	p.full = full
-	p._progress = 0
+	p.progress = 0
 	p.setSongTitle(currentSong.name)
 	p.hasTag = false
 	p.subtitles = nil

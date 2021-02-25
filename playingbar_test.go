@@ -20,7 +20,7 @@ func Test_NewPlayingBar(t *testing.T) {
 
 	p := newPlayingBar()
 
-	if p.progress == nil {
+	if p.update == nil {
 		t.Errorf("chan int == nil")
 	}
 
@@ -40,8 +40,8 @@ func Test_NewProgress(t *testing.T) {
 		t.Errorf("Expected %d; got %d", full, p.full)
 	}
 
-	if p._progress != 0 {
-		t.Errorf("Expected %d; got %d", 0, p._progress)
+	if p.progress != 0 {
+		t.Errorf("Expected %d; got %d", 0, p.progress)
 	}
 
 }
