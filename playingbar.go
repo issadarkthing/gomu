@@ -18,7 +18,7 @@ import (
 type PlayingBar struct {
 	*tview.Frame
 	full      int
-	progress  chan int
+	update    chan struct{}
 	progress  int
 	skip      bool
 	text      *tview.TextView
@@ -48,7 +48,7 @@ func newPlayingBar() *PlayingBar {
 	p := &PlayingBar{
 		Frame:    frame,
 		text:     textView,
-		progress: make(chan int),
+		update: make(chan struct{}),
 	}
 
 	return p
@@ -66,7 +66,8 @@ func (p *PlayingBar) run() error {
 			break
 		}
 
-		p._progress += <-p.progress
+		<-p.update
+		p.progress++
 
 		p.text.Clear()
 		start, err := time.ParseDuration(strconv.Itoa(p.progress) + "s")

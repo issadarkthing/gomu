@@ -182,7 +182,7 @@ next:
 				continue
 			}
 
-			gomu.playingBar.progress <- 1
+			gomu.playingBar.update <- struct{}{}
 
 		}
 
