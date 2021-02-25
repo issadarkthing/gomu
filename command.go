@@ -300,64 +300,64 @@ func (c Command) defineCommands() {
 
 	c.define("forward", func() {
 		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
-			position := gomu.playingBar._progress + 10
+			position := gomu.playingBar.progress + 10
 			if position < gomu.playingBar.full {
 				err := gomu.player.seek(position)
 				if err != nil {
 					logError(err)
 				}
-				gomu.playingBar._progress = position
+				gomu.playingBar.progress = position
 			}
 		}
 	})
 
 	c.define("rewind", func() {
 		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
-			position := gomu.playingBar._progress - 10
+			position := gomu.playingBar.progress - 10
 			if position-1 > 0 {
 				err := gomu.player.seek(position)
 				if err != nil {
 					logError(err)
 				}
-				gomu.playingBar._progress = position
+				gomu.playingBar.progress = position
 			} else {
 				err := gomu.player.seek(0)
 				if err != nil {
 					logError(err)
 				}
-				gomu.playingBar._progress = 0
+				gomu.playingBar.progress = 0
 			}
 		}
 	})
 
 	c.define("forward_fast", func() {
 		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
-			position := gomu.playingBar._progress + 60
+			position := gomu.playingBar.progress + 60
 			if position < gomu.playingBar.full {
 				err := gomu.player.seek(position)
 				if err != nil {
 					logError(err)
 				}
-				gomu.playingBar._progress = position
+				gomu.playingBar.progress = position
 			}
 		}
 	})
 
 	c.define("rewind_fast", func() {
 		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
-			position := gomu.playingBar._progress - 60
+			position := gomu.playingBar.progress - 60
 			if position-1 > 0 {
 				err := gomu.player.seek(position)
 				if err != nil {
 					logError(err)
 				}
-				gomu.playingBar._progress = position
+				gomu.playingBar.progress = position
 			} else {
 				err := gomu.player.seek(0)
 				if err != nil {
 					logError(err)
 				}
-				gomu.playingBar._progress = 0
+				gomu.playingBar.progress = 0
 			}
 		}
 	})

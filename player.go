@@ -22,11 +22,10 @@ type Player struct {
 	isSkipped chan struct{}
 	done      chan struct{}
 
-	// to control the _volume internally
-	_volume          *effects.Volume
+	// to control the vol internally
+	vol              *effects.Volume
 	ctrl             *beep.Ctrl
 	format           *beep.Format
-	resampler        *beep.Resampler
 	length           time.Duration
 	currentSong      *AudioFile
 	streamSeekCloser beep.StreamSeekCloser
@@ -109,7 +108,6 @@ func (p *Player) run(currSong *AudioFile) error {
 	p.ctrl = ctrl
 
 	resampler := beep.ResampleRatio(4, 1, ctrl)
-	p.resampler = resampler
 
 	volume := &effects.Volume{
 		Streamer: resampler,
@@ -120,10 +118,10 @@ func (p *Player) run(currSong *AudioFile) error {
 
 	// sets the volume of previous player
 	volume.Volume += p.volume
-	p._volume = volume
+	p.vol = volume
 
 	// starts playing the audio
-	speaker.Play(p._volume)
+	speaker.Play(p.vol)
 	gomu.hook.RunHooks("new_song")
 
 	p.isRunning = true
@@ -184,7 +182,7 @@ next:
 				continue
 			}
 
-			gomu.playingBar.progress <- 1
+			gomu.playingBar.update <- struct{}{}
 
 		}
 
@@ -214,14 +212,14 @@ func (p *Player) play() {
 func (p *Player) setVolume(v float64) float64 {
 
 	// check if no songs playing currently
-	if p._volume == nil {
+	if p.vol == nil {
 		p.volume += v
 		return p.volume
 	}
 
 	speaker.Lock()
-	p._volume.Volume += v
-	p.volume = p._volume.Volume
+	p.vol.Volume += v
+	p.volume = p.vol.Volume
 	speaker.Unlock()
 	return p.volume
 }

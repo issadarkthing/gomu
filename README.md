@@ -2,8 +2,8 @@
 ## Gomu (Go Music Player) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/issadarkthing/gomu)](https://goreportcard.com/report/github.com/issadarkthing/gomu) [![Build Status](https://travis-ci.com/issadarkthing/gomu.svg?branch=master)](https://travis-ci.com/issadarkthing/gomu)
 
-Gomu is a Terminal User Interface **TUI** music player to play mp3 files from
-your local machine. 
+Gomu is intuitive, powerful CLI music player. It has embedded scripting language
+and event hook to enable user to customize their config extensively.
 
 ![gomu](https://user-images.githubusercontent.com/50593529/107107772-37fdc000-686e-11eb-8c0f-c7d7f43f3c80.png)
 
@@ -19,6 +19,8 @@ your local machine.
 - customizable
 - find music from youtube
 - scriptable config
+- download lyric
+- id3v2 tag editor
 
 ### Dependencies
 If you are using ubuntu, you need to install alsa and required dependencies
