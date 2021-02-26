@@ -61,9 +61,28 @@ func (p *Player) SetSongSkip(f func()) {
 	p.songSkip = f
 }
 
+
+func (p *Player) execSongFinish() {
+	if p.songFinish != nil {
+		p.songFinish()
+	}
+}
+
+func (p *Player) execSongStart() {
+	if p.songStart != nil {
+		p.songStart()
+	}
+}
+
+func (p *Player) execSongSkip() {
+	if p.songSkip != nil {
+		p.songSkip()
+	}
+}
+
 func (p *Player) Run(currSong Audio) error {
 
-	p.songStart()
+	p.execSongStart()
 
 	f, err := os.Open(currSong.Path())
 	if err != nil {
@@ -112,7 +131,6 @@ func (p *Player) Run(currSong Audio) error {
 	}
 
 	p.ctrl = ctrl
-
 	resampler := beep.ResampleRatio(4, 1, ctrl)
 
 	volume := &effects.Volume{
@@ -128,19 +146,13 @@ func (p *Player) Run(currSong Audio) error {
 
 	// starts playing the audio
 	speaker.Play(p.vol)
-
 	p.isRunning = true
 
-	select {
-	case <-time.After(p.length):
+	<-p.done
 
-		p.isRunning = false
-		p.format = nil
-		p.songFinish()
-
-		break
-
-	}
+	p.isRunning = false
+	p.format = nil
+	p.execSongFinish()
 
 	return nil
 }
@@ -191,6 +203,8 @@ func (p *Player) TogglePause() {
 // skips current song
 func (p *Player) Skip() {
 
+	p.execSongSkip()
+
 	if p.currentSong == nil {
 		return
 	}
@@ -239,6 +253,10 @@ func (p *Player) GetCurrentSong() Audio {
 
 func (p *Player) HasInit() bool {
 	return p.hasInit
+}
+
+func (p *Player) SetIsRunning(value bool) {
+	p.isRunning = value
 }
 
 func (p *Player) IsRunning() bool {

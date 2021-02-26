@@ -318,6 +318,15 @@ func start(application *tview.Application, args Args) {
 
 	gomu.initPanels(application, args)
 
+	gomu.player.SetSongFinish(func() {
+		audio, err := gomu.queue.dequeue()
+		if err != nil {
+			return
+		}
+
+		go gomu.player.Run(audio)
+	})
+
 	flex := layout(gomu)
 	gomu.pages.AddPage("main", flex, true, true)
 
