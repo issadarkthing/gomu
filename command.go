@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/issadarkthing/gomu/player"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
 )
@@ -198,12 +199,12 @@ func (c Command) defineCommands() {
 			}
 
 			gomu.queue.pushFront(a)
-			gomu.player.skip()
+			gomu.player.Skip()
 		}
 	})
 
 	c.define("toggle_loop", func() {
-		gomu.queue.isLoop = gomu.player.toggleLoop()
+		gomu.queue.isLoop = gomu.player.ToggleLoop()
 		gomu.queue.updateTitle()
 	})
 
@@ -248,27 +249,27 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("toggle_pause", func() {
-		gomu.player.togglePause()
+		gomu.player.TogglePause()
 	})
 
 	c.define("volume_up", func() {
-		v := volToHuman(gomu.player.volume)
+		v := player.VolToHuman(gomu.player.GetVolume())
 		if v < 100 {
-			vol := gomu.player.setVolume(0.5)
+			vol := gomu.player.SetVolume(0.5)
 			volumePopup(vol)
 		}
 	})
 
 	c.define("volume_down", func() {
-		v := volToHuman(gomu.player.volume)
+		v := player.VolToHuman(gomu.player.GetVolume())
 		if v > 0 {
-			vol := gomu.player.setVolume(-0.5)
+			vol := gomu.player.SetVolume(-0.5)
 			volumePopup(vol)
 		}
 	})
 
 	c.define("skip", func() {
-		gomu.player.skip()
+		gomu.player.Skip()
 	})
 
 	c.define("toggle_help", func() {
@@ -299,10 +300,10 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("forward", func() {
-		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
+		if gomu.player.IsRunning() && !gomu.player.IsPaused() {
 			position := gomu.playingBar.progress + 10
 			if position < gomu.playingBar.full {
-				err := gomu.player.seek(position)
+				err := gomu.player.Seek(position)
 				if err != nil {
 					logError(err)
 				}
@@ -312,16 +313,16 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("rewind", func() {
-		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
+		if gomu.player.IsRunning() && !gomu.player.IsPaused() {
 			position := gomu.playingBar.progress - 10
 			if position-1 > 0 {
-				err := gomu.player.seek(position)
+				err := gomu.player.Seek(position)
 				if err != nil {
 					logError(err)
 				}
 				gomu.playingBar.progress = position
 			} else {
-				err := gomu.player.seek(0)
+				err := gomu.player.Seek(0)
 				if err != nil {
 					logError(err)
 				}
@@ -331,10 +332,10 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("forward_fast", func() {
-		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
+		if gomu.player.IsRunning() && !gomu.player.IsPaused() {
 			position := gomu.playingBar.progress + 60
 			if position < gomu.playingBar.full {
-				err := gomu.player.seek(position)
+				err := gomu.player.Seek(position)
 				if err != nil {
 					logError(err)
 				}
@@ -344,16 +345,16 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("rewind_fast", func() {
-		if gomu.player.isRunning && !gomu.player.ctrl.Paused {
+		if gomu.player.IsRunning() && !gomu.player.IsPaused() {
 			position := gomu.playingBar.progress - 60
 			if position-1 > 0 {
-				err := gomu.player.seek(position)
+				err := gomu.player.Seek(position)
 				if err != nil {
 					logError(err)
 				}
 				gomu.playingBar.progress = position
 			} else {
-				err := gomu.player.seek(0)
+				err := gomu.player.Seek(0)
 				if err != nil {
 					logError(err)
 				}

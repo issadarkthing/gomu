@@ -1,9 +1,6 @@
-// Copyright (C) 2020  Raziman
-
-package main
+package player
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -14,12 +11,16 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
+type Audio interface {
+	Name() string
+	Path() string
+}
+
 type Player struct {
 	hasInit   bool
 	isLoop    bool
 	isRunning bool
 	volume    float64
-	isSkipped chan struct{}
 	done      chan struct{}
 
 	// to control the vol internally
@@ -27,17 +28,18 @@ type Player struct {
 	ctrl             *beep.Ctrl
 	format           *beep.Format
 	length           time.Duration
-	currentSong      *AudioFile
+	currentSong      Audio
 	streamSeekCloser beep.StreamSeekCloser
-	// is used to send progress
-	i int
+
+	songFinish func()
+	songStart  func()
+	songSkip   func()
 }
 
-func newPlayer() *Player {
+func New(volume int) *Player {
 
-	volume := gomu.anko.GetInt("General.volume")
 	// Read initial volume from config
-	initVol := absVolume(volume)
+	initVol := AbsVolume(volume)
 
 	// making sure user does not give invalid volume
 	if volume > 100 || volume < 0 {
@@ -47,27 +49,36 @@ func newPlayer() *Player {
 	return &Player{volume: initVol}
 }
 
-func (p *Player) run(currSong *AudioFile) error {
+func (p *Player) SetSongFinish(f func()) {
+	p.songFinish = f
+}
 
-	p.isSkipped = make(chan struct{}, 1)
-	f, err := os.Open(currSong.path)
+func (p *Player) SetSongStart(f func()) {
+	p.songStart = f
+}
 
+func (p *Player) SetSongSkip(f func()) {
+	p.songSkip = f
+}
+
+func (p *Player) Run(currSong Audio) error {
+
+	p.songStart()
+
+	f, err := os.Open(currSong.Path())
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
-
 	defer f.Close()
 
 	stream, format, err := mp3.Decode(f)
-
-	p.streamSeekCloser = stream
-	p.format = &format
-
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
-
 	defer stream.Close()
+
+	p.streamSeekCloser = stream
+	p.format = &format
 
 	// song duration
 	p.length = p.format.SampleRate.D(p.streamSeekCloser.Len())
@@ -85,11 +96,6 @@ func (p *Player) run(currSong *AudioFile) error {
 	}
 
 	p.currentSong = currSong
-
-	popupMessage := fmt.Sprintf("%s\n\n[ %s ]",
-		currSong.name, fmtDuration(p.length))
-
-	defaultTimedPopup(" Current Song ", popupMessage)
 
 	// resample to adapt to sample rate of new songs
 	resampled := beep.Resample(4, p.format.SampleRate, sr, p.streamSeekCloser)
@@ -122,94 +128,39 @@ func (p *Player) run(currSong *AudioFile) error {
 
 	// starts playing the audio
 	speaker.Play(p.vol)
-	gomu.hook.RunHooks("new_song")
 
 	p.isRunning = true
 
-	gomu.playingBar.newProgress(currSong, int(p.length.Seconds()))
+	select {
+	case <-time.After(p.length):
 
-	go func() {
-		if err := gomu.playingBar.run(); err != nil {
-			logError(err)
-		}
-	}()
+		p.isRunning = false
+		p.format = nil
+		p.songFinish()
 
-	// is used to send progress
-	p.i = 0
-
-next:
-	for {
-
-		select {
-		case <-done:
-			if p.isLoop {
-				gomu.queue.enqueue(currSong)
-				gomu.app.Draw()
-			}
-
-			p.isRunning = false
-			p.format = nil
-			gomu.playingBar.stop()
-
-			nextSong, err := gomu.queue.dequeue()
-			gomu.app.Draw()
-
-			if err != nil {
-				// when there are no songs to be played, set currentSong as nil
-				p.currentSong = nil
-				gomu.playingBar.setDefault()
-				gomu.app.Draw()
-				break next
-			}
-
-			go func() {
-				if err := p.run(nextSong); err != nil {
-					logError(err)
-				}
-			}()
-
-			break next
-
-		case <-time.After(time.Second):
-			// stop progress bar from progressing when paused
-			if !p.isRunning {
-				continue
-			}
-
-			p.i++
-			if p.i >= gomu.playingBar.full {
-				done <- struct{}{}
-				continue
-			}
-
-			gomu.playingBar.update <- struct{}{}
-
-		}
+		break
 
 	}
 
 	return nil
 }
 
-func (p *Player) pause() {
-	gomu.hook.RunHooks("pause")
+func (p *Player) Pause() {
 	speaker.Lock()
 	p.ctrl.Paused = true
 	p.isRunning = false
 	speaker.Unlock()
 }
 
-func (p *Player) play() {
-	gomu.hook.RunHooks("play")
+func (p *Player) Play() {
 	speaker.Lock()
 	p.ctrl.Paused = false
 	p.isRunning = true
 	speaker.Unlock()
-	gomu.playingBar.setSongTitle(p.currentSong.name)
 }
 
 // volume up and volume down using -0.5 or +0.5
-func (p *Player) setVolume(v float64) float64 {
+func (p *Player) SetVolume(v float64) float64 {
 
 	// check if no songs playing currently
 	if p.vol == nil {
@@ -224,23 +175,21 @@ func (p *Player) setVolume(v float64) float64 {
 	return p.volume
 }
 
-func (p *Player) togglePause() {
+func (p *Player) TogglePause() {
 
 	if p.ctrl == nil {
 		return
 	}
 
 	if p.ctrl.Paused {
-		p.play()
+		p.Play()
 	} else {
-		p.pause()
+		p.Pause()
 	}
 }
 
 // skips current song
-func (p *Player) skip() {
-
-	gomu.hook.RunHooks("skip")
+func (p *Player) Skip() {
 
 	if p.currentSong == nil {
 		return
@@ -254,26 +203,25 @@ func (p *Player) skip() {
 // Toggles the queue to loop
 // dequeued item will be enqueued back
 // function returns loop state
-func (p *Player) toggleLoop() bool {
+func (p *Player) ToggleLoop() bool {
 	p.isLoop = !p.isLoop
 	return p.isLoop
 }
 
-func (p *Player) getPosition() time.Duration {
+func (p *Player) GetPosition() time.Duration {
 	return p.format.SampleRate.D(p.streamSeekCloser.Position())
 }
 
 // seek is the function to move forward and rewind
-func (p *Player) seek(pos int) error {
+func (p *Player) Seek(pos int) error {
 	speaker.Lock()
 	defer speaker.Unlock()
 	err := p.streamSeekCloser.Seek(pos * int(p.format.SampleRate))
-	p.i = pos
 	return err
 }
 
 // isPaused is used to distinguish the player between pause and stop
-func (p *Player) isPaused() bool {
+func (p *Player) IsPaused() bool {
 	if p.ctrl == nil {
 		return false
 	}
@@ -281,8 +229,32 @@ func (p *Player) isPaused() bool {
 	return p.ctrl.Paused
 }
 
+func (p *Player) GetVolume() float64 {
+	return p.volume
+}
+
+func (p *Player) GetCurrentSong() Audio {
+	return p.currentSong
+}
+
+func (p *Player) HasInit() bool {
+	return p.hasInit
+}
+
+func (p *Player) IsRunning() bool {
+	return p.isRunning
+}
+
+func (p *Player) SetLoop(value bool) {
+	p.isLoop = value
+}
+
+func (p *Player) IsLoop() bool {
+	return p.isLoop
+}
+
 // Gets the length of the song in the queue
-func getLength(audioPath string) (time.Duration, error) {
+func GetLength(audioPath string) (time.Duration, error) {
 	f, err := os.Open(audioPath)
 
 	if err != nil {
@@ -301,14 +273,14 @@ func getLength(audioPath string) (time.Duration, error) {
 	return format.SampleRate.D(streamer.Len()), nil
 }
 
-// volToHuman converts float64 volume that is used by audio library to human
+// VolToHuman converts float64 volume that is used by audio library to human
 // readable form (0 - 100)
-func volToHuman(volume float64) int {
+func VolToHuman(volume float64) int {
 	return int(volume*10) + 100
 }
 
-// absVolume converts human readable form volume (0 - 100) to float64 volume
+// AbsVolume converts human readable form volume (0 - 100) to float64 volume
 // that is used by the audio library
-func absVolume(volume int) float64 {
+func AbsVolume(volume int) float64 {
 	return (float64(volume) - 100) / 10
 }

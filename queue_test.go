@@ -91,12 +91,13 @@ func TestPushFront(t *testing.T) {
 
 	gomu = prepareTest()
 	rapPlaylist := gomu.playlist.GetRoot().GetChildren()[1]
+
 	gomu.playlist.addAllToQueue(rapPlaylist)
 
-	selSong, err := gomu.queue.deleteItem(2)
 
+	selSong, err := gomu.queue.deleteItem(2)
 	if err != nil {
-		panic(err)
+		t.Error(err)
 	}
 
 	gomu.queue.pushFront(selSong)

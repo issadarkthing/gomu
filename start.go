@@ -329,8 +329,8 @@ func start(application *tview.Application, args Args) {
 
 	isQueueLoop := gomu.anko.GetBool("General.queue_loop")
 
-	gomu.player.isLoop = isQueueLoop
-	gomu.queue.isLoop = gomu.player.isLoop
+	gomu.player.SetLoop(isQueueLoop)
+	gomu.queue.isLoop = isQueueLoop
 
 	loadQueue := gomu.anko.GetBool("General.load_prev_queue")
 
@@ -427,7 +427,7 @@ func start(application *tview.Application, args Args) {
 
 	init := false
 	gomu.app.SetAfterDrawFunc(func(_ tcell.Screen) {
-		if !init && !gomu.player.isRunning {
+		if !init && !gomu.player.IsRunning() {
 			gomu.playingBar.setDefault()
 			init = true
 		}

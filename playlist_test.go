@@ -7,13 +7,14 @@ import (
 	"testing"
 
 	"github.com/rivo/tview"
+	"github.com/issadarkthing/gomu/player"
 )
 
 // Prepares for test
 func prepareTest() *Gomu {
 
 	gomu := newGomu()
-	gomu.player = &Player{}
+	gomu.player = player.New(0)
 	gomu.queue = newQueue()
 	gomu.playlist = &Playlist{
 		TreeView: tview.NewTreeView(),
