@@ -67,8 +67,7 @@ func (p *PlayingBar) run() error {
 			break
 		}
 
-		<-p.update
-		p.progress++
+		p.progress = int(gomu.player.GetPosition().Seconds())
 
 		p.text.Clear()
 		start, err := time.ParseDuration(strconv.Itoa(p.progress) + "s")
@@ -128,20 +127,27 @@ func (p *PlayingBar) run() error {
 				}
 			}
 
-			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n%v",
-				fmtDuration(start),
-				progressBar,
-				fmtDuration(end),
-				lyricText,
-			))
+			gomu.app.QueueUpdateDraw(func() {
+				p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n%v",
+					fmtDuration(start),
+					progressBar,
+					fmtDuration(end),
+					lyricText,
+				))
+			})
+
 		} else {
-			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s",
-				fmtDuration(start),
-				progressBar,
-				fmtDuration(end),
-			))
+
+			gomu.app.QueueUpdateDraw(func() {
+				p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s",
+					fmtDuration(start),
+					progressBar,
+					fmtDuration(end),
+				))
+			})
 		}
-		gomu.app.Draw()
+
+		<-time.After(time.Second)
 	}
 
 	return nil

@@ -13,10 +13,12 @@ import (
 	"syscall"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/issadarkthing/gomu/anko"
-	"github.com/issadarkthing/gomu/hook"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
+
+	"github.com/issadarkthing/gomu/anko"
+	"github.com/issadarkthing/gomu/hook"
+	"github.com/issadarkthing/gomu/player"
 )
 
 // Panel is used to keep track of childrens in slices
@@ -318,9 +320,31 @@ func start(application *tview.Application, args Args) {
 
 	gomu.initPanels(application, args)
 
-	gomu.player.SetSongFinish(func() {
+	gomu.player.SetSongStart(func(audio player.Audio) {
+		name := audio.Name()
+		defaultTimedPopup(" Now Playing ", name)
+
+		duration, err := player.GetLength(audio.Path())
+		if err != nil {
+			logError(err)
+			return
+		}
+
+		audioFile := audio.(*AudioFile)
+		gomu.playingBar.newProgress(audioFile, int(duration.Seconds()))
+
+		go func() {
+			err := gomu.playingBar.run()
+			if err != nil {
+				logError(err)
+			}
+		}()
+	})
+
+	gomu.player.SetSongFinish(func(_ player.Audio) {
 		audio, err := gomu.queue.dequeue()
 		if err != nil {
+			gomu.playingBar.setDefault()
 			return
 		}
 

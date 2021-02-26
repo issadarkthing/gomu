@@ -31,9 +31,9 @@ type Player struct {
 	currentSong      Audio
 	streamSeekCloser beep.StreamSeekCloser
 
-	songFinish func()
-	songStart  func()
-	songSkip   func()
+	songFinish func(Audio)
+	songStart  func(Audio)
+	songSkip   func(Audio)
 }
 
 func New(volume int) *Player {
@@ -49,40 +49,40 @@ func New(volume int) *Player {
 	return &Player{volume: initVol}
 }
 
-func (p *Player) SetSongFinish(f func()) {
+func (p *Player) SetSongFinish(f func(Audio)) {
 	p.songFinish = f
 }
 
-func (p *Player) SetSongStart(f func()) {
+func (p *Player) SetSongStart(f func(Audio)) {
 	p.songStart = f
 }
 
-func (p *Player) SetSongSkip(f func()) {
+func (p *Player) SetSongSkip(f func(Audio)) {
 	p.songSkip = f
 }
 
 
-func (p *Player) execSongFinish() {
+func (p *Player) execSongFinish(a Audio) {
 	if p.songFinish != nil {
-		p.songFinish()
+		p.songFinish(a)
 	}
 }
 
-func (p *Player) execSongStart() {
+func (p *Player) execSongStart(a Audio) {
 	if p.songStart != nil {
-		p.songStart()
+		p.songStart(a)
 	}
 }
 
-func (p *Player) execSongSkip() {
+func (p *Player) execSongSkip(a Audio) {
 	if p.songSkip != nil {
-		p.songSkip()
+		p.songSkip(a)
 	}
 }
 
 func (p *Player) Run(currSong Audio) error {
 
-	p.execSongStart()
+	p.execSongStart(currSong)
 
 	f, err := os.Open(currSong.Path())
 	if err != nil {
@@ -152,7 +152,7 @@ func (p *Player) Run(currSong Audio) error {
 
 	p.isRunning = false
 	p.format = nil
-	p.execSongFinish()
+	p.execSongFinish(currSong)
 
 	return nil
 }
@@ -203,7 +203,7 @@ func (p *Player) TogglePause() {
 // skips current song
 func (p *Player) Skip() {
 
-	p.execSongSkip()
+	p.execSongSkip(p.currentSong)
 
 	if p.currentSong == nil {
 		return
@@ -223,6 +223,11 @@ func (p *Player) ToggleLoop() bool {
 }
 
 func (p *Player) GetPosition() time.Duration {
+
+	if p.format == nil || p.streamSeekCloser == nil {
+		return 1
+	}
+
 	return p.format.SampleRate.D(p.streamSeekCloser.Position())
 }
 
