@@ -381,7 +381,7 @@ func (p *Playlist) addSongToPlaylist(
 		parent:      selPlaylist,
 	}
 
-	displayText := setDisplayText(songName)
+	displayText := setDisplayText(audioFile)
 
 	node.SetReference(audioFile)
 	node.SetText(displayText)
@@ -719,7 +719,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 				parent:      root,
 			}
 
-			displayText := setDisplayText(songName)
+			displayText := setDisplayText(audioFile)
 
 			child.SetReference(audioFile)
 			child.SetText(displayText)
@@ -737,7 +737,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 				parent:      root,
 			}
 
-			displayText := setDisplayText(songName)
+			displayText := setDisplayText(audioFile)
 
 			child.SetReference(audioFile)
 			child.SetColor(gomu.colors.accent)
@@ -810,14 +810,19 @@ func (p *Playlist) paste() error {
 	return nil
 }
 
-func setDisplayText(songName string) string {
+func setDisplayText(audioFile *AudioFile) string {
 	useEmoji := gomu.anko.GetBool("General.use_emoji")
 	if !useEmoji {
-		return songName
+		return audioFile.name
 	}
 
-	emojiFile := gomu.anko.GetString("Emoji.file")
-	return fmt.Sprintf(" %s %s", emojiFile, songName)
+	if audioFile.isAudioFile {
+		emojiFile := gomu.anko.GetString("Emoji.file")
+		return fmt.Sprintf(" %s %s", emojiFile, audioFile.name)
+	}
+
+	emojiDir := gomu.anko.GetString("Emoji.playlist")
+	return fmt.Sprintf(" %s %s", emojiDir, audioFile.name)
 }
 
 // populateAudioLength is the most time consuming part of startup,
