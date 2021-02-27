@@ -204,7 +204,7 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("toggle_loop", func() {
-		gomu.queue.isLoop = gomu.player.ToggleLoop()
+		gomu.queue.isLoop = !gomu.queue.isLoop
 		gomu.queue.updateTitle()
 	})
 

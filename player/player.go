@@ -18,7 +18,6 @@ type Audio interface {
 
 type Player struct {
 	hasInit   bool
-	isLoop    bool
 	isRunning bool
 	volume    float64
 
@@ -219,13 +218,6 @@ func (p *Player) Skip() {
 	p.execSongFinish(p.currentSong)
 }
 
-// Toggles the queue to loop
-// dequeued item will be enqueued back
-// function returns loop state
-func (p *Player) ToggleLoop() bool {
-	p.isLoop = !p.isLoop
-	return p.isLoop
-}
 
 // GetPosition returns the current position of audio file.
 func (p *Player) GetPosition() time.Duration {
@@ -273,14 +265,6 @@ func (p *Player) HasInit() bool {
 // IsRunning returns true if Player is running an audio.
 func (p *Player) IsRunning() bool {
 	return p.isRunning
-}
-
-func (p *Player) SetLoop(value bool) {
-	p.isLoop = value
-}
-
-func (p *Player) IsLoop() bool {
-	return p.isLoop
 }
 
 // Gets the length of the song in the queue

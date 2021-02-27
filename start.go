@@ -352,6 +352,13 @@ func start(application *tview.Application, args Args) {
 		if err != nil {
 			die(err)
 		}
+
+		if gomu.queue.isLoop {
+			_, err = gomu.queue.enqueue(audio)
+			if err != nil {
+				logError(err)
+			}
+		}
 	})
 
 	flex := layout(gomu)
@@ -365,7 +372,6 @@ func start(application *tview.Application, args Args) {
 
 	isQueueLoop := gomu.anko.GetBool("General.queue_loop")
 
-	gomu.player.SetLoop(isQueueLoop)
 	gomu.queue.isLoop = isQueueLoop
 
 	loadQueue := gomu.anko.GetBool("General.load_prev_queue")
