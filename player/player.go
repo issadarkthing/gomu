@@ -22,7 +22,6 @@ type Player struct {
 	isRunning bool
 	volume    float64
 
-	// to control the vol internally
 	vol              *effects.Volume
 	ctrl             *beep.Ctrl
 	format           *beep.Format
@@ -35,6 +34,7 @@ type Player struct {
 	songSkip   func(Audio)
 }
 
+// New returns new Player instance.
 func New(volume int) *Player {
 
 	// Read initial volume from config
@@ -48,39 +48,46 @@ func New(volume int) *Player {
 	return &Player{volume: initVol}
 }
 
+// SetSongFinish accepts callback which will be executed when the song finishes.
 func (p *Player) SetSongFinish(f func(Audio)) {
 	p.songFinish = f
 }
 
+// SetSongStart accepts callback which will be executed when the song starts.
 func (p *Player) SetSongStart(f func(Audio)) {
 	p.songStart = f
 }
 
+// SetSongSkip accepts callback which will be executed when the song is skipped.
 func (p *Player) SetSongSkip(f func(Audio)) {
 	p.songSkip = f
 }
 
-
+// executes songFinish callback.
 func (p *Player) execSongFinish(a Audio) {
 	if p.songFinish != nil {
 		p.songFinish(a)
 	}
 }
 
+// executes songStart callback.
 func (p *Player) execSongStart(a Audio) {
 	if p.songStart != nil {
 		p.songStart(a)
 	}
 }
 
+// executes songFinish callback.
 func (p *Player) execSongSkip(a Audio) {
 	if p.songSkip != nil {
 		p.songSkip(a)
 	}
 }
 
+// Run plays the passed Audio.
 func (p *Player) Run(currSong Audio) error {
 
+	p.isRunning = true
 	p.execSongStart(currSong)
 
 	f, err := os.Open(currSong.Path())
@@ -148,6 +155,7 @@ func (p *Player) Run(currSong Audio) error {
 	return nil
 }
 
+// Pause pauses Player.
 func (p *Player) Pause() {
 	speaker.Lock()
 	p.ctrl.Paused = true
@@ -155,6 +163,7 @@ func (p *Player) Pause() {
 	speaker.Unlock()
 }
 
+// Play unpauses Player.
 func (p *Player) Play() {
 	speaker.Lock()
 	p.ctrl.Paused = false
@@ -162,7 +171,7 @@ func (p *Player) Play() {
 	speaker.Unlock()
 }
 
-// volume up and volume down using -0.5 or +0.5
+// Volume up and volume down using -0.5 or +0.5.
 func (p *Player) SetVolume(v float64) float64 {
 
 	// check if no songs playing currently
@@ -178,6 +187,7 @@ func (p *Player) SetVolume(v float64) float64 {
 	return p.volume
 }
 
+// Toggles the pause state.
 func (p *Player) TogglePause() {
 
 	if p.ctrl == nil {
@@ -191,7 +201,7 @@ func (p *Player) TogglePause() {
 	}
 }
 
-// skips current song
+// Skips current song.
 func (p *Player) Skip() {
 
 	p.execSongSkip(p.currentSong)
@@ -217,6 +227,7 @@ func (p *Player) ToggleLoop() bool {
 	return p.isLoop
 }
 
+// GetPosition returns the current position of audio file.
 func (p *Player) GetPosition() time.Duration {
 
 	if p.format == nil || p.streamSeekCloser == nil {
@@ -234,7 +245,7 @@ func (p *Player) Seek(pos int) error {
 	return err
 }
 
-// isPaused is used to distinguish the player between pause and stop
+// IsPaused is used to distinguish the player between pause and stop
 func (p *Player) IsPaused() bool {
 	if p.ctrl == nil {
 		return false
@@ -243,22 +254,23 @@ func (p *Player) IsPaused() bool {
 	return p.ctrl.Paused
 }
 
+// GetVolume returns current volume.
 func (p *Player) GetVolume() float64 {
 	return p.volume
 }
 
+// GetCurrentSong returns current song.
 func (p *Player) GetCurrentSong() Audio {
 	return p.currentSong
 }
 
+// HasInit checks if the speaker has been initialized or not. Speaker
+// initialization will only happen once.
 func (p *Player) HasInit() bool {
 	return p.hasInit
 }
 
-func (p *Player) SetIsRunning(value bool) {
-	p.isRunning = value
-}
-
+// IsRunning returns true if Player is running an audio.
 func (p *Player) IsRunning() bool {
 	return p.isRunning
 }
