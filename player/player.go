@@ -127,7 +127,7 @@ func (p *Player) Run(currSong Audio) error {
 		p.isRunning = false
 		p.format = nil
 		p.streamSeekCloser.Close()
-		p.execSongFinish(currSong)
+		go p.execSongFinish(currSong)
 	}))
 
 	ctrl := &beep.Ctrl{
