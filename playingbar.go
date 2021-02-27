@@ -69,9 +69,8 @@ func (p *PlayingBar) run() error {
 
 		p.progress = int(gomu.player.GetPosition().Seconds())
 
-		p.text.Clear()
-		start, err := time.ParseDuration(strconv.Itoa(p.progress) + "s")
 
+		start, err := time.ParseDuration(strconv.Itoa(p.progress) + "s")
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
@@ -128,6 +127,7 @@ func (p *PlayingBar) run() error {
 			}
 
 			gomu.app.QueueUpdateDraw(func() {
+				p.text.Clear()
 				p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n%v",
 					fmtDuration(start),
 					progressBar,
@@ -139,6 +139,7 @@ func (p *PlayingBar) run() error {
 		} else {
 
 			gomu.app.QueueUpdateDraw(func() {
+				p.text.Clear()
 				p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s",
 					fmtDuration(start),
 					progressBar,
