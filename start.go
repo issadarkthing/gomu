@@ -348,7 +348,10 @@ func start(application *tview.Application, args Args) {
 			return
 		}
 
-		go gomu.player.Run(audio)
+		err = gomu.player.Run(audio)
+		if err != nil {
+			die(err)
+		}
 	})
 
 	flex := layout(gomu)

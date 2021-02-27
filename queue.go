@@ -159,12 +159,10 @@ func (q *Queue) enqueue(audioFile *AudioFile) (int, error) {
 
 	if !gomu.player.IsRunning() && !gomu.player.IsPaused() && isTestEnv {
 
-		gomu.player.SetIsRunning(true)
-		go func() {
-			if err := gomu.player.Run(audioFile); err != nil {
-				logError(err)
-			}
-		}()
+		err := gomu.player.Run(audioFile)
+		if err != nil {
+			die(err)
+		}
 
 		return q.GetItemCount(), nil
 	}

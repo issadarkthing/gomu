@@ -21,7 +21,6 @@ type Player struct {
 	isLoop    bool
 	isRunning bool
 	volume    float64
-	done      chan struct{}
 
 	// to control the vol internally
 	vol              *effects.Volume
@@ -88,13 +87,11 @@ func (p *Player) Run(currSong Audio) error {
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
-	defer f.Close()
 
 	stream, format, err := mp3.Decode(f)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
-	defer stream.Close()
 
 	p.streamSeekCloser = stream
 	p.format = &format
@@ -118,11 +115,12 @@ func (p *Player) Run(currSong Audio) error {
 
 	// resample to adapt to sample rate of new songs
 	resampled := beep.Resample(4, p.format.SampleRate, sr, p.streamSeekCloser)
-	done := make(chan struct{}, 1)
-	p.done = done
 
 	sstreamer := beep.Seq(resampled, beep.Callback(func() {
-		done <- struct{}{}
+		p.isRunning = false
+		p.format = nil
+		p.streamSeekCloser.Close()
+		p.execSongFinish(currSong)
 	}))
 
 	ctrl := &beep.Ctrl{
@@ -146,13 +144,6 @@ func (p *Player) Run(currSong Audio) error {
 
 	// starts playing the audio
 	speaker.Play(p.vol)
-	p.isRunning = true
-
-	<-p.done
-
-	p.isRunning = false
-	p.format = nil
-	p.execSongFinish(currSong)
 
 	return nil
 }
@@ -209,9 +200,13 @@ func (p *Player) Skip() {
 		return
 	}
 
+	// drain the stream
 	p.ctrl.Streamer = nil
+
 	p.streamSeekCloser.Close()
-	p.done <- struct{}{}
+	p.isRunning = false
+	p.format = nil
+	p.execSongFinish(p.currentSong)
 }
 
 // Toggles the queue to loop
