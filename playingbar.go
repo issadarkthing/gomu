@@ -161,6 +161,7 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 	p.setSongTitle(currentSong.name)
 	p.hasTag = false
 	p.subtitles = nil
+	p.subtitle = nil
 	p.tag = nil
 
 	var tag *id3v2.Tag
