@@ -65,7 +65,7 @@ func (p *Playlist) help() []string {
 		"/      find in playlist",
 		"s      search audio from youtube",
 		"t      edit mp3 tags",
-		"1      find lyric if available",
+		"1/2      find lyric if available",
 	}
 
 }
@@ -174,6 +174,7 @@ func newPlaylist(args Args) *Playlist {
 			'/': "playlist_search",
 			't': "edit_tags",
 			'1': "fetch_lyric",
+			'2': "fetch_lyric_cn",
 		}
 
 		for key, cmd := range cmds {

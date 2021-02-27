@@ -398,6 +398,23 @@ func (c Command) defineCommands() {
 					err := lyricPopup(audioFile)
 					if err != nil {
 						errorPopup(err)
+						gomu.app.Draw()
+					}
+				})
+			}()
+		}
+	})
+
+	c.define("fetch_lyric_cn", func() {
+		audioFile := gomu.playlist.getCurrentFile()
+
+		if audioFile.isAudioFile {
+			go func() {
+				gomu.app.QueueUpdateDraw(func() {
+					err := lyricPopupCN(audioFile)
+					if err != nil {
+						errorPopup(err)
+						gomu.app.Draw()
 					}
 				})
 			}()
