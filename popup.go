@@ -911,9 +911,9 @@ func lyricPopup(audioFile *AudioFile) error {
 	return nil
 }
 
-func lyricPopupCN(audioFile *AudioFile) error {
+func lyricPopupCN(audioFile *AudioFile, serviceProvider string) error {
 
-	results, err := lyric.GetLyricOptionsChinese(audioFile.name)
+	results, err := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -931,7 +931,7 @@ func lyricPopupCN(audioFile *AudioFile) error {
 
 		go func() {
 			lyricID := results[selected]
-			lyric, err := lyric.GetLyricChinese(lyricID)
+			lyric, err := lyric.GetLyricChinese(lyricID, serviceProvider)
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
