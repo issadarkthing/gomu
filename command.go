@@ -439,14 +439,16 @@ func (c Command) defineCommands() {
 	c.define("lyric_delay_increase", func() {
 		err := gomu.playingBar.delayLyric(500)
 		if err != nil {
-			logError(err)
+			errorPopup(err)
+			gomu.app.Draw()
 		}
 	})
 
 	c.define("lyric_delay_decrease", func() {
 		err := gomu.playingBar.delayLyric(-500)
 		if err != nil {
-			logError(err)
+			errorPopup(err)
+			gomu.app.Draw()
 		}
 	})
 

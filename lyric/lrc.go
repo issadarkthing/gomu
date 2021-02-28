@@ -1,5 +1,5 @@
-//Package lyric package download lyrics from different website and embed them into mp3 file.
-//lrc file is used to parse lrc file into subtitle. Similar to subtitles package
+// Package lyric package download lyrics from different website and embed them into mp3 file.
+// lrc file is used to parse lrc file into subtitle. Similar to subtitles package
 package lyric
 
 import (
@@ -35,6 +35,7 @@ func looksLikeLRC(s string) bool {
 func NewFromLRC(s string) (res subtitles.Subtitle, err error) {
 	endString := "[158:00.00]The End" + eol
 	s = s + endString
+	s = cleanLRC(s)
 	r1 := regexp.MustCompile(`(?U)^\[[0-9].*\]`)
 	lines := strings.Split(s, "\n")
 	outSeq := 1
@@ -120,4 +121,15 @@ func parseLrcTime(in string) (time.Time, error) {
 // makeTime is a helper to create a time duration
 func makeTime(h int, m int, s int, ms int) time.Time {
 	return time.Date(0, 1, 1, h, m, s, ms*1000*1000, time.UTC)
+}
+
+// cleanLRC clean the string download
+func cleanLRC(s string) (cleanLyric string) {
+	// Clean &apos; to '
+	s = strings.Replace(s, "&apos;", "'", -1)
+	// It's wierd that sometimes there are two ajacent ''.
+	// Replace it anyway
+	cleanLyric = strings.Replace(s, "''", "'", -1)
+
+	return cleanLyric
 }
