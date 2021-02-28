@@ -23,8 +23,10 @@ func init() {
 }
 
 func looksLikeLRC(s string) bool {
-	if s[0] == 239 || s[0] == 91 {
-		return true
+	if s != "" {
+		if s[0] == 239 || s[0] == 91 {
+			return true
+		}
 	}
 	return false
 }
