@@ -398,6 +398,38 @@ func (c Command) defineCommands() {
 					err := lyricPopup(audioFile)
 					if err != nil {
 						errorPopup(err)
+						gomu.app.Draw()
+					}
+				})
+			}()
+		}
+	})
+
+	c.define("fetch_lyric_cn2", func() {
+		audioFile := gomu.playlist.getCurrentFile()
+		serviceProvider := "netease"
+		if audioFile.isAudioFile {
+			go func() {
+				gomu.app.QueueUpdateDraw(func() {
+					err := lyricPopupCN(audioFile, serviceProvider)
+					if err != nil {
+						errorPopup(err)
+						gomu.app.Draw()
+					}
+				})
+			}()
+		}
+	})
+	c.define("fetch_lyric_cn3", func() {
+		audioFile := gomu.playlist.getCurrentFile()
+		serviceProvider := "kugou"
+		if audioFile.isAudioFile {
+			go func() {
+				gomu.app.QueueUpdateDraw(func() {
+					err := lyricPopupCN(audioFile, serviceProvider)
+					if err != nil {
+						errorPopup(err)
+						gomu.app.Draw()
 					}
 				})
 			}()
@@ -405,14 +437,14 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("lyric_delay_increase", func() {
-		err := gomu.playingBar.delayLyric(1000)
+		err := gomu.playingBar.delayLyric(500)
 		if err != nil {
 			logError(err)
 		}
 	})
 
 	c.define("lyric_delay_decrease", func() {
-		err := gomu.playingBar.delayLyric(-1000)
+		err := gomu.playingBar.delayLyric(-500)
 		if err != nil {
 			logError(err)
 		}

@@ -86,6 +86,7 @@ func (p *PlayingBar) run() error {
 		_, _, width, _ := p.GetInnerRect()
 		progressBar := progresStr(p.progress, p.full, width/2, "█", "━")
 		// our progress bar
+		p.subtitle = nil
 		if p.hasTag && p.subtitles != nil {
 			for i := range p.subtitles {
 				// First we check if the lyric language prefered is presented
@@ -180,6 +181,7 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 			if !ok {
 				die(errors.New("USLT error!"))
 			}
+			// res, err := subtitles.Parse([]byte(uslf.Lyrics))
 			res, err := subtitles.NewFromSRT(uslf.Lyrics)
 			if err != nil {
 				logError(err)
