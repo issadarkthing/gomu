@@ -67,12 +67,10 @@ func (p *PlayingBar) run() error {
 			break
 		}
 
-		<-p.update
-		p.progress++
+		p.progress = int(gomu.player.GetPosition().Seconds())
 
-		p.text.Clear()
+
 		start, err := time.ParseDuration(strconv.Itoa(p.progress) + "s")
-
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
@@ -129,20 +127,29 @@ func (p *PlayingBar) run() error {
 				}
 			}
 
-			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n%v",
-				fmtDuration(start),
-				progressBar,
-				fmtDuration(end),
-				lyricText,
-			))
+			gomu.app.QueueUpdateDraw(func() {
+				p.text.Clear()
+				p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n%v",
+					fmtDuration(start),
+					progressBar,
+					fmtDuration(end),
+					lyricText,
+				))
+			})
+
 		} else {
-			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s",
-				fmtDuration(start),
-				progressBar,
-				fmtDuration(end),
-			))
+
+			gomu.app.QueueUpdateDraw(func() {
+				p.text.Clear()
+				p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s",
+					fmtDuration(start),
+					progressBar,
+					fmtDuration(end),
+				))
+			})
 		}
-		gomu.app.Draw()
+
+		<-time.After(time.Second)
 	}
 
 	return nil
@@ -241,7 +248,7 @@ func (p *PlayingBar) switchLyrics() {
 func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 
 	p.subtitle.ResyncSubs(lyricDelay)
-	err = embedLyric(gomu.player.currentSong.path, p.subtitle.AsSRT(), p.langLyricCurrentPlaying)
+	err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle.AsSRT(), p.langLyricCurrentPlaying)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}

@@ -1,10 +1,12 @@
 package main
 
 import (
-	"github.com/issadarkthing/gomu/anko"
-	"github.com/issadarkthing/gomu/hook"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
+
+	"github.com/issadarkthing/gomu/anko"
+	"github.com/issadarkthing/gomu/hook"
+	"github.com/issadarkthing/gomu/player"
 )
 
 var VERSION = "N/A"
@@ -16,7 +18,7 @@ type Gomu struct {
 	playingBar *PlayingBar
 	queue      *Queue
 	playlist   *Playlist
-	player     *Player
+	player     *player.Player
 	pages      *tview.Pages
 	colors     *Colors
 	command    Command
@@ -49,7 +51,7 @@ func (g *Gomu) initPanels(app *tview.Application, args Args) {
 	g.playingBar = newPlayingBar()
 	g.queue = newQueue()
 	g.playlist = newPlaylist(args)
-	g.player = newPlayer()
+	g.player = player.New(g.anko.GetInt("General.volume"))
 	g.pages = tview.NewPages()
 	g.panels = []Panel{g.playlist, g.queue, g.playingBar}
 }

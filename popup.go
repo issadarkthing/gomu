@@ -18,6 +18,7 @@ import (
 
 	"github.com/issadarkthing/gomu/invidious"
 	"github.com/issadarkthing/gomu/lyric"
+	"github.com/issadarkthing/gomu/player"
 )
 
 // this is used to make the popup unique
@@ -200,7 +201,7 @@ func defaultTimedPopup(title, description string) {
 // Shows popup for the current volume
 func volumePopup(volume float64) {
 
-	currVol := volToHuman(volume)
+	currVol := player.VolToHuman(volume)
 	maxVol := 100
 	// max progress bar length
 	maxLength := 50

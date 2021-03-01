@@ -18,10 +18,12 @@ import (
 	"github.com/rivo/tview"
 	spin "github.com/tj/go-spin"
 	"github.com/ztrue/tracerr"
+	
+	"github.com/issadarkthing/gomu/player"
 )
 
-// AudioFile is representing directories and mp3 files
-// if isAudioFile equals to false it is a directory
+// AudioFile represents directories and mp3 files
+// isAudioFile equals to false if it is a directory
 type AudioFile struct {
 	name        string
 	path        string
@@ -29,6 +31,14 @@ type AudioFile struct {
 	length      time.Duration
 	node        *tview.TreeNode
 	parent      *tview.TreeNode
+}
+
+func (a *AudioFile) Name() string {
+	return a.name
+}
+
+func (a *AudioFile) Path() string {
+	return a.path
 }
 
 // Playlist struct represents playlist panel
@@ -238,8 +248,8 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 
 				// Here we remove the song from queue
 				songPaths := gomu.queue.getItems()
-				if audioName == getName(gomu.player.currentSong.name) {
-					gomu.player.skip()
+				if audioName == getName(gomu.player.GetCurrentSong().Name()) {
+					gomu.player.Skip()
 				}
 				for i, songPath := range songPaths {
 					if strings.Contains(songPath, audioName) {
@@ -310,9 +320,12 @@ func (p *Playlist) addAllToQueue(root *tview.TreeNode) {
 	for _, v := range childrens {
 		currNode := v.GetReference().(*AudioFile)
 		if currNode.isAudioFile {
-			if currNode != gomu.player.currentSong {
+		
+			currSong := gomu.player.GetCurrentSong()
+			if currSong == nil || (currNode.Name() != currSong.Name()) {
 				gomu.queue.enqueue(currNode)
 			}
+
 		}
 	}
 
@@ -356,7 +369,7 @@ func (p *Playlist) addSongToPlaylist(
 	songName := getName(audioPath)
 	node := tview.NewTreeNode(songName)
 
-	audioLength, err := getLength(audioPath)
+	audioLength, err := player.GetLength(audioPath)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -370,7 +383,7 @@ func (p *Playlist) addSongToPlaylist(
 		parent:      selPlaylist,
 	}
 
-	displayText := setDisplayText(songName)
+	displayText := setDisplayText(audioFile)
 
 	node.SetReference(audioFile)
 	node.SetText(displayText)
@@ -708,7 +721,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 				parent:      root,
 			}
 
-			displayText := setDisplayText(songName)
+			displayText := setDisplayText(audioFile)
 
 			child.SetReference(audioFile)
 			child.SetText(displayText)
@@ -726,7 +739,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 				parent:      root,
 			}
 
-			displayText := setDisplayText(songName)
+			displayText := setDisplayText(audioFile)
 
 			child.SetReference(audioFile)
 			child.SetColor(gomu.colors.accent)
@@ -799,14 +812,19 @@ func (p *Playlist) paste() error {
 	return nil
 }
 
-func setDisplayText(songName string) string {
+func setDisplayText(audioFile *AudioFile) string {
 	useEmoji := gomu.anko.GetBool("General.use_emoji")
 	if !useEmoji {
-		return songName
+		return audioFile.name
 	}
 
-	emojiFile := gomu.anko.GetString("Emoji.file")
-	return fmt.Sprintf(" %s %s", emojiFile, songName)
+	if audioFile.isAudioFile {
+		emojiFile := gomu.anko.GetString("Emoji.file")
+		return fmt.Sprintf(" %s %s", emojiFile, audioFile.name)
+	}
+
+	emojiDir := gomu.anko.GetString("Emoji.playlist")
+	return fmt.Sprintf(" %s %s", emojiDir, audioFile.name)
 }
 
 // populateAudioLength is the most time consuming part of startup,
@@ -815,7 +833,7 @@ func populateAudioLength(root *tview.TreeNode) error {
 	root.Walk(func(node *tview.TreeNode, _ *tview.TreeNode) bool {
 		audioFile := node.GetReference().(*AudioFile)
 		if audioFile.isAudioFile {
-			audioLength, err := getLength(audioFile.path)
+			audioLength, err := player.GetLength(audioFile.path)
 			if err != nil {
 				logError(err)
 				return false
