@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/issadarkthing/gomu/player"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
 )
@@ -154,19 +155,14 @@ func (q *Queue) dequeue() (*AudioFile, error) {
 // Add item to the list and returns the length of the queue
 func (q *Queue) enqueue(audioFile *AudioFile) (int, error) {
 
-	player := gomu.player
+	isTestEnv := os.Getenv("TEST") == "false"
 
-	if !player.isRunning && !player.isPaused() && os.Getenv("TEST") == "false" {
+	if !gomu.player.IsRunning() && !gomu.player.IsPaused() && isTestEnv {
 
-		gomu.player.isRunning = true
-
-		go func() {
-
-			if err := gomu.player.run(audioFile); err != nil {
-				logError(err)
-			}
-
-		}()
+		err := gomu.player.Run(audioFile)
+		if err != nil {
+			die(err)
+		}
 
 		return q.GetItemCount(), nil
 	}
@@ -176,7 +172,7 @@ func (q *Queue) enqueue(audioFile *AudioFile) (int, error) {
 	}
 
 	q.items = append(q.items, audioFile)
-	songLength, err := getLength(audioFile.path)
+	songLength, err := player.GetLength(audioFile.path)
 
 	if err != nil {
 		return 0, tracerr.Wrap(err)
@@ -214,8 +210,8 @@ func (q *Queue) saveQueue(isQuit bool) error {
 	songPaths := q.getItems()
 	var content strings.Builder
 
-	if gomu.player.hasInit && isQuit && gomu.player.currentSong != nil {
-		currentSongPath := gomu.player.currentSong.path
+	if gomu.player.HasInit() && isQuit && gomu.player.GetCurrentSong() != nil {
+		currentSongPath := gomu.player.GetCurrentSong().Path()
 		currentSongInQueue := false
 		for _, songPath := range songPaths {
 			if getName(songPath) == getName(currentSongPath) {
@@ -347,7 +343,7 @@ func (q *Queue) shuffle() {
 	q.Clear()
 
 	for _, v := range q.items {
-		audioLen, err := getLength(v.path)
+		audioLen, err := player.GetLength(v.path)
 		if err != nil {
 			logError(err)
 		}

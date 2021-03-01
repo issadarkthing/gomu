@@ -13,10 +13,12 @@ import (
 	"syscall"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/issadarkthing/gomu/anko"
-	"github.com/issadarkthing/gomu/hook"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
+
+	"github.com/issadarkthing/gomu/anko"
+	"github.com/issadarkthing/gomu/hook"
+	"github.com/issadarkthing/gomu/player"
 )
 
 // Panel is used to keep track of childrens in slices
@@ -318,6 +320,47 @@ func start(application *tview.Application, args Args) {
 
 	gomu.initPanels(application, args)
 
+	gomu.player.SetSongStart(func(audio player.Audio) {
+		name := audio.Name()
+		defaultTimedPopup(" Now Playing ", name)
+
+		duration, err := player.GetLength(audio.Path())
+		if err != nil {
+			logError(err)
+			return
+		}
+
+		audioFile := audio.(*AudioFile)
+		gomu.playingBar.newProgress(audioFile, int(duration.Seconds()))
+
+		go func() {
+			err := gomu.playingBar.run()
+			if err != nil {
+				logError(err)
+			}
+		}()
+	})
+
+	gomu.player.SetSongFinish(func(_ player.Audio) {
+		audio, err := gomu.queue.dequeue()
+		if err != nil {
+			gomu.playingBar.setDefault()
+			return
+		}
+
+		err = gomu.player.Run(audio)
+		if err != nil {
+			die(err)
+		}
+
+		if gomu.queue.isLoop {
+			_, err = gomu.queue.enqueue(audio)
+			if err != nil {
+				logError(err)
+			}
+		}
+	})
+
 	flex := layout(gomu)
 	gomu.pages.AddPage("main", flex, true, true)
 
@@ -329,8 +372,7 @@ func start(application *tview.Application, args Args) {
 
 	isQueueLoop := gomu.anko.GetBool("General.queue_loop")
 
-	gomu.player.isLoop = isQueueLoop
-	gomu.queue.isLoop = gomu.player.isLoop
+	gomu.queue.isLoop = isQueueLoop
 
 	loadQueue := gomu.anko.GetBool("General.load_prev_queue")
 
@@ -427,7 +469,7 @@ func start(application *tview.Application, args Args) {
 
 	init := false
 	gomu.app.SetAfterDrawFunc(func(_ tcell.Screen) {
-		if !init && !gomu.player.isRunning {
+		if !init && !gomu.player.IsRunning() {
 			gomu.playingBar.setDefault()
 			init = true
 		}
