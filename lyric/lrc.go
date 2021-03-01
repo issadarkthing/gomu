@@ -76,10 +76,11 @@ func NewFromLRC(s string) (res subtitles.Subtitle, err error) {
 		s2 := r2.ReplaceAllString(lines[i], "$1")
 		s3 := strings.Trim(s2, "\r ")
 		o.Text = append(o.Text, s3)
-		if len(o.Text) > 0 {
-			res.Captions = append(res.Captions, o)
-			outSeq++
-		}
+		// Seems that empty lines are useful and shouldn't be deleted
+		// if len(o.Text) > 0 {
+		res.Captions = append(res.Captions, o)
+		outSeq++
+		// }
 	}
 	return
 }
