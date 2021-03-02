@@ -266,33 +266,17 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 // Deletes playlist/dir from filesystem
 func (p *Playlist) deletePlaylist(audioFile *AudioFile) (err error) {
 
-	var selectedDir *AudioFile
-
-	// gets the parent dir if current focused node is not a dir
-	if audioFile.isAudioFile {
-		return nil
-	} else {
-		selectedDir = audioFile
-	}
-
-	err = os.RemoveAll(selectedDir.path)
-
+	err = os.RemoveAll(audioFile.path)
 	if err != nil {
-
-		errorPopup(err)
-
 		err = tracerr.Wrap(err)
-
 	} else {
-
 		defaultTimedPopup(
 			" Success ",
-			selectedDir.name+"\nhas been deleted successfully")
-
+			audioFile.name+"\nhas been deleted successfully")
 		p.refresh()
 	}
 
-	return nil
+	return err
 }
 
 // Bulk add a playlist to queue

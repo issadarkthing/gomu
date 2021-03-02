@@ -129,9 +129,6 @@ func confirmationPopup(
 func confirmDeleteAllPopup(selPlaylist *tview.TreeNode) (err error) {
 
 	popupID := "confirm-deleteall-input-popup"
-	if selPlaylist.GetReference().(*AudioFile).isAudioFile {
-		return fmt.Errorf("not a folder")
-	}
 	input := newInputPopup(popupID, "Are you sure to delete the folder and all files under it?", "Type DELETE to Confirm: ", "")
 
 	input.SetDoneFunc(func(key tcell.Key) {
@@ -144,9 +141,9 @@ func confirmDeleteAllPopup(selPlaylist *tview.TreeNode) (err error) {
 			gomu.popups.pop()
 
 			if confirmationText == "DELETE" {
-				err := gomu.playlist.deletePlaylist(selPlaylist.GetReference().(*AudioFile))
+				err = gomu.playlist.deletePlaylist(selPlaylist.GetReference().(*AudioFile))
 				if err != nil {
-					logError(err)
+					errorPopup(err)
 				}
 			}
 
