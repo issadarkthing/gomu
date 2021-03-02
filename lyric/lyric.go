@@ -68,6 +68,7 @@ func cleanHTML(input string) string {
 	// delete heading tag
 	re := regexp.MustCompile(`^<h3>.*`)
 	content = re.ReplaceAllString(content, "")
+	content = strings.ReplaceAll(content, "\r\n", "")
 	content = strings.ReplaceAll(content, "\n", "")
 	content = strings.ReplaceAll(content, "<br/>", "\n")
 	// remove non-utf8 character

@@ -4,18 +4,17 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/martinlindhe/subtitles"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCleanHTML(t *testing.T) {
 
-	clean, err := ioutil.ReadFile("./sample-clean.srt")
+	clean, err := ioutil.ReadFile("./sample-clean.lrc")
 	if err != nil {
 		t.Error(err)
 	}
 
-	unclean, err := ioutil.ReadFile("./sample-unclean.srt")
+	unclean, err := ioutil.ReadFile("./sample-unclean.lrc")
 	if err != nil {
 		t.Error(err)
 	}
@@ -24,7 +23,7 @@ func TestCleanHTML(t *testing.T) {
 
 	assert.Equal(t, string(clean), got)
 
-	_, err = subtitles.NewFromSRT(got)
+	_, err = NewFromLRC(got)
 	if err != nil {
 		t.Error(err)
 	}
