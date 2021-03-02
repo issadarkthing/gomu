@@ -556,7 +556,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		"--write-sub",
 		"--all-subs",
 		"--convert-subs",
-		"srt",
+		"lrc",
 		// "--cookies",
 		// "~/Downloads/youtube.com_cookies.txt",
 		url,
@@ -616,7 +616,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		fileName := file.Name()
 		fileExt := filepath.Ext(fileName)
 		lyricFileName := filepath.Join(pathToFile, fileName)
-		if fileExt == ".srt" {
+		if fileExt == ".lrc" {
 			// Embed all lyrics and use langExt as content descriptor of uslt
 			fileNameWithoutExt := strings.TrimSuffix(fileName, fileExt)
 			langExt := strings.TrimPrefix(filepath.Ext(fileNameWithoutExt), ".")

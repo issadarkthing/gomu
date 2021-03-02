@@ -2,10 +2,11 @@ package lyric
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"strconv"
 
 	"github.com/asmcos/requests"
-	"github.com/martinlindhe/subtitles"
 )
 
 // GetLyricOptionsChinese queries available song lyrics. It returns map of title and
@@ -74,12 +75,28 @@ func GetLyricChinese(lyricID string, serviceProvider string) (string, error) {
 		return "", err
 	}
 	if looksLikeLRC(lyric) {
-		var tmpSubtitle subtitles.Subtitle
+		// var tmpSubtitle subtitles.Subtitle
+		// tmpSubtitle, err = NewFromLRC(lyric)
+		// if err != nil {
+		// 	return "", err
+		// }
+		// lyric = tmpSubtitle.AsSRT()
+		//Fixme
+		filename := "/home/tramhao/old.lrc"
+		file, _ := os.Create(filename)
+		io.WriteString(file, lyric)
+		file.Close()
+		var tmpSubtitle Lyric
 		tmpSubtitle, err = NewFromLRC(lyric)
 		if err != nil {
 			return "", err
 		}
-		lyric = tmpSubtitle.AsSRT()
+		lyric = tmpSubtitle.AsLRC()
+		//Fixme
+		filename = "/home/tramhao/new.lrc"
+		file, _ = os.Create(filename)
+		io.WriteString(file, lyric)
+		file.Close()
 	}
 	return lyric, nil
 }

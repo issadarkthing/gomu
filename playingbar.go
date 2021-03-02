@@ -10,9 +10,10 @@ import (
 	"time"
 
 	"github.com/bogem/id3v2"
-	"github.com/martinlindhe/subtitles"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
+
+	"github.com/issadarkthing/gomu/lyric"
 )
 
 type PlayingBar struct {
@@ -24,14 +25,14 @@ type PlayingBar struct {
 	text                    *tview.TextView
 	hasTag                  bool
 	tag                     *id3v2.Tag
-	subtitle                *subtitles.Subtitle
+	subtitle                *lyric.Lyric
 	subtitles               []*gomuSubtitle
 	langLyricCurrentPlaying string
 }
 
 type gomuSubtitle struct {
 	langExt  string
-	subtitle *subtitles.Subtitle
+	subtitle *lyric.Lyric
 }
 
 func (p *PlayingBar) help() []string {
@@ -147,7 +148,7 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 				die(errors.New("USLT error!"))
 			}
 			// res, err := subtitles.Parse([]byte(uslf.Lyrics))
-			res, err := subtitles.NewFromSRT(uslf.Lyrics)
+			res, err := lyric.NewFromLRC(uslf.Lyrics)
 			if err != nil {
 				logError(err)
 			}
@@ -238,7 +239,7 @@ func (p *PlayingBar) switchLyrics() {
 func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 
 	p.subtitle.ResyncSubs(lyricDelay)
-	err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle.AsSRT(), p.langLyricCurrentPlaying)
+	err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle.AsLRC(), p.langLyricCurrentPlaying)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}

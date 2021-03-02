@@ -9,9 +9,18 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/martinlindhe/subtitles"
 )
+
+type Lyric struct {
+	Captions []Caption
+}
+
+type Caption struct {
+	Seq   int
+	Start time.Time
+	End   time.Time
+	Text  []string
+}
 
 // Eol is the end of line characters to use when writing .srt data
 var eol = "\n"
@@ -32,7 +41,7 @@ func looksLikeLRC(s string) bool {
 }
 
 // NewFromLRC parses a .lrc text into Subtitle, assumes s is a clean utf8 string
-func NewFromLRC(s string) (res subtitles.Subtitle, err error) {
+func NewFromLRC(s string) (res Lyric, err error) {
 	endString := "[158:00.00]The End" + eol
 	s = s + endString
 	s = cleanLRC(s)
@@ -57,7 +66,7 @@ func NewFromLRC(s string) (res subtitles.Subtitle, err error) {
 			continue
 		}
 
-		var o subtitles.Caption
+		var o Caption
 		o.Seq = outSeq
 
 		o.Start, err = parseLrcTime(matchStart[0])
@@ -85,7 +94,7 @@ func NewFromLRC(s string) (res subtitles.Subtitle, err error) {
 	return
 }
 
-// parseSrtTime parses a srt subtitle time (duration since start of film)
+// parseSrtTime parses a lrc subtitle time (duration since start of film)
 func parseLrcTime(in string) (time.Time, error) {
 	in = strings.TrimPrefix(in, "[")
 	in = strings.TrimSuffix(in, "]")
@@ -133,4 +142,40 @@ func cleanLRC(s string) (cleanLyric string) {
 	cleanLyric = strings.Replace(s, "''", "'", -1)
 
 	return cleanLyric
+}
+
+// AsLRC renders the sub in .srt format
+func (lyric Lyric) AsLRC() (res string) {
+	for _, sub := range lyric.Captions {
+		res += sub.AsLRC()
+	}
+	return
+}
+
+// AsLRC renders the caption as srt
+func (cap Caption) AsLRC() string {
+	// res := fmt.Sprintf("%d", cap.Caption.Seq) + eol +
+	// 	TimeLRC(cap.Caption.Start) + " --> " + TimeLRC(cap.Caption.End) + eol
+	res := "[" + TimeLRC(cap.Start) + "]"
+	for _, line := range cap.Text {
+		res += line + eol
+	}
+	return res
+}
+
+// TimeLRC renders a timestamp for use in .srt
+func TimeLRC(t time.Time) string {
+	res := t.Format("04:05.00")
+	// return strings.Replace(res, ".", ",", 1)
+	return res
+}
+
+//ResyncSubs can ajust delay of lyrics
+func (lyric *Lyric) ResyncSubs(sync int) {
+	for i := range lyric.Captions {
+		lyric.Captions[i].Start = lyric.Captions[i].Start.
+			Add(time.Duration(sync) * time.Millisecond)
+		lyric.Captions[i].End = lyric.Captions[i].End.
+			Add(time.Duration(sync) * time.Millisecond)
+	}
 }
