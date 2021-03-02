@@ -98,5 +98,8 @@ func GetLyricChinese(lyricID string, serviceProvider string) (string, error) {
 	// 	io.WriteString(file, lyric)
 	// 	file.Close()
 	// }
-	return lyric, nil
+	if looksLikeLRC(lyric) {
+		return lyric, nil
+	}
+	return "", fmt.Errorf("lyric not compatible")
 }

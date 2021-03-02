@@ -1,6 +1,7 @@
 package lyric
 
 import (
+	"fmt"
 	"html"
 	"net/url"
 	"regexp"
@@ -29,8 +30,13 @@ func GetLyric(url string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	return lyric, nil
+	if lyric == "" {
+		return "", fmt.Errorf("no lyric available")
+	}
+	if looksLikeLRC(lyric) {
+		return lyric, nil
+	}
+	return "", fmt.Errorf("lyric not compatible")
 }
 
 // GetLyricOptions queries available song lyrics. It returns map of title and
