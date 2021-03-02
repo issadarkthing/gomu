@@ -136,6 +136,7 @@ func makeTime(h int, m int, s int, ms int) time.Time {
 // cleanLRC clean the string download
 func cleanLRC(s string) (cleanLyric string) {
 	// Clean &apos; to '
+	s = strings.ToValidUTF8(s, " ")
 	s = strings.Replace(s, "&apos;", "'", -1)
 	// It's wierd that sometimes there are two ajacent ''.
 	// Replace it anyway

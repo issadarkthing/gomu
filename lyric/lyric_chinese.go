@@ -99,6 +99,7 @@ func GetLyricChinese(lyricID string, serviceProvider string) (string, error) {
 	// 	file.Close()
 	// }
 	if looksLikeLRC(lyric) {
+		lyric = cleanLRC(lyric)
 		return lyric, nil
 	}
 	return "", fmt.Errorf("lyric not compatible")
