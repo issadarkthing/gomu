@@ -2,8 +2,8 @@ package lyric
 
 import (
 	"fmt"
-	"io"
-	"os"
+	// "io"
+	// "os"
 	"strconv"
 
 	"github.com/asmcos/requests"
@@ -74,29 +74,29 @@ func GetLyricChinese(lyricID string, serviceProvider string) (string, error) {
 		err = fmt.Errorf("no lyric available")
 		return "", err
 	}
-	if looksLikeLRC(lyric) {
-		// var tmpSubtitle subtitles.Subtitle
-		// tmpSubtitle, err = NewFromLRC(lyric)
-		// if err != nil {
-		// 	return "", err
-		// }
-		// lyric = tmpSubtitle.AsSRT()
-		//Fixme
-		filename := "/home/tramhao/old.lrc"
-		file, _ := os.Create(filename)
-		io.WriteString(file, lyric)
-		file.Close()
-		var tmpSubtitle Lyric
-		tmpSubtitle, err = NewFromLRC(lyric)
-		if err != nil {
-			return "", err
-		}
-		lyric = tmpSubtitle.AsLRC()
-		//Fixme
-		filename = "/home/tramhao/new.lrc"
-		file, _ = os.Create(filename)
-		io.WriteString(file, lyric)
-		file.Close()
-	}
+	// if looksLikeLRC(lyric) {
+	// 	// var tmpSubtitle subtitles.Subtitle
+	// 	// tmpSubtitle, err = NewFromLRC(lyric)
+	// 	// if err != nil {
+	// 	// 	return "", err
+	// 	// }
+	// 	// lyric = tmpSubtitle.AsSRT()
+	// 	//Fixme
+	// 	filename := "/home/tramhao/old.lrc"
+	// 	file, _ := os.Create(filename)
+	// 	io.WriteString(file, lyric)
+	// 	file.Close()
+	// 	var tmpSubtitle Lyric
+	// 	tmpSubtitle, err = NewFromLRC(lyric)
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+	// 	lyric = tmpSubtitle.AsLRC()
+	// 	//Fixme
+	// 	filename = "/home/tramhao/new.lrc"
+	// 	file, _ = os.Create(filename)
+	// 	io.WriteString(file, lyric)
+	// 	file.Close()
+	// }
 	return lyric, nil
 }
