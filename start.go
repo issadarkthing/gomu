@@ -470,9 +470,14 @@ func start(application *tview.Application, args Args) {
 
 	init := false
 	gomu.app.SetAfterDrawFunc(func(_ tcell.Screen) {
-		if !init && !gomu.player.IsRunning() {
+		if !init {
 			gomu.playingBar.setDefault()
 			init = true
+		}
+		if gomu.player.IsRunning() {
+			gomu.playingBar.setSongTitle(gomu.player.GetCurrentSong().Name())
+		} else {
+			gomu.playingBar.setDefault()
 		}
 	})
 
