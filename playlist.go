@@ -18,7 +18,7 @@ import (
 	"github.com/rivo/tview"
 	spin "github.com/tj/go-spin"
 	"github.com/ztrue/tracerr"
-	
+
 	"github.com/issadarkthing/gomu/player"
 )
 
@@ -270,38 +270,27 @@ func (p *Playlist) deletePlaylist(audioFile *AudioFile) (err error) {
 
 	// gets the parent dir if current focused node is not a dir
 	if audioFile.isAudioFile {
-		selectedDir = audioFile.parent.GetReference().(*AudioFile)
+		return nil
 	} else {
 		selectedDir = audioFile
 	}
 
-	confirmationPopup("Are you sure to delete this directory?",
-		func(_ int, buttonName string) {
+	err = os.RemoveAll(selectedDir.path)
 
-			if buttonName == "no" || buttonName == "" {
-				return
-			}
+	if err != nil {
 
-			err := os.RemoveAll(selectedDir.path)
+		errorPopup(err)
 
-			if err != nil {
+		err = tracerr.Wrap(err)
 
-				defaultTimedPopup(
-					" Error ",
-					"Unable to delete dir "+selectedDir.name)
+	} else {
 
-				err = tracerr.Wrap(err)
+		defaultTimedPopup(
+			" Success ",
+			selectedDir.name+"\nhas been deleted successfully")
 
-			} else {
-
-				defaultTimedPopup(
-					" Success ",
-					selectedDir.name+"\nhas been deleted successfully")
-
-				p.refresh()
-			}
-
-		})
+		p.refresh()
+	}
 
 	return nil
 }
@@ -320,7 +309,7 @@ func (p *Playlist) addAllToQueue(root *tview.TreeNode) {
 	for _, v := range childrens {
 		currNode := v.GetReference().(*AudioFile)
 		if currNode.isAudioFile {
-		
+
 			currSong := gomu.player.GetCurrentSong()
 			if currSong == nil || (currNode.Name() != currSong.Name()) {
 				gomu.queue.enqueue(currNode)

@@ -43,9 +43,11 @@ func (c Command) defineCommands() {
 
 	c.define("delete_playlist", func() {
 		audioFile := gomu.playlist.getCurrentFile()
-		err := gomu.playlist.deletePlaylist(audioFile)
-		if err != nil {
-			logError(err)
+		if !audioFile.isAudioFile {
+			err := confirmDeleteAllPopup(audioFile.node)
+			if err != nil {
+				errorPopup(err)
+			}
 		}
 	})
 

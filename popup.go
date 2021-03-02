@@ -125,6 +125,43 @@ func confirmationPopup(
 
 }
 
+// Confirmation popup for delete playlist. Accepts callback
+func confirmDeleteAllPopup(selPlaylist *tview.TreeNode) (err error) {
+
+	popupID := "confirm-deleteall-input-popup"
+	if selPlaylist.GetReference().(*AudioFile).isAudioFile {
+		return fmt.Errorf("not a folder")
+	}
+	input := newInputPopup(popupID, "Are you sure to delete the folder and all files under it?", "Type DELETE to Confirm: ", "")
+
+	input.SetDoneFunc(func(key tcell.Key) {
+
+		switch key {
+		case tcell.KeyEnter:
+			confirmationText := input.GetText()
+
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
+
+			if confirmationText == "DELETE" {
+				err := gomu.playlist.deletePlaylist(selPlaylist.GetReference().(*AudioFile))
+				if err != nil {
+					logError(err)
+				}
+			}
+
+		case tcell.KeyEscape:
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
+		}
+
+		gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+
+	})
+
+	return tracerr.Wrap(err)
+}
+
 func center(p tview.Primitive, width, height int) tview.Primitive {
 	return tview.NewFlex().
 		AddItem(nil, 0, 1, false).
