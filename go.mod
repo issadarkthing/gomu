@@ -6,6 +6,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.6.1 // indirect
 	github.com/antchfx/htmlquery v1.2.3 // indirect
 	github.com/antchfx/xmlquery v1.3.4 // indirect
+	github.com/asmcos/requests v0.0.0-20210118082303-cb8f46dd3767
 	github.com/bogem/id3v2 v1.2.0
 	github.com/faiface/beep v1.0.2
 	github.com/gdamore/tcell/v2 v2.1.0
@@ -15,7 +16,7 @@ require (
 	github.com/hajimehoshi/oto v0.7.1 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/logrusorgru/aurora v2.0.3+incompatible // indirect
-	github.com/martinlindhe/subtitles v0.0.0-20210219114018-c133f18cfb3d
+	github.com/martinlindhe/subtitles v0.0.0-20210226093915-8010a8a9b389
 	github.com/mattn/anko v0.1.8
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/tview v0.0.0-20210125085121-dbc1f32bb1d0

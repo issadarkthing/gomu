@@ -125,6 +125,40 @@ func confirmationPopup(
 
 }
 
+// Confirmation popup for delete playlist. Accepts callback
+func confirmDeleteAllPopup(selPlaylist *tview.TreeNode) (err error) {
+
+	popupID := "confirm-deleteall-input-popup"
+	input := newInputPopup(popupID, "Are you sure to delete the folder and all files under it?", "Type DELETE to Confirm: ", "")
+
+	input.SetDoneFunc(func(key tcell.Key) {
+
+		switch key {
+		case tcell.KeyEnter:
+			confirmationText := input.GetText()
+
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
+
+			if confirmationText == "DELETE" {
+				err = gomu.playlist.deletePlaylist(selPlaylist.GetReference().(*AudioFile))
+				if err != nil {
+					errorPopup(err)
+				}
+			}
+
+		case tcell.KeyEscape:
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
+		}
+
+		gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+
+	})
+
+	return tracerr.Wrap(err)
+}
+
 func center(p tview.Primitive, width, height int) tview.Primitive {
 	return tview.NewFlex().
 		AddItem(nil, 0, 1, false).
@@ -893,14 +927,60 @@ func lyricPopup(audioFile *AudioFile) error {
 			lyric, err := lyric.GetLyric(url)
 			if err != nil {
 				errorPopup(err)
+				gomu.app.Draw()
 			}
 
 			langExt := "en"
 			err = embedLyric(audioFile.path, lyric, langExt)
 			if err != nil {
 				errorPopup(err)
+				gomu.app.Draw()
 			} else {
 				infoPopup("Lyric added successfully")
+				gomu.app.Draw()
+			}
+
+		}()
+	})
+
+	return nil
+}
+
+func lyricPopupCN(audioFile *AudioFile, serviceProvider string) error {
+
+	results, err := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	titles := make([]string, 0, len(results))
+
+	for result := range results {
+		titles = append(titles, result)
+	}
+
+	searchPopup(" Lyrics ", titles, func(selected string) {
+		if selected == "" {
+			return
+		}
+
+		go func() {
+			lyricID := results[selected]
+			lyric, err := lyric.GetLyricChinese(lyricID, serviceProvider)
+			if err != nil {
+				errorPopup(err)
+				gomu.app.Draw()
+				return
+			}
+
+			langExt := "zh-CN"
+			err = embedLyric(audioFile.path, lyric, langExt)
+			if err != nil {
+				errorPopup(err)
+				gomu.app.Draw()
+			} else {
+				infoPopup("Lyric added successfully")
+				gomu.app.Draw()
 			}
 
 		}()

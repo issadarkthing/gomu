@@ -206,8 +206,9 @@ module General {
 	# to another instance from this list:
 	# https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
 	invidious_instance  = "https://vid.puffyan.us"
-	# Prefered language for lyrics to be embeded, if not available, english version will be embeded.
-	# Available tags: en,el,ko,es,th,vi,zh-Hans,zh-Hant but only set 1 tag is working 
+	# Prefered language for lyrics to be displayed, if not available, english version
+	# will be displayed.
+	# Available tags: en,el,ko,es,th,vi,zh-Hans,zh-Hant, and can be separated with comma. 
 	# find more tags: youtube-dl --skip-download --list-subs "url"
 	lang_lyric          = "en"
 }
@@ -469,9 +470,14 @@ func start(application *tview.Application, args Args) {
 
 	init := false
 	gomu.app.SetAfterDrawFunc(func(_ tcell.Screen) {
-		if !init && !gomu.player.IsRunning() {
+		if !init {
 			gomu.playingBar.setDefault()
 			init = true
+		}
+		if gomu.player.IsRunning() {
+			gomu.playingBar.setSongTitle(gomu.player.GetCurrentSong().Name())
+		} else {
+			gomu.playingBar.setDefault()
 		}
 	})
 

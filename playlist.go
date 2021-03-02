@@ -18,7 +18,7 @@ import (
 	"github.com/rivo/tview"
 	spin "github.com/tj/go-spin"
 	"github.com/ztrue/tracerr"
-	
+
 	"github.com/issadarkthing/gomu/player"
 )
 
@@ -75,7 +75,7 @@ func (p *Playlist) help() []string {
 		"/      find in playlist",
 		"s      search audio from youtube",
 		"t      edit mp3 tags",
-		"1      find lyric if available",
+		"1/2/3 find lyric if available",
 	}
 
 }
@@ -184,6 +184,8 @@ func newPlaylist(args Args) *Playlist {
 			'/': "playlist_search",
 			't': "edit_tags",
 			'1': "fetch_lyric",
+			'2': "fetch_lyric_cn2",
+			'3': "fetch_lyric_cn3",
 		}
 
 		for key, cmd := range cmds {
@@ -264,44 +266,17 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 // Deletes playlist/dir from filesystem
 func (p *Playlist) deletePlaylist(audioFile *AudioFile) (err error) {
 
-	var selectedDir *AudioFile
-
-	// gets the parent dir if current focused node is not a dir
-	if audioFile.isAudioFile {
-		selectedDir = audioFile.parent.GetReference().(*AudioFile)
+	err = os.RemoveAll(audioFile.path)
+	if err != nil {
+		err = tracerr.Wrap(err)
 	} else {
-		selectedDir = audioFile
+		defaultTimedPopup(
+			" Success ",
+			audioFile.name+"\nhas been deleted successfully")
+		p.refresh()
 	}
 
-	confirmationPopup("Are you sure to delete this directory?",
-		func(_ int, buttonName string) {
-
-			if buttonName == "no" || buttonName == "" {
-				return
-			}
-
-			err := os.RemoveAll(selectedDir.path)
-
-			if err != nil {
-
-				defaultTimedPopup(
-					" Error ",
-					"Unable to delete dir "+selectedDir.name)
-
-				err = tracerr.Wrap(err)
-
-			} else {
-
-				defaultTimedPopup(
-					" Success ",
-					selectedDir.name+"\nhas been deleted successfully")
-
-				p.refresh()
-			}
-
-		})
-
-	return nil
+	return err
 }
 
 // Bulk add a playlist to queue
@@ -318,7 +293,7 @@ func (p *Playlist) addAllToQueue(root *tview.TreeNode) {
 	for _, v := range childrens {
 		currNode := v.GetReference().(*AudioFile)
 		if currNode.isAudioFile {
-		
+
 			currSong := gomu.player.GetCurrentSong()
 			if currSong == nil || (currNode.Name() != currSong.Name()) {
 				gomu.queue.enqueue(currNode)
