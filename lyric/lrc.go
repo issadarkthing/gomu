@@ -1,5 +1,18 @@
 // Package lyric package download lyrics from different website and embed them into mp3 file.
 // lrc file is used to parse lrc file into subtitle. Similar to subtitles package
+// [al:''Album where the song is from'']
+// [ar:''Lyrics artist'']
+// [by:''Creator of the LRC file'']
+// [offset:''+/- Overall timestamp adjustment in milliseconds, + shifts time up, - shifts down'']
+// [re:''The player or editor that creates LRC file'']
+// [ti:''Lyrics (song) title'']
+// [ve:''version of program'']
+// [ti:Let's Twist Again]
+// [ar:Chubby Checker oppure  Beatles, The]
+// [au:Written by Kal Mann / Dave Appell, 1961]
+// [al:Hits Of The 60's - Vol. 2 – Oldies]
+// [00:12.00]Lyrics beginning ...
+// [00:15.30]Some more lyrics ...
 package lyric
 
 import (
@@ -9,10 +22,19 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ztrue/tracerr"
 )
 
 type Lyric struct {
-	Captions []Caption
+	Album               string
+	Artist              string
+	ByCreator           string        // Creator of LRC file
+	Offset              time.Duration // positive means delay lyric
+	RePlayerEditor      string        // Player or Editor to create this LRC file
+	Title               string
+	VersionPlayerEditor string // Version of player or editor
+	Captions            []Caption
 }
 
 type Caption struct {
@@ -45,7 +67,6 @@ func NewFromLRC(s string) (res Lyric, err error) {
 	endString := "[158:00.00]The End" + eol
 	s = s + endString
 	s = cleanLRC(s)
-	r1 := regexp.MustCompile(`(?U)^\[[0-9].*\]`)
 	lines := strings.Split(s, "\n")
 	outSeq := 1
 
@@ -55,9 +76,21 @@ func NewFromLRC(s string) (res Lyric, err error) {
 			continue
 		}
 
-		var matchEnd []string
+		if strings.HasPrefix(seq, "[offset") {
+			tmpString := strings.TrimPrefix(seq, "[offset:")
+			tmpString = strings.TrimSuffix(tmpString, "]")
+			tmpString = strings.ReplaceAll(tmpString, " ", "")
+			var intOffset int
+			intOffset, err = strconv.Atoi(tmpString)
+			if err != nil {
+				return res, tracerr.Wrap(err)
+			}
+			res.Offset = (time.Duration)(intOffset) * time.Millisecond
+		}
+
+		r1 := regexp.MustCompile(`(?U)^\[[0-9].*\]`)
 		matchStart := r1.FindStringSubmatch(lines[i])
-		matchEnd = r1.FindStringSubmatch(lines[i+1])
+		matchEnd := r1.FindStringSubmatch(lines[i+1])
 
 		if len(matchStart) < 1 || len(matchEnd) < 1 {
 			// err = fmt.Errorf("lrc: parse error at line %d (idx out of range) for input '%s'", i, lines[i])
@@ -147,6 +180,13 @@ func cleanLRC(s string) (cleanLyric string) {
 
 // AsLRC renders the sub in .srt format
 func (lyric Lyric) AsLRC() (res string) {
+
+	if lyric.Offset != 0 {
+		intOffset := int(lyric.Offset.Milliseconds())
+		stringOffset := strconv.Itoa(intOffset)
+		res += "[offset:" + stringOffset + "]" + eol
+	}
+
 	for _, sub := range lyric.Captions {
 		res += sub.AsLRC()
 	}
@@ -171,12 +211,12 @@ func TimeLRC(t time.Time) string {
 	return res
 }
 
-//ResyncSubs can ajust delay of lyrics
-func (lyric *Lyric) ResyncSubs(sync int) {
-	for i := range lyric.Captions {
-		lyric.Captions[i].Start = lyric.Captions[i].Start.
-			Add(time.Duration(sync) * time.Millisecond)
-		lyric.Captions[i].End = lyric.Captions[i].End.
-			Add(time.Duration(sync) * time.Millisecond)
-	}
-}
+// //ResyncSubs can ajust delay of lyrics
+// func (lyric *Lyric) ResyncSubs(sync int) {
+// 	for i := range lyric.Captions {
+// 		lyric.Captions[i].Start = lyric.Captions[i].Start.
+// 			Add(time.Duration(sync) * time.Millisecond)
+// 		lyric.Captions[i].End = lyric.Captions[i].End.
+// 			Add(time.Duration(sync) * time.Millisecond)
+// 	}
+// }

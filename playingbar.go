@@ -86,8 +86,8 @@ func (p *PlayingBar) run() error {
 		var lyricText string
 		if p.subtitle != nil {
 			for i := range p.subtitle.Captions {
-				startTime := p.subtitle.Captions[i].Start
-				endTime := p.subtitle.Captions[i].End
+				startTime := p.subtitle.Captions[i].Start.Add(p.subtitle.Offset)
+				endTime := p.subtitle.Captions[i].End.Add(p.subtitle.Offset)
 				currentTime := time.Date(0, 1, 1, 0, 0, p.progress, 0, time.UTC)
 				if currentTime.After(startTime.Add(-1*time.Second)) && currentTime.Before(endTime) {
 					lyricText = strings.Join(p.subtitle.Captions[i].Text, " ")
@@ -238,7 +238,7 @@ func (p *PlayingBar) switchLyrics() {
 
 func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 
-	p.subtitle.ResyncSubs(lyricDelay)
+	p.subtitle.Offset += (time.Duration)(lyricDelay) * time.Millisecond
 	err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle.AsLRC(), p.langLyricCurrentPlaying)
 	if err != nil {
 		return tracerr.Wrap(err)
