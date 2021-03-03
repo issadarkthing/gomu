@@ -87,7 +87,14 @@ func (p *PlayingBar) run() error {
 		if p.subtitle != nil {
 			for i := range p.subtitle.Captions {
 				startTime := p.subtitle.Captions[i].Start.Add(p.subtitle.Offset)
-				endTime := p.subtitle.Captions[i].End.Add(p.subtitle.Offset)
+				var endTime time.Time
+				if i < len(p.subtitle.Captions)-1 {
+					endTime = p.subtitle.Captions[i+1].Start.Add(p.subtitle.Offset)
+				} else {
+					// Here we display the last lyric until the end of song
+					endTime = time.Date(0, 1, 1, 0, 0, p.full, 0, time.UTC)
+				}
+
 				currentTime := time.Date(0, 1, 1, 0, 0, p.progress, 0, time.UTC)
 				if currentTime.After(startTime.Add(-1*time.Second)) && currentTime.Before(endTime) {
 					lyricText = strings.Join(p.subtitle.Captions[i].Text, " ")
@@ -232,6 +239,7 @@ func (p *PlayingBar) switchLyrics() {
 
 	p.langLyricCurrentPlaying = p.subtitles[langIndex].langExt
 	p.subtitle = p.subtitles[langIndex].subtitle
+
 	defaultTimedPopup(" Success ", p.langLyricCurrentPlaying+" lyric switched successfully.")
 
 }

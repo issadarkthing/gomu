@@ -40,7 +40,6 @@ type Lyric struct {
 type Caption struct {
 	Seq   int
 	Start time.Time
-	End   time.Time
 	Text  []string
 }
 
@@ -64,8 +63,6 @@ func looksLikeLRC(s string) bool {
 
 // NewFromLRC parses a .lrc text into Subtitle, assumes s is a clean utf8 string
 func NewFromLRC(s string) (res Lyric, err error) {
-	endString := "[158:00.00]The End" + eol
-	s = s + endString
 	s = cleanLRC(s)
 	lines := strings.Split(s, "\n")
 	outSeq := 1
@@ -90,12 +87,9 @@ func NewFromLRC(s string) (res Lyric, err error) {
 
 		r1 := regexp.MustCompile(`(?U)^\[[0-9].*\]`)
 		matchStart := r1.FindStringSubmatch(lines[i])
-		matchEnd := r1.FindStringSubmatch(lines[i+1])
 
-		if len(matchStart) < 1 || len(matchEnd) < 1 {
-			// err = fmt.Errorf("lrc: parse error at line %d (idx out of range) for input '%s'", i, lines[i])
-			// break
-			// Here we continue to parse the subtitle and ignore the lines have no start or end
+		if len(matchStart) < 1 {
+			// Here we continue to parse the subtitle and ignore the lines have no startTime
 			continue
 		}
 
@@ -105,12 +99,6 @@ func NewFromLRC(s string) (res Lyric, err error) {
 		o.Start, err = parseLrcTime(matchStart[0])
 		if err != nil {
 			err = fmt.Errorf("lrc: start error at line %d: %v", i, err)
-			break
-		}
-
-		o.End, err = parseLrcTime(matchEnd[0])
-		if err != nil {
-			err = fmt.Errorf("lrc: end error at line %d: %v", i, err)
 			break
 		}
 
