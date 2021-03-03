@@ -71,8 +71,7 @@ func GetLyricChinese(lyricID string, serviceProvider string) (string, error) {
 	}
 	lyric = dataMap["lyric"].(string)
 	if lyric == "" {
-		err = fmt.Errorf("no lyric available")
-		return "", err
+		return "", fmt.Errorf("no lyric available")
 	}
 	// if looksLikeLRC(lyric) {
 	// 	// var tmpSubtitle subtitles.Subtitle

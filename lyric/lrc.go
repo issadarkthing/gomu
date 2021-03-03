@@ -198,13 +198,3 @@ func TimeLRC(t time.Time) string {
 	// return strings.Replace(res, ".", ",", 1)
 	return res
 }
-
-// //ResyncSubs can ajust delay of lyrics
-// func (lyric *Lyric) ResyncSubs(sync int) {
-// 	for i := range lyric.Captions {
-// 		lyric.Captions[i].Start = lyric.Captions[i].Start.
-// 			Add(time.Duration(sync) * time.Millisecond)
-// 		lyric.Captions[i].End = lyric.Captions[i].End.
-// 			Add(time.Duration(sync) * time.Millisecond)
-// 	}
-// }
