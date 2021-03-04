@@ -3,6 +3,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -23,6 +24,7 @@ import (
 
 // this is used to make the popup unique
 // this mitigates the issue of closing all popups when timeout ends
+
 var (
 	popupCounter = 0
 )
@@ -30,6 +32,14 @@ var (
 // Stack Simple stack data structure
 type Stack struct {
 	popups []tview.Primitive
+}
+
+type TagEditor struct {
+	*tview.Form
+	text      *tview.TextView
+	tag       *id3v2.Tag
+	subtitle  *lyric.Lyric
+	subtitles []*gomuSubtitle
 }
 
 // Push popup to the stack and focus
@@ -838,6 +848,10 @@ func ytSearchPopup() {
 }
 
 func tagPopup(node *AudioFile) (err error) {
+
+	popupLyricMap := make(map[string]*lyric.Lyric)
+	popupID := "tag-input-popup"
+
 	var tag *id3v2.Tag
 	if node.isAudioFile {
 		tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
@@ -848,13 +862,43 @@ func tagPopup(node *AudioFile) (err error) {
 	} else {
 		return nil
 	}
+	usltFrames := tag.GetFrames(tag.CommonID("Unsynchronised lyrics/text transcription"))
 
-	popupID := "tag-input-popup"
+	for _, f := range usltFrames {
+		uslf, ok := f.(id3v2.UnsynchronisedLyricsFrame)
+		if !ok {
+			die(errors.New("USLT error"))
+		}
+		res, err := lyric.NewFromLRC(uslf.Lyrics)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+		popupLyricMap[uslf.ContentDescriptor] = &res
+	}
+	var options []string
+	for option := range popupLyricMap {
+		options = append(options, option)
+	}
+
+	// lyricDropdown := tview.NewDropDown().
+	// 	SetLabel("Available Lyrics").
+	// 	SetOptions(options, nil).
+	// 	SetCurrentOption(0)
+
+	// var lyricText string = "abcdefg"
+	// _, optionSelected := lyricDropdown.GetCurrentOption()
+	// for _, v := range popupLyricMap[optionSelected].Captions.Text {
+	// 	lyricText += v
+	// }
+	lyricTextView := tview.NewTextView()
 
 	form := tview.NewForm().
 		AddInputField("Artist", tag.Artist(), 20, nil, nil).
 		AddInputField("Title", tag.Title(), 20, nil, nil).
-		AddInputField("Album", tag.Album(), 20, nil, nil)
+		AddInputField("Album", tag.Album(), 20, nil, nil).
+		SetButtonBackgroundColor(gomu.colors.popup).
+		SetButtonTextColor(gomu.colors.accent).
+		AddButton("Get Tag", nil)
 
 	form.SetFieldBackgroundColor(gomu.colors.popup).
 		SetBackgroundColor(gomu.colors.popup).
@@ -862,41 +906,122 @@ func tagPopup(node *AudioFile) (err error) {
 		SetBorder(true).
 		SetBorderPadding(1, 0, 2, 2)
 
+	// lyricform := tview.NewForm().
+	// 	AddFormItem(lyricDropdown).
+	// 	AddButton("Delete", nil).
+	// 	SetButtonBackgroundColor(gomu.colors.popup).
+	// 	SetButtonTextColor(gomu.colors.accent)
+
+	// lyricform.SetFieldBackgroundColor(gomu.colors.popup).
+	// 	SetBackgroundColor(gomu.colors.popup).
+	// 	SetTitle(node.name).
+	// 	SetBorder(true).
+	// 	SetBorderPadding(1, 0, 2, 2)
+
+	// artistInput := tview.NewInputField().
+	// 	SetLabel("Artist").
+	// 	SetFieldWidth(20).
+	// 	SetText(tag.Artist())
+	// flexTop := tview.NewFlex().SetDirection(tview.FlexRow).
+	// 	AddItem(artistInput, 1, 0, true).
+	// 	SetBackgroundColor(gomu.colors.popup).
+	// 	SetBorder(true).
+	// 	SetBorderPadding(1, 1, 2, 2)
+
+	// frameTop := tview.NewFrame(artistInput).
+	// 	SetBorder(true).
+	// 	SetTitle(node.name).
+	// 	SetBackgroundColor(gomu.colors.background)
+
+	// lyricFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+	// 	AddItem(frameTop, 0, 1, true).
+	// 	AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
+	// 		// AddItem(artistInput, 0, 3, true).
+	// 		AddItem(lyricTextView, 0, 3, true), 0, 3, true)
+
+	lyricFlex := &TagEditor{
+		Form: form,
+		text: lyricTextView,
+	}
+
+	lyricFlex.
+		SetBackgroundColor(gomu.colors.popup) //.
+		// SetBorder(true).
+		// SetBorderPadding(1, 1, 2, 2).
+		// SetTitle(" REPL ")
+
 	gomu.pages.
-		AddPage(popupID, center(form, 60, 10), true, true)
-	gomu.popups.push(form)
+		AddPage(popupID, center(lyricFlex, 70, 40), true, true)
+	gomu.popups.push(lyricFlex)
 
-	form.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
-		switch e.Key() {
-		case tcell.KeyEnter:
-			tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
-			if err != nil {
-				errorPopup(err)
-			}
-			tagArtist := form.GetFormItemByLabel("Artist").(*tview.InputField).GetText()
-			tagTitle := form.GetFormItemByLabel("Title").(*tview.InputField).GetText()
-			tag.SetArtist(tagArtist)
-			tag.SetTitle(tagTitle)
-			tag.SetAlbum(form.GetFormItemByLabel("Album").(*tview.InputField).GetText())
-			err := tag.Save()
-			if err != nil {
-				errorPopup(err)
-				gomu.pages.RemovePage(popupID)
-				gomu.popups.pop()
-				return e
-			}
+	// form.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+	// 	switch e.Key() {
+	// 	case tcell.KeyEnter:
+	// 		tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+	// 		if err != nil {
+	// 			errorPopup(err)
+	// 		}
+	// 		tagArtist := form.GetFormItemByLabel("Artist").(*tview.InputField).GetText()
+	// 		tagTitle := form.GetFormItemByLabel("Title").(*tview.InputField).GetText()
+	// 		tag.SetArtist(tagArtist)
+	// 		tag.SetTitle(tagTitle)
+	// 		tag.SetAlbum(form.GetFormItemByLabel("Album").(*tview.InputField).GetText())
+	// 		err := tag.Save()
+	// 		if err != nil {
+	// 			errorPopup(err)
+	// 			gomu.pages.RemovePage(popupID)
+	// 			gomu.popups.pop()
+	// 			return e
+	// 		}
 
-			defaultTimedPopup(" Success ", "Tag update successfully")
-			gomu.pages.RemovePage(popupID)
-			gomu.popups.pop()
+	// 		defaultTimedPopup(" Success ", "Tag update successfully")
+	// 		gomu.pages.RemovePage(popupID)
+	// 		gomu.popups.pop()
 
-		case tcell.KeyEsc:
-			gomu.pages.RemovePage(popupID)
-			gomu.popups.pop()
-		}
+	// 	case tcell.KeyEsc:
+	// 		gomu.pages.RemovePage(popupID)
+	// 		gomu.popups.pop()
+	// 	case tcell.KeyTAB:
+	// 		if form.GetFormItemByLabel("Get Tag").HasFocus() {
+	// 			lyricform.SetFocus(0)
+	// 		}
+	// 	}
 
-		return e
-	})
+	// 	return e
+	// })
+
+	// lyricform.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+	// 	switch e.Key() {
+	// 	case tcell.KeyEnter:
+	// 		tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+	// 		if err != nil {
+	// 			errorPopup(err)
+	// 		}
+	// 		tagArtist := form.GetFormItemByLabel("Artist").(*tview.InputField).GetText()
+	// 		tagTitle := form.GetFormItemByLabel("Title").(*tview.InputField).GetText()
+	// 		tag.SetArtist(tagArtist)
+	// 		tag.SetTitle(tagTitle)
+	// 		tag.SetAlbum(form.GetFormItemByLabel("Album").(*tview.InputField).GetText())
+	// 		err := tag.Save()
+	// 		if err != nil {
+	// 			errorPopup(err)
+	// 			gomu.pages.RemovePage(popupID)
+	// 			gomu.popups.pop()
+	// 			return e
+	// 		}
+
+	// 		defaultTimedPopup(" Success ", "Tag update successfully")
+	// 		gomu.pages.RemovePage(popupID)
+	// 		gomu.popups.pop()
+
+	// 	case tcell.KeyEsc:
+	// 		gomu.pages.RemovePage(popupID)
+	// 		gomu.popups.pop()
+	// 	}
+
+	// 	return e
+	// })
+
 	return err
 }
 

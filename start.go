@@ -271,10 +271,10 @@ module Color {
 // Sets the layout of the application
 func layout(gomu *Gomu) *tview.Flex {
 	flex := tview.NewFlex().
-		AddItem(gomu.playlist, 0, 1, false).
+		AddItem(gomu.playlist, 0, 2, false).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
 			AddItem(gomu.queue, 0, 5, false).
-			AddItem(gomu.playingBar, 9, 0, false), 0, 3, false)
+			AddItem(gomu.playingBar, 9, 0, false), 0, 4, false)
 
 	return flex
 }
@@ -322,8 +322,6 @@ func start(application *tview.Application, args Args) {
 	gomu.initPanels(application, args)
 
 	gomu.player.SetSongStart(func(audio player.Audio) {
-		name := audio.Name()
-		defaultTimedPopup(" Now Playing ", name)
 
 		duration, err := player.GetLength(audio.Path())
 		if err != nil {
@@ -333,6 +331,8 @@ func start(application *tview.Application, args Args) {
 
 		audioFile := audio.(*AudioFile)
 		gomu.playingBar.newProgress(audioFile, int(duration.Seconds()))
+		name := audio.Name()
+		defaultTimedPopup(" Now Playing ", fmt.Sprintf("%s \n\n %s lyric loaded", name, gomu.playingBar.langLyricCurrentPlaying))
 
 		go func() {
 			err := gomu.playingBar.run()
