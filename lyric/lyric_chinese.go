@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/asmcos/requests"
+	"github.com/ztrue/tracerr"
 )
 
 // GetLyricOptionsChinese queries available song lyrics. It returns map of title and
@@ -22,13 +23,13 @@ func GetLyricOptionsChinese(search string, serviceProvider string) (map[string]s
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := req.Get("http://api.sunyj.xyz", p)
 	if err != nil {
-		return nil, err
+		return nil, tracerr.Wrap(err)
 	}
 
 	var dataMap []map[string]interface{}
 	err = resp.Json(&dataMap)
 	if err != nil {
-		return nil, err
+		return nil, tracerr.Wrap(err)
 	}
 	for _, v := range dataMap {
 		songName := v["name"]
@@ -62,12 +63,12 @@ func GetLyricChinese(lyricID string, serviceProvider string) (string, error) {
 	req := requests.Requests()
 	resp, err := req.Get("http://api.sunyj.xyz", p)
 	if err != nil {
-		return "", err
+		return "", tracerr.Wrap(err)
 	}
 	var dataMap map[string]interface{}
 	err = resp.Json(&dataMap)
 	if err != nil {
-		return "", err
+		return "", tracerr.Wrap(err)
 	}
 	lyric = dataMap["lyric"].(string)
 	if lyric == "" {

@@ -872,109 +872,108 @@ func tagPopup(node *AudioFile) (err error) {
 		options = append(options, option)
 	}
 
-	// lyricDropdown := tview.NewDropDown().
-	// 	SetLabel("Available Lyrics").
-	// 	SetOptions(options, nil).
-	// 	SetCurrentOption(0)
-
 	// var lyricText string = "abcdefg"
 	// _, optionSelected := lyricDropdown.GetCurrentOption()
-	// for _, v := range popupLyricMap[optionSelected].Captions.Text {
+	// // for _, v := range popupLyricMap[optionSelected].Captions.Text {
 	// 	lyricText += v
 	// }
 	lyricTextView := tview.NewTextView()
 
+	lyricTextView.SetBackgroundColor(gomu.colors.background).
+		SetBorder(true).
+		SetTitle("lyric")
+	widgets := make(map[string]tview.Primitive)
+	// widgets["widgetA"] = tview.NewXXX()
+	// widgets["widgetA"].(XXX).Foo()
+	_ = widgets
+
+	getTagButton := tview.NewButton("Get Tag")
+
 	form := tview.NewForm().
-		AddInputField("Artist", tag.Artist(), 20, nil, nil).
-		AddInputField("Title", tag.Title(), 20, nil, nil).
-		AddInputField("Album", tag.Album(), 20, nil, nil).
-		SetButtonBackgroundColor(gomu.colors.popup).
-		SetButtonTextColor(gomu.colors.accent).
-		AddButton("Get Tag", nil)
+		AddInputField("Artist: ", tag.Artist(), 20, nil, nil).
+		AddInputField("Title: ", tag.Title(), 20, nil, nil).
+		AddInputField("Album: ", tag.Album(), 20, nil, nil).
+		AddFormItem(getTagButton)
+		// AddButton("Get Tag", nil)
 
 	form.SetFieldBackgroundColor(gomu.colors.popup).
 		SetBackgroundColor(gomu.colors.popup).
 		SetTitle(node.name).
 		SetBorder(true).
 		SetBorderPadding(1, 0, 2, 2)
+	form2 := tview.NewForm().
+		AddDropDown("Lyrics Available: ", options, 0, nil).
+		AddButton("Delete Lyric", nil).
+		AddButton("Get Lyric2", nil).
+		AddButton("Get Lyric3", nil)
 
-	// lyricform := tview.NewForm().
-	// 	AddFormItem(lyricDropdown).
-	// 	AddButton("Delete", nil).
-	// 	SetButtonBackgroundColor(gomu.colors.popup).
-	// 	SetButtonTextColor(gomu.colors.accent)
+	form2.SetFieldBackgroundColor(gomu.colors.popup).
+		SetBackgroundColor(gomu.colors.popup).
+		SetTitle("Lyric").
+		SetBorder(true).
+		SetBorderPadding(1, 0, 2, 2)
 
-	// lyricform.SetFieldBackgroundColor(gomu.colors.popup).
-	// 	SetBackgroundColor(gomu.colors.popup).
-	// 	SetTitle(node.name).
-	// 	SetBorder(true).
-	// 	SetBorderPadding(1, 0, 2, 2)
-
-	// artistInput := tview.NewInputField().
-	// 	SetLabel("Artist").
-	// 	SetFieldWidth(20).
-	// 	SetText(tag.Artist())
-	// flexTop := tview.NewFlex().SetDirection(tview.FlexRow).
-	// 	AddItem(artistInput, 1, 0, true).
-	// 	SetBackgroundColor(gomu.colors.popup).
-	// 	SetBorder(true).
-	// 	SetBorderPadding(1, 1, 2, 2)
-
-	// frameTop := tview.NewFrame(artistInput).
-	// 	SetBorder(true).
-	// 	SetTitle(node.name).
-	// 	SetBackgroundColor(gomu.colors.background)
-
-	lyricFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
-			// AddItem(artistInput, 0, 3, true).
-			AddItem(lyricTextView, 0, 3, true), 0, 3, true)
+	lyricFlex := tview.NewFlex().SetDirection(tview.FlexColumn).
+		AddItem(form, 40, 0, true).
+		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
+			AddItem(form2, 10, 0, true).
+			AddItem(lyricTextView, 0, 2, true), 0, 2, true)
+		// AddItem(artistInput, 0, 3, true).
+		// AddItem(lyricTextView, 0, 3, true), 0, 3, true)
 
 	lyricFlex.
-		SetBackgroundColor(gomu.colors.popup) //.
-		// SetBorder(true).
-		// SetBorderPadding(1, 1, 2, 2).
-		// SetTitle(" REPL ")
+		SetBackgroundColor(gomu.colors.popup)
 
-	gomu.pages.
-		AddPage(popupID, center(lyricFlex, 70, 40), true, true)
-	gomu.popups.push(lyricFlex)
+	// gettagbutton := form.getformitembylabel("get tag")
 
-	// form.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
-	// 	switch e.Key() {
-	// 	case tcell.KeyEnter:
-	// 		tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
-	// 		if err != nil {
-	// 			errorPopup(err)
-	// 		}
-	// 		tagArtist := form.GetFormItemByLabel("Artist").(*tview.InputField).GetText()
-	// 		tagTitle := form.GetFormItemByLabel("Title").(*tview.InputField).GetText()
-	// 		tag.SetArtist(tagArtist)
-	// 		tag.SetTitle(tagTitle)
-	// 		tag.SetAlbum(form.GetFormItemByLabel("Album").(*tview.InputField).GetText())
-	// 		err := tag.Save()
-	// 		if err != nil {
-	// 			errorPopup(err)
-	// 			gomu.pages.RemovePage(popupID)
-	// 			gomu.popups.pop()
-	// 			return e
-	// 		}
-
-	// 		defaultTimedPopup(" Success ", "Tag update successfully")
-	// 		gomu.pages.RemovePage(popupID)
-	// 		gomu.popups.pop()
-
-	// 	case tcell.KeyEsc:
-	// 		gomu.pages.RemovePage(popupID)
-	// 		gomu.popups.pop()
-	// 	case tcell.KeyTAB:
-	// 		if form.GetFormItemByLabel("Get Tag").HasFocus() {
-	// 			lyricform.SetFocus(0)
-	// 		}
+	// gettagbutton.setinputcapture(func(e *tcell.eventkey) *tcell.eventkey {
+	// 	switch e.key() {
+	// 	case tcell.keytab:
+	// 		gomu.app.setfocus(form2)
 	// 	}
 
-	// 	return e
+	// return e
 	// })
+
+	gomu.pages.
+		AddPage(popupID, center(lyricFlex, 120, 40), true, true)
+	gomu.popups.push(lyricFlex)
+
+	form.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+		switch e.Key() {
+		case tcell.KeyEnter:
+			tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+			if err != nil {
+				errorPopup(err)
+			}
+			tagArtist := form.GetFormItemByLabel("Artist").(*tview.InputField).GetText()
+			tagTitle := form.GetFormItemByLabel("Title").(*tview.InputField).GetText()
+			tag.SetArtist(tagArtist)
+			tag.SetTitle(tagTitle)
+			tag.SetAlbum(form.GetFormItemByLabel("Album").(*tview.InputField).GetText())
+			err := tag.Save()
+			if err != nil {
+				errorPopup(err)
+				gomu.pages.RemovePage(popupID)
+				gomu.popups.pop()
+				return e
+			}
+
+			defaultTimedPopup(" Success ", "Tag update successfully")
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
+
+		case tcell.KeyEsc:
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
+		case tcell.KeyTAB:
+			// if form.GetFormItemByLabel("Get Tag").HasFocus() {
+			// 	lyricform.SetFocus(0)
+			// }
+		}
+
+		return e
+	})
 
 	return err
 }

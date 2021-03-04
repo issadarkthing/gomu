@@ -271,10 +271,10 @@ module Color {
 // Sets the layout of the application
 func layout(gomu *Gomu) *tview.Flex {
 	flex := tview.NewFlex().
-		AddItem(gomu.playlist, 0, 2, false).
+		AddItem(gomu.playlist, 0, 1, false).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
 			AddItem(gomu.queue, 0, 5, false).
-			AddItem(gomu.playingBar, 9, 0, false), 0, 4, false)
+			AddItem(gomu.playingBar, 9, 0, false), 0, 2, false)
 
 	return flex
 }
