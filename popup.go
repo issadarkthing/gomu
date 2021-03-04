@@ -34,14 +34,6 @@ type Stack struct {
 	popups []tview.Primitive
 }
 
-type TagEditor struct {
-	*tview.Form
-	text      *tview.TextView
-	tag       *id3v2.Tag
-	subtitle  *lyric.Lyric
-	subtitles []*gomuSubtitle
-}
-
 // Push popup to the stack and focus
 func (s *Stack) push(p tview.Primitive) {
 	s.popups = append(s.popups, p)
@@ -933,16 +925,10 @@ func tagPopup(node *AudioFile) (err error) {
 	// 	SetTitle(node.name).
 	// 	SetBackgroundColor(gomu.colors.background)
 
-	// lyricFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-	// 	AddItem(frameTop, 0, 1, true).
-	// 	AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
-	// 		// AddItem(artistInput, 0, 3, true).
-	// 		AddItem(lyricTextView, 0, 3, true), 0, 3, true)
-
-	lyricFlex := &TagEditor{
-		Form: form,
-		text: lyricTextView,
-	}
+	lyricFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
+			// AddItem(artistInput, 0, 3, true).
+			AddItem(lyricTextView, 0, 3, true), 0, 3, true)
 
 	lyricFlex.
 		SetBackgroundColor(gomu.colors.popup) //.
@@ -985,38 +971,6 @@ func tagPopup(node *AudioFile) (err error) {
 	// 		if form.GetFormItemByLabel("Get Tag").HasFocus() {
 	// 			lyricform.SetFocus(0)
 	// 		}
-	// 	}
-
-	// 	return e
-	// })
-
-	// lyricform.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
-	// 	switch e.Key() {
-	// 	case tcell.KeyEnter:
-	// 		tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
-	// 		if err != nil {
-	// 			errorPopup(err)
-	// 		}
-	// 		tagArtist := form.GetFormItemByLabel("Artist").(*tview.InputField).GetText()
-	// 		tagTitle := form.GetFormItemByLabel("Title").(*tview.InputField).GetText()
-	// 		tag.SetArtist(tagArtist)
-	// 		tag.SetTitle(tagTitle)
-	// 		tag.SetAlbum(form.GetFormItemByLabel("Album").(*tview.InputField).GetText())
-	// 		err := tag.Save()
-	// 		if err != nil {
-	// 			errorPopup(err)
-	// 			gomu.pages.RemovePage(popupID)
-	// 			gomu.popups.pop()
-	// 			return e
-	// 		}
-
-	// 		defaultTimedPopup(" Success ", "Tag update successfully")
-	// 		gomu.pages.RemovePage(popupID)
-	// 		gomu.popups.pop()
-
-	// 	case tcell.KeyEsc:
-	// 		gomu.pages.RemovePage(popupID)
-	// 		gomu.popups.pop()
 	// 	}
 
 	// 	return e
