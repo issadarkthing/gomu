@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/rivo/tview"
 	"github.com/issadarkthing/gomu/player"
+	"github.com/rivo/tview"
 )
 
 // Prepares for test

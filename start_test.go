@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestSetupHooks(t *testing.T) {
 
 	gomu := newGomu()

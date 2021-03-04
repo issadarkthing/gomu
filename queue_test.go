@@ -94,7 +94,6 @@ func TestPushFront(t *testing.T) {
 
 	gomu.playlist.addAllToQueue(rapPlaylist)
 
-
 	selSong, err := gomu.queue.deleteItem(2)
 	if err != nil {
 		t.Error(err)

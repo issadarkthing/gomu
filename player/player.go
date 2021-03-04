@@ -218,7 +218,6 @@ func (p *Player) Skip() {
 	p.execSongFinish(p.currentSong)
 }
 
-
 // GetPosition returns the current position of audio file.
 func (p *Player) GetPosition() time.Duration {
 
