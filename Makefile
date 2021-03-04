@@ -18,7 +18,7 @@ test:
 
 format:
 	@echo === FORMATTING ===
-	go fmt *.go
+	go fmt ./...
 
 $(BIN_DIR):
 	mkdir -p $@

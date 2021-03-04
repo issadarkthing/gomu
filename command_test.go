@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestGetFn(t *testing.T) {
 
 	c := newCommand()

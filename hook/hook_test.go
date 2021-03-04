@@ -7,7 +7,7 @@ import (
 )
 
 func TestAddHook(t *testing.T) {
-	
+
 	h := NewEventHook()
 
 	h.AddHook("a", nil)
@@ -31,7 +31,7 @@ func TestRunHooks(t *testing.T) {
 	h := NewEventHook()
 	x := 0
 
-	for i := 0; i < 100; i ++ {
+	for i := 0; i < 100; i++ {
 		h.AddHook("sample", func() {
 			x++
 		})

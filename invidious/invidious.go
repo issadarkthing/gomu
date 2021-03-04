@@ -69,7 +69,7 @@ func (_ *Invidious) GetSuggestions(prefix string) ([]string, error) {
 	return suggestions, nil
 }
 
-// GetTrendingMusic fetch music trending based on region. 
+// GetTrendingMusic fetch music trending based on region.
 // Region (ISO 3166 country code) can be provided in the argument.
 func (i *Invidious) GetTrendingMusic(region string) ([]YoutubeVideo, error) {
 
@@ -83,7 +83,7 @@ func (i *Invidious) GetTrendingMusic(region string) ([]YoutubeVideo, error) {
 		return nil, err
 	}
 
-	return yt, nil 
+	return yt, nil
 }
 
 // getRequest is a helper function that simplifies GET request and parsing the

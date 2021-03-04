@@ -119,7 +119,7 @@ func TestEmbedLyric(t *testing.T) {
 	}
 	f.Close()
 
-	defer func(){
+	defer func() {
 		err := os.Remove(testFile)
 		if err != nil {
 			t.Error(err)

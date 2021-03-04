@@ -219,7 +219,7 @@ func (q *Queue) saveQueue(isQuit bool) error {
 				currentSongInQueue = true
 			}
 		}
-		if !currentSongInQueue {
+		if !currentSongInQueue && len(q.items) != 0 {
 			hashed := sha1Hex(getName(currentSongPath))
 			content.WriteString(hashed + "\n")
 		}
