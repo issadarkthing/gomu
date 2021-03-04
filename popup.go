@@ -837,18 +837,16 @@ func ytSearchPopup() {
 	})
 }
 
-func tagPopup(node *AudioFile) bool {
+func tagPopup(node *AudioFile) (err error) {
 	var tag *id3v2.Tag
-	var err error
 	if node.isAudioFile {
 		tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
 		if err != nil {
-			logError(err)
-			return false
+			return tracerr.Wrap(err)
 		}
 		defer tag.Close()
 	} else {
-		return false
+		return nil
 	}
 
 	popupID := "tag-input-popup"
@@ -874,7 +872,6 @@ func tagPopup(node *AudioFile) bool {
 			tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
 			if err != nil {
 				errorPopup(err)
-				logError(err)
 			}
 			tagArtist := form.GetFormItemByLabel("Artist").(*tview.InputField).GetText()
 			tagTitle := form.GetFormItemByLabel("Title").(*tview.InputField).GetText()
@@ -884,7 +881,6 @@ func tagPopup(node *AudioFile) bool {
 			err := tag.Save()
 			if err != nil {
 				errorPopup(err)
-				logError(err)
 				gomu.pages.RemovePage(popupID)
 				gomu.popups.pop()
 				return e
@@ -901,7 +897,7 @@ func tagPopup(node *AudioFile) bool {
 
 		return e
 	})
-	return true
+	return err
 }
 
 func lyricPopup(audioFile *AudioFile) error {

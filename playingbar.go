@@ -10,9 +10,10 @@ import (
 	"time"
 
 	"github.com/bogem/id3v2"
-	"github.com/martinlindhe/subtitles"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
+
+	"github.com/issadarkthing/gomu/lyric"
 )
 
 type PlayingBar struct {
@@ -24,14 +25,14 @@ type PlayingBar struct {
 	text                    *tview.TextView
 	hasTag                  bool
 	tag                     *id3v2.Tag
-	subtitle                *subtitles.Subtitle
+	subtitle                *lyric.Lyric
 	subtitles               []*gomuSubtitle
 	langLyricCurrentPlaying string
 }
 
 type gomuSubtitle struct {
 	langExt  string
-	subtitle *subtitles.Subtitle
+	subtitle *lyric.Lyric
 }
 
 func (p *PlayingBar) help() []string {
@@ -85,8 +86,15 @@ func (p *PlayingBar) run() error {
 		var lyricText string
 		if p.subtitle != nil {
 			for i := range p.subtitle.Captions {
-				startTime := p.subtitle.Captions[i].Start
-				endTime := p.subtitle.Captions[i].End
+				startTime := p.subtitle.Captions[i].Start.Add(p.subtitle.Offset)
+				var endTime time.Time
+				if i < len(p.subtitle.Captions)-1 {
+					endTime = p.subtitle.Captions[i+1].Start.Add(p.subtitle.Offset)
+				} else {
+					// Here we display the last lyric until the end of song
+					endTime = time.Date(0, 1, 1, 0, 0, p.full, 0, time.UTC)
+				}
+
 				currentTime := time.Date(0, 1, 1, 0, 0, p.progress, 0, time.UTC)
 				if currentTime.After(startTime.Add(-1*time.Second)) && currentTime.Before(endTime) {
 					lyricText = strings.Join(p.subtitle.Captions[i].Text, " ")
@@ -99,7 +107,7 @@ func (p *PlayingBar) run() error {
 
 		gomu.app.QueueUpdateDraw(func() {
 			p.text.Clear()
-			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n%v",
+			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n\n%v",
 				fmtDuration(start),
 				progressBar,
 				fmtDuration(end),
@@ -147,7 +155,7 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 				die(errors.New("USLT error!"))
 			}
 			// res, err := subtitles.Parse([]byte(uslf.Lyrics))
-			res, err := subtitles.NewFromSRT(uslf.Lyrics)
+			res, err := lyric.NewFromLRC(uslf.Lyrics)
 			if err != nil {
 				logError(err)
 			}
@@ -231,14 +239,15 @@ func (p *PlayingBar) switchLyrics() {
 
 	p.langLyricCurrentPlaying = p.subtitles[langIndex].langExt
 	p.subtitle = p.subtitles[langIndex].subtitle
+
 	defaultTimedPopup(" Success ", p.langLyricCurrentPlaying+" lyric switched successfully.")
 
 }
 
 func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 
-	p.subtitle.ResyncSubs(lyricDelay)
-	err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle.AsSRT(), p.langLyricCurrentPlaying)
+	p.subtitle.Offset += (time.Duration)(lyricDelay) * time.Millisecond
+	err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle.AsLRC(), p.langLyricCurrentPlaying)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}

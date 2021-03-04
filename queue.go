@@ -15,9 +15,10 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/issadarkthing/gomu/player"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
+
+	"github.com/issadarkthing/gomu/player"
 )
 
 type Queue struct {

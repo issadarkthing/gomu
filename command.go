@@ -386,7 +386,10 @@ func (c Command) defineCommands() {
 
 	c.define("edit_tags", func() {
 		audioFile := gomu.playlist.getCurrentFile()
-		tagPopup(audioFile)
+		err := tagPopup(audioFile)
+		if err != nil {
+			errorPopup(err)
+		}
 	})
 
 	c.define("switch_lyric", func() {

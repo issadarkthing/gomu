@@ -1,5 +1,18 @@
 // Package lyric package download lyrics from different website and embed them into mp3 file.
 // lrc file is used to parse lrc file into subtitle. Similar to subtitles package
+// [al:''Album where the song is from'']
+// [ar:''Lyrics artist'']
+// [by:''Creator of the LRC file'']
+// [offset:''+/- Overall timestamp adjustment in milliseconds, + shifts time up, - shifts down'']
+// [re:''The player or editor that creates LRC file'']
+// [ti:''Lyrics (song) title'']
+// [ve:''version of program'']
+// [ti:Let's Twist Again]
+// [ar:Chubby Checker oppure  Beatles, The]
+// [au:Written by Kal Mann / Dave Appell, 1961]
+// [al:Hits Of The 60's - Vol. 2 – Oldies]
+// [00:12.00]Lyrics beginning ...
+// [00:15.30]Some more lyrics ...
 package lyric
 
 import (
@@ -10,8 +23,25 @@ import (
 	"strings"
 	"time"
 
-	"github.com/martinlindhe/subtitles"
+	"github.com/ztrue/tracerr"
 )
+
+type Lyric struct {
+	Album               string
+	Artist              string
+	ByCreator           string        // Creator of LRC file
+	Offset              time.Duration // positive means delay lyric
+	RePlayerEditor      string        // Player or Editor to create this LRC file
+	Title               string
+	VersionPlayerEditor string // Version of player or editor
+	Captions            []Caption
+}
+
+type Caption struct {
+	Seq   int
+	Start time.Time
+	Text  []string
+}
 
 // Eol is the end of line characters to use when writing .srt data
 var eol = "\n"
@@ -32,11 +62,8 @@ func looksLikeLRC(s string) bool {
 }
 
 // NewFromLRC parses a .lrc text into Subtitle, assumes s is a clean utf8 string
-func NewFromLRC(s string) (res subtitles.Subtitle, err error) {
-	endString := "[158:00.00]The End" + eol
-	s = s + endString
+func NewFromLRC(s string) (res Lyric, err error) {
 	s = cleanLRC(s)
-	r1 := regexp.MustCompile(`(?U)^\[[0-9].*\]`)
 	lines := strings.Split(s, "\n")
 	outSeq := 1
 
@@ -46,29 +73,32 @@ func NewFromLRC(s string) (res subtitles.Subtitle, err error) {
 			continue
 		}
 
-		var matchEnd []string
-		matchStart := r1.FindStringSubmatch(lines[i])
-		matchEnd = r1.FindStringSubmatch(lines[i+1])
+		if strings.HasPrefix(seq, "[offset") {
+			tmpString := strings.TrimPrefix(seq, "[offset:")
+			tmpString = strings.TrimSuffix(tmpString, "]")
+			tmpString = strings.ReplaceAll(tmpString, " ", "")
+			var intOffset int
+			intOffset, err = strconv.Atoi(tmpString)
+			if err != nil {
+				return res, tracerr.Wrap(err)
+			}
+			res.Offset = (time.Duration)(intOffset) * time.Millisecond
+		}
 
-		if len(matchStart) < 1 || len(matchEnd) < 1 {
-			// err = fmt.Errorf("lrc: parse error at line %d (idx out of range) for input '%s'", i, lines[i])
-			// break
-			// Here we continue to parse the subtitle and ignore the lines have no start or end
+		r1 := regexp.MustCompile(`(?U)^\[[0-9].*\]`)
+		matchStart := r1.FindStringSubmatch(lines[i])
+
+		if len(matchStart) < 1 {
+			// Here we continue to parse the subtitle and ignore the lines have no startTime
 			continue
 		}
 
-		var o subtitles.Caption
+		var o Caption
 		o.Seq = outSeq
 
 		o.Start, err = parseLrcTime(matchStart[0])
 		if err != nil {
 			err = fmt.Errorf("lrc: start error at line %d: %v", i, err)
-			break
-		}
-
-		o.End, err = parseLrcTime(matchEnd[0])
-		if err != nil {
-			err = fmt.Errorf("lrc: end error at line %d: %v", i, err)
 			break
 		}
 
@@ -85,7 +115,7 @@ func NewFromLRC(s string) (res subtitles.Subtitle, err error) {
 	return
 }
 
-// parseSrtTime parses a srt subtitle time (duration since start of film)
+// parseSrtTime parses a lrc subtitle time (duration since start of film)
 func parseLrcTime(in string) (time.Time, error) {
 	in = strings.TrimPrefix(in, "[")
 	in = strings.TrimSuffix(in, "]")
@@ -127,10 +157,44 @@ func makeTime(h int, m int, s int, ms int) time.Time {
 // cleanLRC clean the string download
 func cleanLRC(s string) (cleanLyric string) {
 	// Clean &apos; to '
+	s = strings.ToValidUTF8(s, " ")
 	s = strings.Replace(s, "&apos;", "'", -1)
 	// It's wierd that sometimes there are two ajacent ''.
 	// Replace it anyway
 	cleanLyric = strings.Replace(s, "''", "'", -1)
 
 	return cleanLyric
+}
+
+// AsLRC renders the sub in .srt format
+func (lyric Lyric) AsLRC() (res string) {
+
+	if lyric.Offset != 0 {
+		intOffset := int(lyric.Offset.Milliseconds())
+		stringOffset := strconv.Itoa(intOffset)
+		res += "[offset:" + stringOffset + "]" + eol
+	}
+
+	for _, sub := range lyric.Captions {
+		res += sub.AsLRC()
+	}
+	return
+}
+
+// AsLRC renders the caption as srt
+func (cap Caption) AsLRC() string {
+	// res := fmt.Sprintf("%d", cap.Caption.Seq) + eol +
+	// 	TimeLRC(cap.Caption.Start) + " --> " + TimeLRC(cap.Caption.End) + eol
+	res := "[" + TimeLRC(cap.Start) + "]"
+	for _, line := range cap.Text {
+		res += line + eol
+	}
+	return res
+}
+
+// TimeLRC renders a timestamp for use in .srt
+func TimeLRC(t time.Time) string {
+	res := t.Format("04:05.00")
+	// return strings.Replace(res, ".", ",", 1)
+	return res
 }

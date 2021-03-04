@@ -274,7 +274,7 @@ func layout(gomu *Gomu) *tview.Flex {
 		AddItem(gomu.playlist, 0, 1, false).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
 			AddItem(gomu.queue, 0, 5, false).
-			AddItem(gomu.playingBar, 0, 1, false), 0, 3, false)
+			AddItem(gomu.playingBar, 9, 0, false), 0, 3, false)
 
 	return flex
 }

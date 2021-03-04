@@ -1,6 +1,7 @@
 package lyric
 
 import (
+	"fmt"
 	"html"
 	"net/url"
 	"regexp"
@@ -16,7 +17,7 @@ func GetLyric(url string) (string, error) {
 	var lyric string
 	c := colly.NewCollector()
 
-	c.OnHTML("span#ctl00_ContentPlaceHolder1_lblSubtitle", func(e *colly.HTMLElement) {
+	c.OnHTML("span#ctl00_ContentPlaceHolder1_lbllyrics", func(e *colly.HTMLElement) {
 		content, err := e.DOM.Html()
 		if err != nil {
 			panic(err)
@@ -25,12 +26,17 @@ func GetLyric(url string) (string, error) {
 		lyric = cleanHTML(content)
 	})
 
-	err := c.Visit(url + "&type=srt")
+	err := c.Visit(url + "&type=lrc")
 	if err != nil {
 		return "", err
 	}
-
-	return lyric, nil
+	if lyric == "" {
+		return "", fmt.Errorf("no lyric available")
+	}
+	if looksLikeLRC(lyric) {
+		return lyric, nil
+	}
+	return "", fmt.Errorf("lyric not compatible")
 }
 
 // GetLyricOptions queries available song lyrics. It returns map of title and
@@ -59,10 +65,12 @@ func GetLyricOptions(search string) (map[string]string, error) {
 func cleanHTML(input string) string {
 
 	content := html.UnescapeString(input)
-	content = strings.ReplaceAll(content, "<br/>", "\n")
 	// delete heading tag
 	re := regexp.MustCompile(`^<h3>.*`)
 	content = re.ReplaceAllString(content, "")
+	content = strings.ReplaceAll(content, "\r\n", "")
+	content = strings.ReplaceAll(content, "\n", "")
+	content = strings.ReplaceAll(content, "<br/>", "\n")
 	// remove non-utf8 character
 	re = regexp.MustCompile(`‚`)
 	content = re.ReplaceAllString(content, ",")
