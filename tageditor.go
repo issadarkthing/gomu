@@ -27,13 +27,13 @@ func tagPopup(node *AudioFile) (err error) {
 		artistInputField  *tview.InputField = tview.NewInputField()
 		titleInputField   *tview.InputField = tview.NewInputField()
 		albumInputField   *tview.InputField = tview.NewInputField()
-		getTagButton      *tview.Button     = tview.NewButton("[G1]Get Tag")
-		saveTagButton     *tview.Button     = tview.NewButton("[S]Save Tag")
+		getTagButton      *tview.Button     = tview.NewButton("Get Tag")
+		saveTagButton     *tview.Button     = tview.NewButton("Save Tag")
 		lyricDropDown     *tview.DropDown   = tview.NewDropDown()
-		deleteLyricButton *tview.Button     = tview.NewButton("[D]Delete Lyric")
-		getLyric1Button   *tview.Button     = tview.NewButton("[1]Get Lyric 1(en)")
-		getLyric2Button   *tview.Button     = tview.NewButton("[2]Get Lyric 2(zh-CN)")
-		getLyric3Button   *tview.Button     = tview.NewButton("[3]Get Lyric 3(zh-CN)")
+		deleteLyricButton *tview.Button     = tview.NewButton("Delete Lyric")
+		getLyric1Button   *tview.Button     = tview.NewButton("Get Lyric 1(en)")
+		getLyric2Button   *tview.Button     = tview.NewButton("Get Lyric 2(zh-CN)")
+		getLyric3Button   *tview.Button     = tview.NewButton("Get Lyric 3(zh-CN)")
 		lyricTextView     *tview.TextView
 		leftGrid          *tview.Grid = tview.NewGrid()
 		rightFlex         *tview.Flex = tview.NewFlex()
@@ -279,6 +279,7 @@ func tagPopup(node *AudioFile) (err error) {
 						gomu.app.Draw()
 						return
 					}
+					options = newOptions
 
 					// Update dropdown options
 					lyricDropDown.SetOptions(newOptions, nil).
@@ -459,8 +460,17 @@ func tagPopup(node *AudioFile) (err error) {
 			cycleFocus(gomu.app, inputs, false)
 		case tcell.KeyBacktab:
 			cycleFocus(gomu.app, inputs, true)
+		case tcell.KeyDown:
+			cycleFocus(gomu.app, inputs, false)
+		case tcell.KeyUp:
+			cycleFocus(gomu.app, inputs, true)
 		}
 
+		switch e.Rune() {
+		case '1':
+		case '2':
+		case '3':
+		}
 		return e
 	})
 

@@ -5,6 +5,7 @@ import (
 	// "io"
 	// "os"
 	"strconv"
+	"strings"
 
 	"github.com/asmcos/requests"
 	"github.com/ztrue/tracerr"
@@ -58,6 +59,8 @@ func GetLyricOptionsChinese(search string, serviceProvider string) (map[string]s
 		}
 		result[songTitle] = lyricID
 		var tag SongTag
+		resultArtist = strings.TrimPrefix(resultArtist, "[")
+		resultArtist = strings.TrimSuffix(resultArtist, "]")
 		tag.Artist = resultArtist
 		tag.Title = resultName
 		tag.Album = resultAlbum
