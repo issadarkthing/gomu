@@ -53,14 +53,14 @@ func GetLyricOptionsChinese(search string, serviceProvider string) (map[string]s
 		} else if serviceProvider == "kugou" {
 			lyricID = v["lyric_id"].(string)
 		}
-		songTitle := fmt.Sprintf("%s - %s ", songArtist, songName)
+		resultArtist = strings.TrimPrefix(resultArtist, "[")
+		resultArtist = strings.TrimSuffix(resultArtist, "]")
+		songTitle := fmt.Sprintf("%s - %s : %s", resultArtist, songName, resultAlbum)
 		if lyricID == "" {
 			continue
 		}
 		result[songTitle] = lyricID
 		var tag SongTag
-		resultArtist = strings.TrimPrefix(resultArtist, "[")
-		resultArtist = strings.TrimSuffix(resultArtist, "]")
 		tag.Artist = resultArtist
 		tag.Title = resultName
 		tag.Album = resultAlbum
