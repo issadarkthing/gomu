@@ -881,7 +881,7 @@ func lyricPopup(audioFile *AudioFile) error {
 
 func lyricPopupCN(audioFile *AudioFile, serviceProvider string) error {
 
-	results, err := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
+	results, _, err := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}

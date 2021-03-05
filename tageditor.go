@@ -27,13 +27,13 @@ func tagPopup(node *AudioFile) (err error) {
 		artistInputField  *tview.InputField = tview.NewInputField()
 		titleInputField   *tview.InputField = tview.NewInputField()
 		albumInputField   *tview.InputField = tview.NewInputField()
-		getTagButton      *tview.Button     = tview.NewButton("Get Tag")
-		saveTagButton     *tview.Button     = tview.NewButton("Save Tag")
+		getTagButton      *tview.Button     = tview.NewButton("[G1]Get Tag")
+		saveTagButton     *tview.Button     = tview.NewButton("[S]Save Tag")
 		lyricDropDown     *tview.DropDown   = tview.NewDropDown()
-		deleteLyricButton *tview.Button     = tview.NewButton("Delete Lyric")
-		getLyric1Button   *tview.Button     = tview.NewButton("Get Lyric 1(en)")
-		getLyric2Button   *tview.Button     = tview.NewButton("Get Lyric 2(zh-CN)")
-		getLyric3Button   *tview.Button     = tview.NewButton("Get Lyric 3(zh-CN)")
+		deleteLyricButton *tview.Button     = tview.NewButton("[D]Delete Lyric")
+		getLyric1Button   *tview.Button     = tview.NewButton("[1]Get Lyric 1(en)")
+		getLyric2Button   *tview.Button     = tview.NewButton("[2]Get Lyric 2(zh-CN)")
+		getLyric3Button   *tview.Button     = tview.NewButton("[3]Get Lyric 3(zh-CN)")
 		lyricTextView     *tview.TextView
 		leftGrid          *tview.Grid = tview.NewGrid()
 		rightFlex         *tview.Flex = tview.NewFlex()
@@ -53,7 +53,48 @@ func tagPopup(node *AudioFile) (err error) {
 		SetText(tag.Album()).
 		SetFieldBackgroundColor(gomu.colors.popup).
 		SetBackgroundColor(gomu.colors.background)
-	getTagButton.SetBorder(true).
+	getTagButton.SetSelectedFunc(func() {
+		audioFile := node
+		serviceProvider := "netease"
+		results, resultsTag, err := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
+		if err != nil {
+			errorPopup(err)
+			return
+		}
+
+		titles := make([]string, 0, len(results))
+
+		for result := range results {
+			titles = append(titles, result)
+		}
+
+		searchPopup(" Lyrics ", titles, func(selected string) {
+			if selected == "" {
+				return
+			}
+
+			lyricID := results[selected]
+			newTag := resultsTag[lyricID]
+			artistInputField.SetText(newTag.Artist)
+			titleInputField.SetText(newTag.Title)
+			albumInputField.SetText(newTag.Album)
+			tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+			if err != nil {
+				errorPopup(err)
+			}
+			defer tag.Close()
+			tag.SetArtist(artistInputField.GetText())
+			tag.SetTitle(titleInputField.GetText())
+			tag.SetAlbum(albumInputField.GetText())
+			err = tag.Save()
+			if err != nil {
+				errorPopup(err)
+			} else {
+				defaultTimedPopup(" Success ", "Tag update successfully")
+			}
+		})
+	}).
+		SetBorder(true).
 		SetBackgroundColor(gomu.colors.background).
 		SetTitleColor(gomu.colors.accent)
 	saveTagButton.SetSelectedFunc(func() {
@@ -195,7 +236,7 @@ func tagPopup(node *AudioFile) (err error) {
 	getLyric2Button.SetSelectedFunc(func() {
 		audioFile := node
 		serviceProvider := "netease"
-		results, err := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
+		results, _, err := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
 		if err != nil {
 			errorPopup(err)
 			return
@@ -263,7 +304,7 @@ func tagPopup(node *AudioFile) (err error) {
 	getLyric3Button.SetSelectedFunc(func() {
 		audioFile := node
 		serviceProvider := "kugou"
-		results, err := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
+		results, _, err := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
 		if err != nil {
 			errorPopup(err)
 			return

@@ -10,11 +10,18 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
+type SongTag struct {
+	Artist string
+	Title  string
+	Album  string
+}
+
 // GetLyricOptionsChinese queries available song lyrics. It returns map of title and
 // id of the lyric.
-func GetLyricOptionsChinese(search string, serviceProvider string) (map[string]string, error) {
+func GetLyricOptionsChinese(search string, serviceProvider string) (map[string]string, map[string]SongTag, error) {
 
 	result := make(map[string]string)
+	resultTag := make(map[string]SongTag)
 	p := requests.Params{
 		"site":   serviceProvider,
 		"search": search,
@@ -23,17 +30,21 @@ func GetLyricOptionsChinese(search string, serviceProvider string) (map[string]s
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := req.Get("http://api.sunyj.xyz", p)
 	if err != nil {
-		return nil, tracerr.Wrap(err)
+		return nil, nil, tracerr.Wrap(err)
 	}
 
 	var dataMap []map[string]interface{}
 	err = resp.Json(&dataMap)
 	if err != nil {
-		return nil, tracerr.Wrap(err)
+		return nil, nil, tracerr.Wrap(err)
 	}
 	for _, v := range dataMap {
 		songName := v["name"]
+		resultName := fmt.Sprintf("%s", songName)
 		songArtist := v["artist"]
+		resultArtist := fmt.Sprintf("%s", songArtist)
+		songAlbum := v["album"]
+		resultAlbum := fmt.Sprintf("%s", songAlbum)
 		var lyricID string
 		if serviceProvider == "netease" {
 			lyricIDfloat64 := v["lyric_id"]
@@ -46,9 +57,14 @@ func GetLyricOptionsChinese(search string, serviceProvider string) (map[string]s
 			continue
 		}
 		result[songTitle] = lyricID
+		var tag SongTag
+		tag.Artist = resultArtist
+		tag.Title = resultName
+		tag.Album = resultAlbum
+		resultTag[lyricID] = tag
 	}
 
-	return result, nil
+	return result, resultTag, nil
 }
 
 // GetLyricChinese should receive url that was returned from GetLyricOptions. GetLyric

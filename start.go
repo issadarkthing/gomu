@@ -474,6 +474,11 @@ func start(application *tview.Application, args Args) {
 			gomu.playingBar.setDefault()
 			init = true
 		}
+		if gomu.player.IsRunning() {
+			gomu.playingBar.setSongTitle(gomu.player.GetCurrentSong().Name())
+		} else {
+			gomu.playingBar.setDefault()
+		}
 	})
 
 	go populateAudioLength(gomu.playlist.GetRoot())
