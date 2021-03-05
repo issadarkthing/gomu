@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -841,7 +842,7 @@ func ytSearchPopup() {
 
 func tagPopup(node *AudioFile) (err error) {
 
-	popupLyricMap := make(map[string]*lyric.Lyric)
+	popupLyricMap := make(map[string]string)
 	popupID := "tag-input-popup"
 
 	var tag *id3v2.Tag
@@ -861,115 +862,209 @@ func tagPopup(node *AudioFile) (err error) {
 		if !ok {
 			die(errors.New("USLT error"))
 		}
-		res, err := lyric.NewFromLRC(uslf.Lyrics)
-		if err != nil {
-			return tracerr.Wrap(err)
-		}
-		popupLyricMap[uslf.ContentDescriptor] = &res
+		res := uslf.Lyrics
+		popupLyricMap[uslf.ContentDescriptor] = res
 	}
 	var options []string
 	for option := range popupLyricMap {
 		options = append(options, option)
 	}
+	sort.Strings(options)
 
-	// var lyricText string = "abcdefg"
-	// _, optionSelected := lyricDropdown.GetCurrentOption()
-	// // for _, v := range popupLyricMap[optionSelected].Captions.Text {
-	// 	lyricText += v
-	// }
-	lyricTextView := tview.NewTextView()
-
-	lyricTextView.SetBackgroundColor(gomu.colors.background).
+	var (
+		artistInputField  *tview.InputField = tview.NewInputField()
+		titleInputField   *tview.InputField = tview.NewInputField()
+		albumInputField   *tview.InputField = tview.NewInputField()
+		getTagButton      *tview.Button     = tview.NewButton("Get Tag")
+		saveTagButton     *tview.Button     = tview.NewButton("Save Tag")
+		lyricDropDown     *tview.DropDown   = tview.NewDropDown()
+		deleteLyricButton *tview.Button     = tview.NewButton("Delete Lyric")
+		getLyric1Button   *tview.Button     = tview.NewButton("Get Lyric 1")
+		getLyric2Button   *tview.Button     = tview.NewButton("Get Lyric 2")
+		getLyric3Button   *tview.Button     = tview.NewButton("Get Lyric 3")
+		lyricTextView     *tview.TextView
+		leftGrid          *tview.Grid = tview.NewGrid()
+		rightFlex         *tview.Flex = tview.NewFlex()
+	)
+	artistInputField.SetLabel("Artist: ").
+		SetFieldWidth(20).
+		SetText(tag.Artist()).
+		SetFieldBackgroundColor(gomu.colors.popup).
+		SetBackgroundColor(gomu.colors.background)
+	titleInputField.SetLabel("Title:  ").
+		SetFieldWidth(20).
+		SetText(tag.Title()).
+		SetFieldBackgroundColor(gomu.colors.popup).
+		SetBackgroundColor(gomu.colors.background)
+	albumInputField.SetLabel("Album:  ").
+		SetFieldWidth(20).
+		SetText(tag.Album()).
+		SetFieldBackgroundColor(gomu.colors.popup).
+		SetBackgroundColor(gomu.colors.background)
+	getTagButton.SetBorder(true).
+		SetBackgroundColor(gomu.colors.background).
+		SetTitleColor(gomu.colors.accent)
+	saveTagButton.SetSelectedFunc(func() {
+		tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+		if err != nil {
+			errorPopup(err)
+		}
+		defer tag.Close()
+		tag.SetArtist(artistInputField.GetText())
+		tag.SetTitle(titleInputField.GetText())
+		tag.SetAlbum(albumInputField.GetText())
+		err := tag.Save()
+		if err != nil {
+			errorPopup(err)
+		} else {
+			defaultTimedPopup(" Success ", "Tag update successfully")
+		}
+	}).
 		SetBorder(true).
-		SetTitle("lyric")
-	widgets := make(map[string]tview.Primitive)
-	// widgets["widgetA"] = tview.NewXXX()
-	// widgets["widgetA"].(XXX).Foo()
-	_ = widgets
+		SetBackgroundColor(gomu.colors.background).
+		SetTitleColor(gomu.colors.foreground)
 
-	getTagButton := tview.NewButton("Get Tag")
+	deleteLyricButton.SetSelectedFunc(func() {
+		_, langExt := lyricDropDown.GetCurrentOption()
+		if len(options) > 0 {
+			err := embedLyric(node.path, "", langExt, true)
+			if err != nil {
+				errorPopup(err)
+			}
+			// Reset dropdown options
+			var newOptions []string
+			for _, v := range options {
+				if v == langExt {
+					continue
+				}
+				newOptions = append(newOptions, v)
+			}
+			lyricDropDown.SetOptions(newOptions, nil).
+				SetCurrentOption(0)
+				// Reset lyricpreview
+			if len(newOptions) > 0 {
+				_, langExt = lyricDropDown.GetCurrentOption()
+				lyricTextView.SetText(popupLyricMap[langExt]).
+					SetTitle(" " + langExt + " lyric preview ")
+			} else {
+				langExt = ""
+				lyricTextView.SetText("No lyric embeded.").
+					SetTitle(" " + langExt + " lyric preview ")
+			}
+			infoPopup(langExt + " lyric deleted successfully.")
+		} else {
+			infoPopup("No lyric embeded.")
+		}
+	}).
+		SetBorder(true).
+		SetBackgroundColor(gomu.colors.background).
+		SetTitleColor(gomu.colors.accent)
 
-	form := tview.NewForm().
-		AddInputField("Artist: ", tag.Artist(), 20, nil, nil).
-		AddInputField("Title: ", tag.Title(), 20, nil, nil).
-		AddInputField("Album: ", tag.Album(), 20, nil, nil).
-		AddFormItem(getTagButton)
-		// AddButton("Get Tag", nil)
+	getLyric1Button.SetBorder(true).
+		SetBackgroundColor(gomu.colors.background).
+		SetTitleColor(gomu.colors.accent)
+	getLyric2Button.SetBorder(true).
+		SetBackgroundColor(gomu.colors.background).
+		SetTitleColor(gomu.colors.accent)
+	getLyric3Button.SetBorder(true).
+		SetBackgroundColor(gomu.colors.background).
+		SetTitleColor(gomu.colors.accent)
+	lyricDropDown.SetOptions(options, nil).
+		SetCurrentOption(0).
+		SetFieldBackgroundColor(gomu.colors.background).
+		SetFieldTextColor(gomu.colors.accent).
+		SetPrefixTextColor(gomu.colors.accent).
+		SetSelectedFunc(func(text string, _ int) {
+			lyricTextView.SetText(popupLyricMap[text]).
+				SetTitle(" " + text + " lyric preview ")
+		}).
+		SetLabel("Embeded Lyrics: ")
+	lyricDropDown.SetBackgroundColor(gomu.colors.popup)
 
-	form.SetFieldBackgroundColor(gomu.colors.popup).
+	var lyricText string
+	_, langExt := lyricDropDown.GetCurrentOption()
+	lyricText = popupLyricMap[langExt]
+	if lyricText == "" {
+		lyricText = "No lyric embeded."
+		langExt = ""
+	}
+	lyricTextView = tview.NewTextView()
+	lyricTextView.
+		SetDynamicColors(true).
+		SetRegions(true).
+		SetScrollable(true).
+		SetTitle(" " + langExt + " lyric preview ").
+		SetBorder(true)
+
+	lyricTextView.SetText(lyricText).
+		SetScrollable(true).
+		SetWordWrap(true).
+		SetWrap(true).
 		SetBackgroundColor(gomu.colors.popup).
+		SetBorder(true)
+
+	leftGrid.SetRows(3, 3, 3, 3, 3, 0, 3, 3, 3, 3, 3).
+		SetColumns(30).
+		AddItem(artistInputField, 0, 0, 1, 3, 1, 10, true).
+		AddItem(titleInputField, 1, 0, 1, 3, 1, 10, true).
+		AddItem(albumInputField, 2, 0, 1, 3, 1, 10, true).
+		AddItem(getTagButton, 3, 0, 1, 3, 1, 10, true).
+		AddItem(saveTagButton, 4, 0, 1, 3, 1, 10, true).
+		AddItem(lyricDropDown, 6, 0, 1, 3, 1, 10, true).
+		AddItem(deleteLyricButton, 7, 0, 1, 3, 1, 10, true).
+		AddItem(getLyric1Button, 8, 0, 1, 3, 1, 10, true).
+		AddItem(getLyric2Button, 9, 0, 1, 3, 1, 10, true).
+		AddItem(getLyric3Button, 10, 0, 1, 3, 1, 10, true)
+	leftGrid.SetBorder(true).
 		SetTitle(node.name).
-		SetBorder(true).
-		SetBorderPadding(1, 0, 2, 2)
-	form2 := tview.NewForm().
-		AddDropDown("Lyrics Available: ", options, 0, nil).
-		AddButton("Delete Lyric", nil).
-		AddButton("Get Lyric2", nil).
-		AddButton("Get Lyric3", nil)
+		SetBorderPadding(1, 1, 2, 2)
 
-	form2.SetFieldBackgroundColor(gomu.colors.popup).
-		SetBackgroundColor(gomu.colors.popup).
-		SetTitle("Lyric").
-		SetBorder(true).
-		SetBorderPadding(1, 0, 2, 2)
+	rightFlex.SetDirection(tview.FlexColumn).
+		AddItem(lyricTextView, 0, 1, true)
 
 	lyricFlex := tview.NewFlex().SetDirection(tview.FlexColumn).
-		AddItem(form, 40, 0, true).
-		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-			AddItem(form2, 10, 0, true).
-			AddItem(lyricTextView, 0, 2, true), 0, 2, true)
-		// AddItem(artistInput, 0, 3, true).
-		// AddItem(lyricTextView, 0, 3, true), 0, 3, true)
+		AddItem(leftGrid, 0, 2, true).
+		AddItem(rightFlex, 0, 3, true)
 
 	lyricFlex.
+		SetTitle(node.name).
+		SetBorderPadding(1, 1, 2, 2).
 		SetBackgroundColor(gomu.colors.popup)
 
-	// gettagbutton := form.getformitembylabel("get tag")
-
-	// gettagbutton.setinputcapture(func(e *tcell.eventkey) *tcell.eventkey {
-	// 	switch e.key() {
-	// 	case tcell.keytab:
-	// 		gomu.app.setfocus(form2)
-	// 	}
-
-	// return e
-	// })
+	inputs := []tview.Primitive{
+		artistInputField,
+		titleInputField,
+		albumInputField,
+		getTagButton,
+		saveTagButton,
+		lyricDropDown,
+		deleteLyricButton,
+		getLyric1Button,
+		getLyric2Button,
+		getLyric3Button,
+		lyricTextView,
+	}
 
 	gomu.pages.
-		AddPage(popupID, center(lyricFlex, 120, 40), true, true)
+		AddPage(popupID, center(lyricFlex, 90, 40), true, true)
 	gomu.popups.push(lyricFlex)
 
-	form.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+	lyricFlex.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 		switch e.Key() {
 		case tcell.KeyEnter:
-			tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
-			if err != nil {
-				errorPopup(err)
-			}
-			tagArtist := form.GetFormItemByLabel("Artist").(*tview.InputField).GetText()
-			tagTitle := form.GetFormItemByLabel("Title").(*tview.InputField).GetText()
-			tag.SetArtist(tagArtist)
-			tag.SetTitle(tagTitle)
-			tag.SetAlbum(form.GetFormItemByLabel("Album").(*tview.InputField).GetText())
-			err := tag.Save()
-			if err != nil {
-				errorPopup(err)
-				gomu.pages.RemovePage(popupID)
-				gomu.popups.pop()
+			if deleteLyricButton.HasFocus() {
+				return e
+			} else if saveTagButton.HasFocus() {
 				return e
 			}
-
-			defaultTimedPopup(" Success ", "Tag update successfully")
-			gomu.pages.RemovePage(popupID)
-			gomu.popups.pop()
 
 		case tcell.KeyEsc:
 			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
-		case tcell.KeyTAB:
-			// if form.GetFormItemByLabel("Get Tag").HasFocus() {
-			// 	lyricform.SetFocus(0)
-			// }
+		case tcell.KeyTab:
+			cycleFocus(gomu.app, inputs, false)
+		case tcell.KeyBacktab:
+			cycleFocus(gomu.app, inputs, true)
 		}
 
 		return e
@@ -1005,7 +1100,7 @@ func lyricPopup(audioFile *AudioFile) error {
 			}
 
 			langExt := "en"
-			err = embedLyric(audioFile.path, lyric, langExt)
+			err = embedLyric(audioFile.path, lyric, langExt, false)
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
@@ -1048,7 +1143,7 @@ func lyricPopupCN(audioFile *AudioFile, serviceProvider string) error {
 			}
 
 			langExt := "zh-CN"
-			err = embedLyric(audioFile.path, lyric, langExt)
+			err = embedLyric(audioFile.path, lyric, langExt, false)
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
@@ -1061,4 +1156,25 @@ func lyricPopupCN(audioFile *AudioFile, serviceProvider string) error {
 	})
 
 	return nil
+}
+
+func cycleFocus(app *tview.Application, elements []tview.Primitive, reverse bool) {
+	for i, el := range elements {
+		if !el.HasFocus() {
+			continue
+		}
+
+		if reverse {
+			i = i - 1
+			if i < 0 {
+				i = len(elements) - 1
+			}
+		} else {
+			i = i + 1
+			i = i % len(elements)
+		}
+
+		app.SetFocus(elements[i])
+		return
+	}
 }

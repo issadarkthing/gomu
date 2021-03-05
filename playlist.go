@@ -629,7 +629,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 			}
 			lyricContent := string(byteContent)
 
-			err = embedLyric(audioPath, lyricContent, langExt)
+			err = embedLyric(audioPath, lyricContent, langExt, false)
 			if err != nil {
 				return tracerr.Wrap(err)
 			}

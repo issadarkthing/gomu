@@ -228,7 +228,7 @@ func (p *PlayingBar) switchLyrics() {
 func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 
 	p.subtitle.Offset += (time.Duration)(lyricDelay) * time.Millisecond
-	err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle.AsLRC(), p.langLyricCurrentPlaying)
+	err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle.AsLRC(), p.langLyricCurrentPlaying, false)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}

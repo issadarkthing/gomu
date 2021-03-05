@@ -242,7 +242,7 @@ func shell(input string) (string, error) {
 	return stdout.String(), nil
 }
 
-func embedLyric(songPath string, lyricContent string, usltContentDescriptor string) (err error) {
+func embedLyric(songPath string, lyricContent string, usltContentDescriptor string, isDelete bool) (err error) {
 	var tag *id3v2.Tag
 	tag, err = id3v2.Open(songPath, id3v2.Options{Parse: true})
 	if err != nil {
@@ -262,13 +262,14 @@ func embedLyric(songPath string, lyricContent string, usltContentDescriptor stri
 		}
 		tag.AddUnsynchronisedLyricsFrame(uslf)
 	}
-	tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
-		Encoding:          id3v2.EncodingUTF8,
-		Language:          "eng",
-		ContentDescriptor: usltContentDescriptor,
-		Lyrics:            lyricContent,
-	})
-
+	if !isDelete {
+		tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
+			Encoding:          id3v2.EncodingUTF8,
+			Language:          "eng",
+			ContentDescriptor: usltContentDescriptor,
+			Lyrics:            lyricContent,
+		})
+	}
 	err = tag.Save()
 	if err != nil {
 		return tracerr.Wrap(err)
