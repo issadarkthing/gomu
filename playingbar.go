@@ -247,6 +247,8 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
+	defer tag.Close()
+
 	if tag == nil {
 		return nil
 	}
@@ -260,7 +262,6 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		if !ok {
 			return fmt.Errorf("USLT error")
 		}
-		// res, err := subtitles.Parse([]byte(uslf.Lyrics))
 		res, err := lyric.NewFromLRC(uslf.Lyrics)
 		if err != nil {
 			return tracerr.Wrap(err)
@@ -271,6 +272,5 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		}
 		p.subtitles = append(p.subtitles, subtitle)
 	}
-	defer tag.Close()
 	return nil
 }
