@@ -344,6 +344,7 @@ func (p *Playlist) addSongToPlaylist(
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
+	populateAudioLength(selPlaylist)
 	audioLength, err := getTagLength(audioPath)
 	if err != nil {
 		return tracerr.Wrap(err)
