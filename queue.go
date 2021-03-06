@@ -17,8 +17,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
-
-	"github.com/issadarkthing/gomu/player"
 )
 
 type Queue struct {
@@ -173,7 +171,7 @@ func (q *Queue) enqueue(audioFile *AudioFile) (int, error) {
 	}
 
 	q.items = append(q.items, audioFile)
-	songLength, err := player.GetLength(audioFile.path)
+	songLength, err := getTagLength(audioFile.path)
 
 	if err != nil {
 		return 0, tracerr.Wrap(err)
@@ -344,7 +342,7 @@ func (q *Queue) shuffle() {
 	q.Clear()
 
 	for _, v := range q.items {
-		audioLen, err := player.GetLength(v.path)
+		audioLen, err := getTagLength(v.path)
 		if err != nil {
 			logError(err)
 		}

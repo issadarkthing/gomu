@@ -323,10 +323,13 @@ func start(application *tview.Application, args Args) {
 
 	gomu.player.SetSongStart(func(audio player.Audio) {
 
-		duration, err := player.GetLength(audio.Path())
-		if err != nil {
-			logError(err)
-			return
+		duration, err := getTagLength(audio.Path())
+		if err != nil || duration == 0 {
+			duration, err = player.GetLength(audio.Path())
+			if err != nil {
+				logError(err)
+				return
+			}
 		}
 
 		audioFile := audio.(*AudioFile)

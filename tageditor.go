@@ -80,7 +80,7 @@ func tagPopup(node *AudioFile) (err error) {
 			titles = append(titles, result)
 		}
 
-		searchPopup(" Lyrics ", titles, func(selected string) {
+		searchPopup(" Song Tags ", titles, func(selected string) {
 			if selected == "" {
 				return
 			}
@@ -90,6 +90,7 @@ func tagPopup(node *AudioFile) (err error) {
 			artistInputField.SetText(newTag.Artist)
 			titleInputField.SetText(newTag.Title)
 			albumInputField.SetText(newTag.Album)
+
 			tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
 			if err != nil {
 				errorPopup(err)
@@ -118,7 +119,7 @@ func tagPopup(node *AudioFile) (err error) {
 		tag.SetArtist(artistInputField.GetText())
 		tag.SetTitle(titleInputField.GetText())
 		tag.SetAlbum(albumInputField.GetText())
-		err := tag.Save()
+		err = tag.Save()
 		if err != nil {
 			errorPopup(err)
 		} else {

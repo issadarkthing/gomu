@@ -18,8 +18,6 @@ import (
 	"github.com/rivo/tview"
 	spin "github.com/tj/go-spin"
 	"github.com/ztrue/tracerr"
-
-	"github.com/issadarkthing/gomu/player"
 )
 
 // AudioFile represents directories and mp3 files
@@ -342,7 +340,11 @@ func (p *Playlist) addSongToPlaylist(
 	songName := getName(audioPath)
 	node := tview.NewTreeNode(songName)
 
-	audioLength, err := player.GetLength(audioPath)
+	err = embedLength(audioPath)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	audioLength, err := getTagLength(audioPath)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -806,10 +808,18 @@ func populateAudioLength(root *tview.TreeNode) error {
 	root.Walk(func(node *tview.TreeNode, _ *tview.TreeNode) bool {
 		audioFile := node.GetReference().(*AudioFile)
 		if audioFile.isAudioFile {
-			audioLength, err := player.GetLength(audioFile.path)
-			if err != nil {
-				logError(err)
-				return false
+			audioLength, err := getTagLength(audioFile.path)
+			if err != nil || audioLength == 0 {
+				err = embedLength(audioFile.path)
+				if err != nil {
+					logError(err)
+					return false
+				}
+				audioLength, err = getTagLength(audioFile.path)
+				if err != nil {
+					logError(err)
+					return false
+				}
 			}
 			audioFile.length = audioLength
 		}

@@ -13,11 +13,14 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/bogem/id3v2"
 	"github.com/ztrue/tracerr"
+
+	"github.com/issadarkthing/gomu/player"
 )
 
 // logError logs the error message.
@@ -275,4 +278,58 @@ func embedLyric(songPath string, lyricContent string, usltContentDescriptor stri
 		return tracerr.Wrap(err)
 	}
 	return err
+}
+
+func embedLength(songPath string) (err error) {
+	var tag *id3v2.Tag
+	tag, err = id3v2.Open(songPath, id3v2.Options{Parse: true})
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	defer tag.Close()
+	// tlenFrame := tag.GetFrames(tag.CommonID("Length"))
+	// We delete the lyric frame with same language by delete all and add others back
+	var lengthSongTimeDuration time.Duration
+	lengthSongTimeDuration, err = player.GetLength(songPath)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	lengthSong := fmt.Sprintf("%v", lengthSongTimeDuration.Milliseconds())
+	lengthFrame := id3v2.UserDefinedTextFrame{
+		Encoding:    id3v2.EncodingUTF8,
+		Description: "TLEN",
+		Value:       string(lengthSong),
+	}
+	tag.AddUserDefinedTextFrame(lengthFrame)
+
+	err = tag.Save()
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	return err
+}
+
+func getTagLength(songPath string) (songLength time.Duration, err error) {
+	var tag *id3v2.Tag
+	tag, err = id3v2.Open(songPath, id3v2.Options{Parse: true})
+	if err != nil {
+		return 0, tracerr.Wrap(err)
+	}
+	defer tag.Close()
+	tlenFrames := tag.GetFrames(tag.CommonID("User defined text information frame"))
+	if tlenFrames == nil {
+		return 0, tracerr.Wrap(err)
+	}
+	for _, tlenFrame := range tlenFrames {
+		if tlenFrame.(id3v2.UserDefinedTextFrame).Description == "TLEN" {
+			songLengthString := tlenFrame.(id3v2.UserDefinedTextFrame).Value
+			songLengthInt64, err := strconv.ParseInt(songLengthString, 10, 64)
+			if err != nil {
+				return 0, tracerr.Wrap(err)
+			}
+			songLength = (time.Duration)(songLengthInt64) * time.Millisecond
+			break
+		}
+	}
+	return songLength, err
 }
