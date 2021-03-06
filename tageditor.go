@@ -460,9 +460,9 @@ func tagPopup(node *AudioFile) (err error) {
 			cycleFocus(gomu.app, inputs, false)
 		case tcell.KeyBacktab:
 			cycleFocus(gomu.app, inputs, true)
-		case tcell.KeyDown:
+		case tcell.KeyRight:
 			cycleFocus(gomu.app, inputs, false)
-		case tcell.KeyUp:
+		case tcell.KeyLeft:
 			cycleFocus(gomu.app, inputs, true)
 		}
 
