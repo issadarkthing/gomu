@@ -287,18 +287,18 @@ func embedLength(songPath string) (err error) {
 		return tracerr.Wrap(err)
 	}
 	defer tag.Close()
-	// tlenFrame := tag.GetFrames(tag.CommonID("Length"))
-	// We delete the lyric frame with same language by delete all and add others back
+
 	var lengthSongTimeDuration time.Duration
 	lengthSongTimeDuration, err = player.GetLength(songPath)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
-	lengthSong := fmt.Sprintf("%v", lengthSongTimeDuration.Milliseconds())
+
+	lengthSongString := strconv.FormatInt(lengthSongTimeDuration.Milliseconds(), 10)
 	lengthFrame := id3v2.UserDefinedTextFrame{
 		Encoding:    id3v2.EncodingUTF8,
 		Description: "TLEN",
-		Value:       string(lengthSong),
+		Value:       lengthSongString,
 	}
 	tag.AddUserDefinedTextFrame(lengthFrame)
 
