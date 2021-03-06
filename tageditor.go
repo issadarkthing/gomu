@@ -61,6 +61,18 @@ func tagPopup(node *AudioFile) (err error) {
 			errorPopup(err)
 			return
 		}
+		serviceProvider = "kugou"
+		results2, resultsTag2, err2 := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
+		if err2 != nil {
+			errorPopup(err2)
+			return
+		}
+		for i, v := range results2 {
+			results[i] = v
+		}
+		for i, v := range resultsTag2 {
+			resultsTag[i] = v
+		}
 
 		titles := make([]string, 0, len(results))
 
@@ -352,38 +364,37 @@ func tagPopup(node *AudioFile) (err error) {
 					errorPopup(err)
 					gomu.app.Draw()
 				} else {
-					infoPopup("cn Lyric added successfully")
+					infoPopup(langExt + " Lyric embeded successfully.")
 					gomu.app.Draw()
 				}
 				// This is to ensure that the above go routine finish.
-				gomu.app.QueueUpdateDraw(func() {
-					_, popupLyricMap, newOptions, err := loadTagMap(node)
-					if err != nil {
-						errorPopup(err)
-						gomu.app.Draw()
-						return
-					}
+				_, popupLyricMap, newOptions, err := loadTagMap(node)
+				if err != nil {
+					errorPopup(err)
+					gomu.app.Draw()
+					return
+				}
 
-					// Update dropdown options
-					lyricDropDown.SetOptions(newOptions, nil).
-						SetCurrentOption(0).
-						SetSelectedFunc(func(text string, _ int) {
-							lyricTextView.SetText(popupLyricMap[text]).
-								SetTitle(" " + text + " lyric preview ")
-						})
+				// Update dropdown options
+				lyricDropDown.SetOptions(newOptions, nil).
+					SetCurrentOption(0).
+					SetSelectedFunc(func(text string, _ int) {
+						lyricTextView.SetText(popupLyricMap[text]).
+							SetTitle(" " + text + " lyric preview ")
+					})
 
-					// Update lyric preview
-					if len(newOptions) > 0 {
-						_, langExt := lyricDropDown.GetCurrentOption()
-						lyricTextView.SetText(popupLyricMap[langExt]).
-							SetTitle(" " + langExt + " lyric preview ")
-						infoPopup(langExt + " lyric embeded successfully.")
-					} else {
-						lyricTextView.SetText("No lyric embeded.").
-							SetTitle(" lyric preview ")
-					}
-				})
+				// Update lyric preview
+				if len(newOptions) > 0 {
+					_, langExt := lyricDropDown.GetCurrentOption()
+					lyricTextView.SetText(popupLyricMap[langExt]).
+						SetTitle(" " + langExt + " lyric preview ")
+				} else {
+					lyricTextView.SetText("No lyric embeded.").
+						SetTitle(" lyric preview ")
+				}
+
 			}()
+
 		})
 	}).
 		SetBorder(true).
