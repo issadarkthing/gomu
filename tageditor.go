@@ -139,7 +139,12 @@ func tagPopup(node *AudioFile) (err error) {
 			}
 			options = newOptions
 			lyricDropDown.SetOptions(newOptions, nil).
-				SetCurrentOption(0)
+				SetCurrentOption(0).
+				SetSelectedFunc(func(text string, _ int) {
+					lyricTextView.SetText(popupLyricMap[text]).
+						SetTitle(" " + text + " lyric preview ")
+				})
+
 				// Update lyric preview
 			if len(newOptions) > 0 {
 				_, langExt = lyricDropDown.GetCurrentOption()
@@ -212,7 +217,12 @@ func tagPopup(node *AudioFile) (err error) {
 
 								// Update dropdown options
 								lyricDropDown.SetOptions(newOptions, nil).
-									SetCurrentOption(0)
+									SetCurrentOption(0).
+									SetSelectedFunc(func(text string, _ int) {
+										lyricTextView.SetText(popupLyricMap[text]).
+											SetTitle(" " + text + " lyric preview ")
+									})
+
 								// Update lyric preview
 								if len(newOptions) > 0 {
 									_, langExt := lyricDropDown.GetCurrentOption()
@@ -283,7 +293,12 @@ func tagPopup(node *AudioFile) (err error) {
 
 					// Update dropdown options
 					lyricDropDown.SetOptions(newOptions, nil).
-						SetCurrentOption(0)
+						SetCurrentOption(0).
+						SetSelectedFunc(func(text string, _ int) {
+							lyricTextView.SetText(popupLyricMap[text]).
+								SetTitle(" " + text + " lyric preview ")
+						})
+
 					// Update lyric preview
 					if len(newOptions) > 0 {
 						_, langExt := lyricDropDown.GetCurrentOption()
@@ -351,7 +366,12 @@ func tagPopup(node *AudioFile) (err error) {
 
 					// Update dropdown options
 					lyricDropDown.SetOptions(newOptions, nil).
-						SetCurrentOption(0)
+						SetCurrentOption(0).
+						SetSelectedFunc(func(text string, _ int) {
+							lyricTextView.SetText(popupLyricMap[text]).
+								SetTitle(" " + text + " lyric preview ")
+						})
+
 					// Update lyric preview
 					if len(newOptions) > 0 {
 						_, langExt := lyricDropDown.GetCurrentOption()
