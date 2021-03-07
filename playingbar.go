@@ -66,6 +66,10 @@ func (p *PlayingBar) run() error {
 			break
 		}
 
+		if gomu.player.IsPaused() {
+			continue
+		}
+
 		p.progress = int(gomu.player.GetPosition().Seconds())
 
 		start, err := time.ParseDuration(strconv.Itoa(p.progress) + "s")
