@@ -837,17 +837,16 @@ func ytSearchPopup() {
 	})
 }
 
-func lyricPopup(audioFile *AudioFile) error {
+func lyricPopup(lang string, audioFile *AudioFile) error {
 
-	results, err := lyric.GetLyricOptions(audioFile.name)
+	var titles []string
+	results, err := lyric.GetLyricOptions(lang, audioFile.name)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
 
-	titles := make([]string, 0, len(results))
-
-	for result := range results {
-		titles = append(titles, result)
+	for _, v := range results {
+		titles = append(titles, v.TitleForPopup)
 	}
 
 	searchPopup(" Lyrics ", titles, func(selected string) {
@@ -856,63 +855,25 @@ func lyricPopup(audioFile *AudioFile) error {
 		}
 
 		go func() {
-			url := results[selected]
-			lyric, err := lyric.GetLyric(url)
+			var selectedIndex int
+			for i, v := range results {
+				if v.TitleForPopup == selected {
+					selectedIndex = i
+					break
+				}
+			}
+			lyric, err := lyric.GetLyric(results[selectedIndex].LangExt, results[selectedIndex])
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
 			}
 
-			langExt := "en"
-			err = embedLyric(audioFile.path, lyric, langExt, false)
+			err = embedLyric(audioFile.path, lyric, lang, false)
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
 			} else {
-				infoPopup("en Lyric added successfully")
-				gomu.app.Draw()
-			}
-
-		}()
-	})
-
-	return nil
-}
-
-func lyricPopupCN(audioFile *AudioFile, serviceProvider string) error {
-
-	results, _, err := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-
-	titles := make([]string, 0, len(results))
-
-	for result := range results {
-		titles = append(titles, result)
-	}
-
-	searchPopup(" Lyrics ", titles, func(selected string) {
-		if selected == "" {
-			return
-		}
-
-		go func() {
-			lyricID := results[selected]
-			lyric, err := lyric.GetLyricChinese(lyricID, serviceProvider)
-			if err != nil {
-				errorPopup(err)
-				gomu.app.Draw()
-				return
-			}
-
-			langExt := "zh-CN"
-			err = embedLyric(audioFile.path, lyric, langExt, false)
-			if err != nil {
-				errorPopup(err)
-				gomu.app.Draw()
-			} else {
-				infoPopup("cn Lyric added successfully")
+				infoPopup(lang + " lyric added successfully")
 				gomu.app.Draw()
 			}
 

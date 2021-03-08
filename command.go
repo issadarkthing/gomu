@@ -403,11 +403,12 @@ func (c Command) defineCommands() {
 
 	c.define("fetch_lyric", func() {
 		audioFile := gomu.playlist.getCurrentFile()
+		lang := "en"
 
 		if audioFile.isAudioFile {
 			go func() {
 				gomu.app.QueueUpdateDraw(func() {
-					err := lyricPopup(audioFile)
+					err := lyricPopup(lang, audioFile)
 					if err != nil {
 						errorPopup(err)
 						gomu.app.Draw()
@@ -419,26 +420,11 @@ func (c Command) defineCommands() {
 
 	c.define("fetch_lyric_cn2", func() {
 		audioFile := gomu.playlist.getCurrentFile()
-		serviceProvider := "netease"
+		lang := "zh-CN"
 		if audioFile.isAudioFile {
 			go func() {
 				gomu.app.QueueUpdateDraw(func() {
-					err := lyricPopupCN(audioFile, serviceProvider)
-					if err != nil {
-						errorPopup(err)
-						gomu.app.Draw()
-					}
-				})
-			}()
-		}
-	})
-	c.define("fetch_lyric_cn3", func() {
-		audioFile := gomu.playlist.getCurrentFile()
-		serviceProvider := "kugou"
-		if audioFile.isAudioFile {
-			go func() {
-				gomu.app.QueueUpdateDraw(func() {
-					err := lyricPopupCN(audioFile, serviceProvider)
+					err := lyricPopup(lang, audioFile)
 					if err != nil {
 						errorPopup(err)
 						gomu.app.Draw()

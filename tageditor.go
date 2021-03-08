@@ -9,10 +9,9 @@ import (
 
 	"github.com/bogem/id3v2"
 	"github.com/gdamore/tcell/v2"
+	"github.com/issadarkthing/gomu/lyric"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
-
-	"github.com/issadarkthing/gomu/lyric"
 )
 
 func tagPopup(node *AudioFile) (err error) {
@@ -33,7 +32,6 @@ func tagPopup(node *AudioFile) (err error) {
 		deleteLyricButton *tview.Button     = tview.NewButton("Delete Lyric")
 		getLyric1Button   *tview.Button     = tview.NewButton("Get Lyric 1(en)")
 		getLyric2Button   *tview.Button     = tview.NewButton("Get Lyric 2(zh-CN)")
-		getLyric3Button   *tview.Button     = tview.NewButton("Get Lyric 3(zh-CN)")
 		lyricTextView     *tview.TextView
 		leftGrid          *tview.Grid = tview.NewGrid()
 		rightFlex         *tview.Flex = tview.NewFlex()
@@ -54,30 +52,16 @@ func tagPopup(node *AudioFile) (err error) {
 		SetFieldBackgroundColor(gomu.colors.popup).
 		SetBackgroundColor(gomu.colors.background)
 	getTagButton.SetSelectedFunc(func() {
+		var titles []string
 		audioFile := node
-		serviceProvider := "netease"
-		results, resultsTag, err := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
+		lang := "zh-CN"
+		results, err := lyric.GetLyricOptions(lang, audioFile.name)
 		if err != nil {
 			errorPopup(err)
 			return
 		}
-		serviceProvider = "kugou"
-		results2, resultsTag2, err2 := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
-		if err2 != nil {
-			errorPopup(err2)
-			return
-		}
-		for i, v := range results2 {
-			results[i] = v
-		}
-		for i, v := range resultsTag2 {
-			resultsTag[i] = v
-		}
-
-		titles := make([]string, 0, len(results))
-
-		for result := range results {
-			titles = append(titles, result)
+		for _, v := range results {
+			titles = append(titles, v.TitleForPopup)
 		}
 
 		searchPopup(" Song Tags ", titles, func(selected string) {
@@ -85,8 +69,15 @@ func tagPopup(node *AudioFile) (err error) {
 				return
 			}
 
-			lyricID := results[selected]
-			newTag := resultsTag[lyricID]
+			var selectedIndex int
+			for i, v := range results {
+				if v.TitleForPopup == selected {
+					selectedIndex = i
+					break
+				}
+			}
+
+			newTag := results[selectedIndex]
 			artistInputField.SetText(newTag.Artist)
 			titleInputField.SetText(newTag.Title)
 			albumInputField.SetText(newTag.Album)
@@ -96,9 +87,9 @@ func tagPopup(node *AudioFile) (err error) {
 				errorPopup(err)
 			}
 			defer tag.Close()
-			tag.SetArtist(artistInputField.GetText())
-			tag.SetTitle(titleInputField.GetText())
-			tag.SetAlbum(albumInputField.GetText())
+			tag.SetArtist(newTag.Artist)
+			tag.SetTitle(newTag.Title)
+			tag.SetAlbum(newTag.Album)
 			err = tag.Save()
 			if err != nil {
 				errorPopup(err)
@@ -177,230 +168,31 @@ func tagPopup(node *AudioFile) (err error) {
 		SetTitleColor(gomu.colors.accent)
 
 	getLyric1Button.SetSelectedFunc(func() {
-		audioFile := node
 
-		if audioFile.isAudioFile {
-			go func() {
-				gomu.app.QueueUpdateDraw(func() {
-					results, err := lyric.GetLyricOptions(audioFile.name)
-					if err != nil {
-						errorPopup(err)
-						gomu.app.Draw()
-						return
-
-					}
-
-					titles := make([]string, 0, len(results))
-
-					for result := range results {
-						titles = append(titles, result)
-					}
-
-					searchPopup(" Lyrics ", titles, func(selected string) {
-						if selected == "" {
-							return
-						}
-
-						go func() {
-							url := results[selected]
-							lyric, err := lyric.GetLyric(url)
-							if err != nil {
-								errorPopup(err)
-								gomu.app.Draw()
-							}
-
-							langExt := "en"
-							err = embedLyric(audioFile.path, lyric, langExt, false)
-							if err != nil {
-								errorPopup(err)
-								gomu.app.Draw()
-							} else {
-								infoPopup("en Lyric added successfully")
-								gomu.app.Draw()
-							}
-
-							// This is to ensure that the above go routine finish.
-							gomu.app.QueueUpdateDraw(func() {
-								_, popupLyricMap, newOptions, err := loadTagMap(node)
-								if err != nil {
-									errorPopup(err)
-									gomu.app.Draw()
-									return
-								}
-
-								// Update dropdown options
-								lyricDropDown.SetOptions(newOptions, nil).
-									SetCurrentOption(0).
-									SetSelectedFunc(func(text string, _ int) {
-										lyricTextView.SetText(popupLyricMap[text]).
-											SetTitle(" " + text + " lyric preview ")
-									})
-
-								// Update lyric preview
-								if len(newOptions) > 0 {
-									_, langExt := lyricDropDown.GetCurrentOption()
-									lyricTextView.SetText(popupLyricMap[langExt]).
-										SetTitle(" " + langExt + " lyric preview ")
-									infoPopup(langExt + " lyric embeded successfully.")
-								} else {
-									lyricTextView.SetText("No lyric embeded.").
-										SetTitle(" lyric preview ")
-								}
-							})
-						}()
-					})
-				})
-			}()
+		audioFile := gomu.playlist.getCurrentFile()
+		lang := "en"
+		err := getLyricFromTagEditor(audioFile, lang, lyricDropDown, lyricTextView)
+		if err != nil {
+			errorPopup(err)
+			gomu.app.Draw()
 		}
 	}).
 		SetBorder(true).
 		SetBackgroundColor(gomu.colors.background).
 		SetTitleColor(gomu.colors.accent)
 	getLyric2Button.SetSelectedFunc(func() {
-		audioFile := node
-		serviceProvider := "netease"
-		results, _, err := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
+		audioFile := gomu.playlist.getCurrentFile()
+		lang := "zh-CN"
+		err := getLyricFromTagEditor(audioFile, lang, lyricDropDown, lyricTextView)
 		if err != nil {
 			errorPopup(err)
-			return
+			gomu.app.Draw()
 		}
-
-		titles := make([]string, 0, len(results))
-
-		for result := range results {
-			titles = append(titles, result)
-		}
-
-		searchPopup(" Lyrics ", titles, func(selected string) {
-			if selected == "" {
-				return
-			}
-
-			go func() {
-				lyricID := results[selected]
-				lyric, err := lyric.GetLyricChinese(lyricID, serviceProvider)
-				if err != nil {
-					errorPopup(err)
-					gomu.app.Draw()
-					return
-				}
-
-				langExt := "zh-CN"
-				err = embedLyric(audioFile.path, lyric, langExt, false)
-				if err != nil {
-					errorPopup(err)
-					gomu.app.Draw()
-				} else {
-					infoPopup("cn Lyric added successfully")
-					gomu.app.Draw()
-				}
-				// This is to ensure that the above go routine finish.
-				gomu.app.QueueUpdateDraw(func() {
-					_, popupLyricMap, newOptions, err := loadTagMap(node)
-					if err != nil {
-						errorPopup(err)
-						gomu.app.Draw()
-						return
-					}
-					options = newOptions
-
-					// Update dropdown options
-					lyricDropDown.SetOptions(newOptions, nil).
-						SetCurrentOption(0).
-						SetSelectedFunc(func(text string, _ int) {
-							lyricTextView.SetText(popupLyricMap[text]).
-								SetTitle(" " + text + " lyric preview ")
-						})
-
-					// Update lyric preview
-					if len(newOptions) > 0 {
-						_, langExt := lyricDropDown.GetCurrentOption()
-						lyricTextView.SetText(popupLyricMap[langExt]).
-							SetTitle(" " + langExt + " lyric preview ")
-						infoPopup(langExt + " lyric embeded successfully.")
-					} else {
-						lyricTextView.SetText("No lyric embeded.").
-							SetTitle(" lyric preview ")
-					}
-				})
-			}()
-		})
 	}).
 		SetBorder(true).
 		SetBackgroundColor(gomu.colors.background).
 		SetTitleColor(gomu.colors.accent)
 
-	getLyric3Button.SetSelectedFunc(func() {
-		audioFile := node
-		serviceProvider := "kugou"
-		results, _, err := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
-		if err != nil {
-			errorPopup(err)
-			return
-		}
-
-		titles := make([]string, 0, len(results))
-
-		for result := range results {
-			titles = append(titles, result)
-		}
-
-		searchPopup(" Lyrics ", titles, func(selected string) {
-			if selected == "" {
-				return
-			}
-
-			go func() {
-				lyricID := results[selected]
-				lyric, err := lyric.GetLyricChinese(lyricID, serviceProvider)
-				if err != nil {
-					errorPopup(err)
-					gomu.app.Draw()
-					return
-				}
-
-				langExt := "zh-CN"
-				err = embedLyric(audioFile.path, lyric, langExt, false)
-				if err != nil {
-					errorPopup(err)
-					gomu.app.Draw()
-				} else {
-					infoPopup(langExt + " Lyric embeded successfully.")
-					gomu.app.Draw()
-				}
-				// This is to ensure that the above go routine finish.
-				_, popupLyricMap, newOptions, err := loadTagMap(node)
-				if err != nil {
-					errorPopup(err)
-					gomu.app.Draw()
-					return
-				}
-
-				// Update dropdown options
-				lyricDropDown.SetOptions(newOptions, nil).
-					SetCurrentOption(0).
-					SetSelectedFunc(func(text string, _ int) {
-						lyricTextView.SetText(popupLyricMap[text]).
-							SetTitle(" " + text + " lyric preview ")
-					})
-
-				// Update lyric preview
-				if len(newOptions) > 0 {
-					_, langExt := lyricDropDown.GetCurrentOption()
-					lyricTextView.SetText(popupLyricMap[langExt]).
-						SetTitle(" " + langExt + " lyric preview ")
-				} else {
-					lyricTextView.SetText("No lyric embeded.").
-						SetTitle(" lyric preview ")
-				}
-
-			}()
-
-		})
-	}).
-		SetBorder(true).
-		SetBackgroundColor(gomu.colors.background).
-		SetTitleColor(gomu.colors.accent)
 	lyricDropDown.SetOptions(options, nil).
 		SetCurrentOption(0).
 		SetFieldBackgroundColor(gomu.colors.background).
@@ -435,7 +227,7 @@ func tagPopup(node *AudioFile) (err error) {
 		SetBackgroundColor(gomu.colors.popup).
 		SetBorder(true)
 
-	leftGrid.SetRows(3, 3, 3, 3, 3, 0, 3, 3, 3, 3, 3).
+	leftGrid.SetRows(3, 3, 3, 3, 3, 0, 3, 3, 3, 3).
 		SetColumns(30).
 		AddItem(artistInputField, 0, 0, 1, 3, 1, 10, true).
 		AddItem(titleInputField, 1, 0, 1, 3, 1, 10, true).
@@ -445,8 +237,7 @@ func tagPopup(node *AudioFile) (err error) {
 		AddItem(lyricDropDown, 6, 0, 1, 3, 1, 10, true).
 		AddItem(deleteLyricButton, 7, 0, 1, 3, 1, 10, true).
 		AddItem(getLyric1Button, 8, 0, 1, 3, 1, 10, true).
-		AddItem(getLyric2Button, 9, 0, 1, 3, 1, 10, true).
-		AddItem(getLyric3Button, 10, 0, 1, 3, 1, 10, true)
+		AddItem(getLyric2Button, 9, 0, 1, 3, 1, 10, true)
 	leftGrid.SetBorder(true).
 		SetTitle(node.name).
 		SetBorderPadding(1, 1, 2, 2)
@@ -473,7 +264,6 @@ func tagPopup(node *AudioFile) (err error) {
 		deleteLyricButton,
 		getLyric1Button,
 		getLyric2Button,
-		getLyric3Button,
 		lyricTextView,
 	}
 
@@ -559,4 +349,83 @@ func loadTagMap(node *AudioFile) (tag *id3v2.Tag, popupLyricMap map[string]strin
 	sort.Strings(options)
 
 	return tag, popupLyricMap, options, err
+}
+
+func getLyricFromTagEditor(audioFile *AudioFile, lang string, lyricDropDown *tview.DropDown, lyricTextView *tview.TextView) (err error) {
+	if audioFile.isAudioFile {
+		go func() {
+			gomu.app.QueueUpdateDraw(func() {
+
+				var titles []string
+				results, err := lyric.GetLyricOptions(lang, audioFile.name)
+				if err != nil {
+					errorPopup(err)
+					gomu.app.Draw()
+				}
+
+				for _, v := range results {
+					titles = append(titles, v.TitleForPopup)
+				}
+
+				searchPopup(" Lyrics ", titles, func(selected string) {
+					if selected == "" {
+						return
+					}
+
+					go func() {
+						var selectedIndex int
+						for i, v := range results {
+							if v.TitleForPopup == selected {
+								selectedIndex = i
+								break
+							}
+						}
+						lyric, err := lyric.GetLyric(results[selectedIndex].LangExt, results[selectedIndex])
+						if err != nil {
+							errorPopup(err)
+							gomu.app.Draw()
+						}
+
+						err = embedLyric(audioFile.path, lyric, lang, false)
+						if err != nil {
+							errorPopup(err)
+							gomu.app.Draw()
+						} else {
+							infoPopup(lang + " lyric added successfully")
+							gomu.app.Draw()
+						}
+
+						// This is to ensure that the above go routine finish.
+						_, popupLyricMap, newOptions, err := loadTagMap(audioFile)
+						if err != nil {
+							errorPopup(err)
+							gomu.app.Draw()
+							return
+						}
+
+						// Update dropdown options
+						lyricDropDown.SetOptions(newOptions, nil).
+							SetCurrentOption(0).
+							SetSelectedFunc(func(text string, _ int) {
+								lyricTextView.SetText(popupLyricMap[text]).
+									SetTitle(" " + text + " lyric preview ")
+							})
+
+						// Update lyric preview
+						if len(newOptions) > 0 {
+							_, langExt := lyricDropDown.GetCurrentOption()
+							lyricTextView.SetText(popupLyricMap[langExt]).
+								SetTitle(" " + langExt + " lyric preview ")
+						} else {
+							lyricTextView.SetText("No lyric embeded.").
+								SetTitle(" lyric preview ")
+						}
+
+					}()
+				})
+
+			})
+		}()
+	}
+	return err
 }
