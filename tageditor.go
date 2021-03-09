@@ -352,80 +352,81 @@ func loadTagMap(node *AudioFile) (tag *id3v2.Tag, popupLyricMap map[string]strin
 }
 
 func getLyricFromTagEditor(audioFile *AudioFile, lang string, lyricDropDown *tview.DropDown, lyricTextView *tview.TextView) (err error) {
-	if audioFile.isAudioFile {
-		go func() {
-			gomu.app.QueueUpdateDraw(func() {
+	if !audioFile.isAudioFile {
+		return errors.New("not an audio file")
+	}
+	go func() {
+		gomu.app.QueueUpdateDraw(func() {
 
-				var titles []string
-				results, err := lyric.GetLyricOptions(lang, audioFile.name)
-				if err != nil {
-					errorPopup(err)
-					gomu.app.Draw()
+			var titles []string
+			results, err := lyric.GetLyricOptions(lang, audioFile.name)
+			if err != nil {
+				errorPopup(err)
+				gomu.app.Draw()
+			}
+
+			for _, v := range results {
+				titles = append(titles, v.TitleForPopup)
+			}
+
+			searchPopup(" Lyrics ", titles, func(selected string) {
+				if selected == "" {
+					return
 				}
 
-				for _, v := range results {
-					titles = append(titles, v.TitleForPopup)
-				}
+				go func() {
+					var selectedIndex int
+					for i, v := range results {
+						if v.TitleForPopup == selected {
+							selectedIndex = i
+							break
+						}
+					}
+					lyric, err := lyric.GetLyric(results[selectedIndex].LangExt, results[selectedIndex])
+					if err != nil {
+						errorPopup(err)
+						gomu.app.Draw()
+					}
 
-				searchPopup(" Lyrics ", titles, func(selected string) {
-					if selected == "" {
+					err = embedLyric(audioFile.path, lyric, lang, false)
+					if err != nil {
+						errorPopup(err)
+						gomu.app.Draw()
+					} else {
+						infoPopup(lang + " lyric added successfully")
+						gomu.app.Draw()
+					}
+
+					// This is to ensure that the above go routine finish.
+					_, popupLyricMap, newOptions, err := loadTagMap(audioFile)
+					if err != nil {
+						errorPopup(err)
+						gomu.app.Draw()
 						return
 					}
 
-					go func() {
-						var selectedIndex int
-						for i, v := range results {
-							if v.TitleForPopup == selected {
-								selectedIndex = i
-								break
-							}
-						}
-						lyric, err := lyric.GetLyric(results[selectedIndex].LangExt, results[selectedIndex])
-						if err != nil {
-							errorPopup(err)
-							gomu.app.Draw()
-						}
+					// Update dropdown options
+					lyricDropDown.SetOptions(newOptions, nil).
+						SetCurrentOption(0).
+						SetSelectedFunc(func(text string, _ int) {
+							lyricTextView.SetText(popupLyricMap[text]).
+								SetTitle(" " + text + " lyric preview ")
+						})
 
-						err = embedLyric(audioFile.path, lyric, lang, false)
-						if err != nil {
-							errorPopup(err)
-							gomu.app.Draw()
-						} else {
-							infoPopup(lang + " lyric added successfully")
-							gomu.app.Draw()
-						}
+					// Update lyric preview
+					if len(newOptions) > 0 {
+						_, langExt := lyricDropDown.GetCurrentOption()
+						lyricTextView.SetText(popupLyricMap[langExt]).
+							SetTitle(" " + langExt + " lyric preview ")
+					} else {
+						lyricTextView.SetText("No lyric embeded.").
+							SetTitle(" lyric preview ")
+					}
 
-						// This is to ensure that the above go routine finish.
-						_, popupLyricMap, newOptions, err := loadTagMap(audioFile)
-						if err != nil {
-							errorPopup(err)
-							gomu.app.Draw()
-							return
-						}
-
-						// Update dropdown options
-						lyricDropDown.SetOptions(newOptions, nil).
-							SetCurrentOption(0).
-							SetSelectedFunc(func(text string, _ int) {
-								lyricTextView.SetText(popupLyricMap[text]).
-									SetTitle(" " + text + " lyric preview ")
-							})
-
-						// Update lyric preview
-						if len(newOptions) > 0 {
-							_, langExt := lyricDropDown.GetCurrentOption()
-							lyricTextView.SetText(popupLyricMap[langExt]).
-								SetTitle(" " + langExt + " lyric preview ")
-						} else {
-							lyricTextView.SetText("No lyric embeded.").
-								SetTitle(" lyric preview ")
-						}
-
-					}()
-				})
-
+				}()
 			})
-		}()
-	}
+
+		})
+	}()
 	return err
 }

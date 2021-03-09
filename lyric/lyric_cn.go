@@ -42,7 +42,7 @@ func getLyricOptionsCn(search string) ([]*SongTag, error) {
 	return results, err
 }
 
-// GetLyricChinese should receive url that was returned from GetLyricOptions. GetLyric
+// GetLyricCn should receive songTag that was returned from GetLyricOptionsCn. GetLyricCn
 // returns lyric of the queried song.
 func getLyricCn(songTag *SongTag) (string, error) {
 
