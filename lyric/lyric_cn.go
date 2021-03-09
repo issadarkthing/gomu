@@ -49,7 +49,7 @@ func getLyricCn(songTag *SongTag) (string, error) {
 	var lyric string
 	p := requests.Params{
 		"site":  songTag.ServiceProvider,
-		"lyric": songTag.LyridID,
+		"lyric": songTag.LyricID,
 	}
 	req := requests.Requests()
 	resp, err := req.Get("http://api.sunyj.xyz", p)
@@ -128,7 +128,7 @@ func getLyricOptionsCnByProvider(search string, serviceProvider string) ([]*Song
 			LangExt:         "zh-CN",
 			ServiceProvider: serviceProvider,
 			SongID:          resultSongID,
-			LyridID:         resultLyricID,
+			LyricID:         resultLyricID,
 		}
 		resultTags = append(resultTags, songTag)
 	}

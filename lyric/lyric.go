@@ -15,7 +15,7 @@ type SongTag struct {
 	LangExt         string
 	ServiceProvider string
 	SongID          string // SongID and LyricID is returned by cn server. It's not guaranteed to be identical
-	LyridID         string
+	LyricID         string
 }
 
 // GetLyric should receive url that was returned from GetLyricOptions. GetLyric

@@ -30,8 +30,8 @@ func tagPopup(node *AudioFile) (err error) {
 		saveTagButton     *tview.Button     = tview.NewButton("Save Tag")
 		lyricDropDown     *tview.DropDown   = tview.NewDropDown()
 		deleteLyricButton *tview.Button     = tview.NewButton("Delete Lyric")
-		getLyric1Button   *tview.Button     = tview.NewButton("Get Lyric 1(en)")
-		getLyric2Button   *tview.Button     = tview.NewButton("Get Lyric 2(zh-CN)")
+		getLyricDropDown  *tview.DropDown   = tview.NewDropDown()
+		getLyricButton    *tview.Button     = tview.NewButton("Fetch Lyric")
 		lyricTextView     *tview.TextView
 		leftGrid          *tview.Grid = tview.NewGrid()
 		rightFlex         *tview.Flex = tview.NewFlex()
@@ -121,6 +121,18 @@ func tagPopup(node *AudioFile) (err error) {
 		SetBackgroundColor(gomu.colors.background).
 		SetTitleColor(gomu.colors.foreground)
 
+	lyricDropDown.SetOptions(options, nil).
+		SetCurrentOption(0).
+		SetFieldBackgroundColor(gomu.colors.background).
+		SetFieldTextColor(gomu.colors.accent).
+		SetPrefixTextColor(gomu.colors.accent).
+		SetSelectedFunc(func(text string, _ int) {
+			lyricTextView.SetText(popupLyricMap[text]).
+				SetTitle(" " + text + " lyric preview ")
+		}).
+		SetLabel("Embeded Lyrics: ")
+	lyricDropDown.SetBackgroundColor(gomu.colors.popup)
+
 	deleteLyricButton.SetSelectedFunc(func() {
 		_, langExt := lyricDropDown.GetCurrentOption()
 		if len(options) > 0 {
@@ -167,43 +179,28 @@ func tagPopup(node *AudioFile) (err error) {
 		SetBackgroundColor(gomu.colors.background).
 		SetTitleColor(gomu.colors.accent)
 
-	getLyric1Button.SetSelectedFunc(func() {
-
-		audioFile := gomu.playlist.getCurrentFile()
-		lang := "en"
-		err := getLyricFromTagEditor(audioFile, lang, lyricDropDown, lyricTextView)
-		if err != nil {
-			errorPopup(err)
-			gomu.app.Draw()
-		}
-	}).
-		SetBorder(true).
-		SetBackgroundColor(gomu.colors.background).
-		SetTitleColor(gomu.colors.accent)
-	getLyric2Button.SetSelectedFunc(func() {
-		audioFile := gomu.playlist.getCurrentFile()
-		lang := "zh-CN"
-		err := getLyricFromTagEditor(audioFile, lang, lyricDropDown, lyricTextView)
-		if err != nil {
-			errorPopup(err)
-			gomu.app.Draw()
-		}
-	}).
-		SetBorder(true).
-		SetBackgroundColor(gomu.colors.background).
-		SetTitleColor(gomu.colors.accent)
-
-	lyricDropDown.SetOptions(options, nil).
+	getLyricDropDownOptions := []string{"en", "zh-CN"}
+	getLyricDropDown.SetOptions(getLyricDropDownOptions, nil).
 		SetCurrentOption(0).
 		SetFieldBackgroundColor(gomu.colors.background).
 		SetFieldTextColor(gomu.colors.accent).
 		SetPrefixTextColor(gomu.colors.accent).
-		SetSelectedFunc(func(text string, _ int) {
-			lyricTextView.SetText(popupLyricMap[text]).
-				SetTitle(" " + text + " lyric preview ")
-		}).
-		SetLabel("Embeded Lyrics: ")
+		SetLabel("Fetch Lyrics: ")
 	lyricDropDown.SetBackgroundColor(gomu.colors.popup)
+
+	getLyricButton.SetSelectedFunc(func() {
+
+		audioFile := gomu.playlist.getCurrentFile()
+		_, lang := getLyricDropDown.GetCurrentOption()
+		err := getLyricFromTagEditor(audioFile, lang, lyricDropDown, lyricTextView)
+		if err != nil {
+			errorPopup(err)
+			gomu.app.Draw()
+		}
+	}).
+		SetBorder(true).
+		SetBackgroundColor(gomu.colors.background).
+		SetTitleColor(gomu.colors.accent)
 
 	var lyricText string
 	_, langExt := lyricDropDown.GetCurrentOption()
@@ -227,7 +224,7 @@ func tagPopup(node *AudioFile) (err error) {
 		SetBackgroundColor(gomu.colors.popup).
 		SetBorder(true)
 
-	leftGrid.SetRows(3, 3, 3, 3, 3, 0, 3, 3, 3, 3).
+	leftGrid.SetRows(3, 3, 3, 3, 3, 0, 3, 3, 3, 3, 3).
 		SetColumns(30).
 		AddItem(artistInputField, 0, 0, 1, 3, 1, 10, true).
 		AddItem(titleInputField, 1, 0, 1, 3, 1, 10, true).
@@ -236,8 +233,8 @@ func tagPopup(node *AudioFile) (err error) {
 		AddItem(saveTagButton, 4, 0, 1, 3, 1, 10, true).
 		AddItem(lyricDropDown, 6, 0, 1, 3, 1, 10, true).
 		AddItem(deleteLyricButton, 7, 0, 1, 3, 1, 10, true).
-		AddItem(getLyric1Button, 8, 0, 1, 3, 1, 10, true).
-		AddItem(getLyric2Button, 9, 0, 1, 3, 1, 10, true)
+		AddItem(getLyricDropDown, 9, 0, 1, 3, 1, 20, true).
+		AddItem(getLyricButton, 10, 0, 1, 3, 1, 10, true)
 	leftGrid.SetBorder(true).
 		SetTitle(node.name).
 		SetBorderPadding(1, 1, 2, 2)
@@ -251,7 +248,7 @@ func tagPopup(node *AudioFile) (err error) {
 
 	lyricFlex.
 		SetTitle(node.name).
-		SetBorderPadding(1, 1, 2, 2).
+		SetBorderPadding(1, 1, 1, 1).
 		SetBackgroundColor(gomu.colors.popup)
 
 	inputs := []tview.Primitive{
@@ -262,8 +259,8 @@ func tagPopup(node *AudioFile) (err error) {
 		saveTagButton,
 		lyricDropDown,
 		deleteLyricButton,
-		getLyric1Button,
-		getLyric2Button,
+		getLyricDropDown,
+		getLyricButton,
 		lyricTextView,
 	}
 
