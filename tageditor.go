@@ -14,6 +14,11 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
+type myFlex struct {
+	*tview.Flex
+	FocusedItem tview.Primitive
+}
+
 func tagPopup(node *AudioFile) (err error) {
 
 	popupID := "tag-editor-input-popup"
@@ -316,9 +321,16 @@ func tagPopup(node *AudioFile) (err error) {
 	rightFlex.SetDirection(tview.FlexColumn).
 		AddItem(lyricTextView, 0, 1, true)
 
-	lyricFlex := tview.NewFlex().SetDirection(tview.FlexColumn).
-		AddItem(leftGrid, 0, 2, true).
-		AddItem(rightFlex, 0, 3, true)
+		// lyricFlex := tview.NewFlex().SetDirection(tview.FlexColumn).
+		// 	AddItem(leftGrid, 0, 2, true).
+		// 	AddItem(rightFlex, 0, 3, true)
+
+	lyricFlex := &myFlex{
+		tview.NewFlex().SetDirection(tview.FlexColumn).
+			AddItem(leftGrid, 0, 2, true).
+			AddItem(rightFlex, 0, 3, true),
+		nil,
+	}
 
 	lyricFlex.
 		SetTitle(node.name).
@@ -350,13 +362,13 @@ func tagPopup(node *AudioFile) (err error) {
 			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 		case tcell.KeyTab:
-			cycleFocus(gomu.app, inputs, false)
+			lyricFlex.cycleFocus(gomu.app, inputs, false)
 		case tcell.KeyBacktab:
-			cycleFocus(gomu.app, inputs, true)
+			lyricFlex.cycleFocus(gomu.app, inputs, true)
 		case tcell.KeyRight:
-			cycleFocus(gomu.app, inputs, false)
+			lyricFlex.cycleFocus(gomu.app, inputs, false)
 		case tcell.KeyLeft:
-			cycleFocus(gomu.app, inputs, true)
+			lyricFlex.cycleFocus(gomu.app, inputs, true)
 		}
 
 		switch e.Rune() {
@@ -370,7 +382,7 @@ func tagPopup(node *AudioFile) (err error) {
 	return err
 }
 
-func cycleFocus(app *tview.Application, elements []tview.Primitive, reverse bool) {
+func (f *myFlex) cycleFocus(app *tview.Application, elements []tview.Primitive, reverse bool) {
 	for i, el := range elements {
 		if !el.HasFocus() {
 			continue
@@ -387,10 +399,29 @@ func cycleFocus(app *tview.Application, elements []tview.Primitive, reverse bool
 		}
 
 		app.SetFocus(elements[i])
+		f.FocusedItem = elements[i]
 		return
 	}
 }
 
+func (f *myFlex) Focus(delegate func(p tview.Primitive)) {
+	// if f.FocusedItem != nil {
+	// 	delegate(f.FocusedItem)
+	// } else {
+	// 	f.Focus(f.FocusedItem)
+	// }
+	// 	for _, item := range f.Focus.items {
+	// 	if item.Item != nil && item.Focus {
+	// 		delegate(item.Item)
+	// 		return
+	// 	}
+	// }
+	if f.FocusedItem != nil {
+		gomu.app.SetFocus(f.FocusedItem)
+	} else {
+		f.Flex.Focus(delegate)
+	}
+}
 func loadTagMap(node *AudioFile) (tag *id3v2.Tag, popupLyricMap map[string]string, options []string, err error) {
 
 	popupLyricMap = make(map[string]string)
