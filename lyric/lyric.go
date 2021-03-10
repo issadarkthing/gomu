@@ -14,12 +14,11 @@ type SongTag struct {
 	TitleForPopup   string
 	LangExt         string
 	ServiceProvider string
-	SongID          string // SongID and LyricID is returned by cn server. It's not guaranteed to be identical
+	SongID          string // SongID and LyricID is returned from cn server. It's not guaranteed to be identical
 	LyricID         string
 }
 
-// GetLyric should receive url that was returned from GetLyricOptions. GetLyric
-// returns lyric of the queried song.
+// GetLyric return the actual function based on lang
 func GetLyric(lang string, songTag *SongTag) (string, error) {
 
 	switch lang {
@@ -33,8 +32,7 @@ func GetLyric(lang string, songTag *SongTag) (string, error) {
 
 }
 
-// GetLyricOptions queries available song lyrics. It returns map of title and
-// url of the lyric.
+// GetLyricOptions return the actual function based on lang
 func GetLyricOptions(lang string, search string) ([]*SongTag, error) {
 
 	switch lang {

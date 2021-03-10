@@ -14,11 +14,13 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
+// myFlex extend the flex control to modify the Focus item
 type myFlex struct {
 	*tview.Flex
 	FocusedItem tview.Primitive
 }
 
+// tagPopup is used to edit tag, delete and fetch lyrics
 func tagPopup(node *AudioFile) (err error) {
 
 	popupID := "tag-editor-input-popup"
@@ -321,10 +323,6 @@ func tagPopup(node *AudioFile) (err error) {
 	rightFlex.SetDirection(tview.FlexColumn).
 		AddItem(lyricTextView, 0, 1, true)
 
-		// lyricFlex := tview.NewFlex().SetDirection(tview.FlexColumn).
-		// 	AddItem(leftGrid, 0, 2, true).
-		// 	AddItem(rightFlex, 0, 3, true)
-
 	lyricFlex := &myFlex{
 		tview.NewFlex().SetDirection(tview.FlexColumn).
 			AddItem(leftGrid, 0, 2, true).
@@ -382,6 +380,7 @@ func tagPopup(node *AudioFile) (err error) {
 	return err
 }
 
+// This is a hack to cycle Focus in a flex
 func (f *myFlex) cycleFocus(app *tview.Application, elements []tview.Primitive, reverse bool) {
 	for i, el := range elements {
 		if !el.HasFocus() {
@@ -404,24 +403,18 @@ func (f *myFlex) cycleFocus(app *tview.Application, elements []tview.Primitive, 
 	}
 }
 
+// Focus is an override of Focus function in tview.flex.
+// This is to ensure that the focus of flex remain unchanged
+// when returning from popups or search lists
 func (f *myFlex) Focus(delegate func(p tview.Primitive)) {
-	// if f.FocusedItem != nil {
-	// 	delegate(f.FocusedItem)
-	// } else {
-	// 	f.Focus(f.FocusedItem)
-	// }
-	// 	for _, item := range f.Focus.items {
-	// 	if item.Item != nil && item.Focus {
-	// 		delegate(item.Item)
-	// 		return
-	// 	}
-	// }
 	if f.FocusedItem != nil {
 		gomu.app.SetFocus(f.FocusedItem)
 	} else {
 		f.Flex.Focus(delegate)
 	}
 }
+
+// loadTagMap will load from tag and return a map of langExt to lyrics
 func loadTagMap(node *AudioFile) (tag *id3v2.Tag, popupLyricMap map[string]string, options []string, err error) {
 
 	popupLyricMap = make(map[string]string)

@@ -8,7 +8,7 @@ import (
 	"github.com/gocolly/colly"
 )
 
-// GetLyric should receive url that was returned from GetLyricOptions. GetLyric
+// getLyricEn should receive SongTag that was returned from GetLyricOptions, and
 // returns lyric of the queried song.
 func getLyricEn(songTag *SongTag) (string, error) {
 
@@ -37,8 +37,7 @@ func getLyricEn(songTag *SongTag) (string, error) {
 	return "", fmt.Errorf("lyric not compatible")
 }
 
-// GetLyricOptions queries available song lyrics. It returns map of title and
-// url of the lyric.
+// getLyricOptionsEn queries available song lyrics. It returns slice of SongTag
 func getLyricOptionsEn(search string) ([]*SongTag, error) {
 
 	var songTags []*SongTag

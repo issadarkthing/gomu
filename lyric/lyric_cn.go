@@ -10,8 +10,7 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-// GetLyricOptionsChinese queries available song lyrics. It returns map of title and
-// id of the lyric.
+// getLyricOptionsCn queries available song lyrics. It returns slice of SongTag
 func getLyricOptionsCn(search string) ([]*SongTag, error) {
 
 	serviceProvider := "netease"
@@ -26,24 +25,12 @@ func getLyricOptionsCn(search string) ([]*SongTag, error) {
 	}
 
 	results = append(results, results2...)
-	// var results3 []*SongTag
-	// for _, v := range results {
-	// 	flag := 0
-	// 	for _, k := range results {
-	// 		if v.TitleForPopup == k.TitleForPopup {
-	// 			flag++
-	// 		}
-	// 	}
-	// 	if flag < 2 {
-	// 		results3 = append(results3, v)
-	// 	}
-	// }
 
 	return results, err
 }
 
-// GetLyricCn should receive songTag that was returned from GetLyricOptionsCn. GetLyricCn
-// returns lyric of the queried song.
+// getLyricCn should receive songTag that was returned from getLyricOptionsCn
+// and returns lyric of the queried song.
 func getLyricCn(songTag *SongTag) (string, error) {
 
 	var lyric string
@@ -73,6 +60,7 @@ func getLyricCn(songTag *SongTag) (string, error) {
 	return "", errors.New("lyric not compatible")
 }
 
+// getLyricOptionsCnByProvider do the query by provider
 func getLyricOptionsCnByProvider(search string, serviceProvider string) ([]*SongTag, error) {
 
 	var resultTags []*SongTag
