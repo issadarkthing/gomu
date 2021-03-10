@@ -253,11 +253,6 @@ func (c Command) defineCommands() {
 
 	c.define("toggle_pause", func() {
 		gomu.player.TogglePause()
-		if gomu.player.IsRunning() {
-			gomu.playingBar.setSongTitle(gomu.player.GetCurrentSong().Name())
-		} else {
-			gomu.playingBar.setDefault()
-		}
 	})
 
 	c.define("volume_up", func() {
