@@ -3,7 +3,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -65,6 +64,10 @@ func (p *PlayingBar) run() error {
 			p.skip = false
 			p.progress = 0
 			break
+		}
+
+		if gomu.player.IsPaused() {
+			continue
 		}
 
 		p.progress = int(gomu.player.GetPosition().Seconds())
@@ -133,71 +136,42 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 	p.full = full
 	p.progress = 0
 	p.setSongTitle(currentSong.name)
-	p.hasTag = false
-	p.subtitles = nil
-	p.subtitle = nil
-	p.tag = nil
 
-	var tag *id3v2.Tag
-	var err error
-	tag, err = id3v2.Open(currentSong.path, id3v2.Options{Parse: true})
-	if tag == nil || err != nil {
-		logError(err)
-	} else {
-		p.hasTag = true
-		p.tag = tag
-
-		usltFrames := tag.GetFrames(tag.CommonID("Unsynchronised lyrics/text transcription"))
-
-		for _, f := range usltFrames {
-			uslf, ok := f.(id3v2.UnsynchronisedLyricsFrame)
-			if !ok {
-				die(errors.New("USLT error!"))
+	err := p.loadLyrics(currentSong.path)
+	if err != nil {
+		errorPopup(err)
+	}
+	langLyricFromConfig := gomu.anko.GetString("General.lang_lyric")
+	if langLyricFromConfig == "" {
+		langLyricFromConfig = "en"
+	}
+	if p.hasTag && p.subtitles != nil {
+		// First we check if the lyric language prefered is presented
+		for i := range p.subtitles {
+			if strings.Contains(langLyricFromConfig, p.subtitles[i].langExt) {
+				p.subtitle = p.subtitles[i].subtitle
+				p.langLyricCurrentPlaying = p.subtitles[i].langExt
+				break
 			}
-			// res, err := subtitles.Parse([]byte(uslf.Lyrics))
-			res, err := lyric.NewFromLRC(uslf.Lyrics)
-			if err != nil {
-				logError(err)
-			}
-			subtitle := &gomuSubtitle{
-				langExt:  uslf.ContentDescriptor,
-				subtitle: &res,
-			}
-			p.subtitles = append(p.subtitles, subtitle)
-			langLyricFromConfig := gomu.anko.GetString("General.lang_lyric")
-			if langLyricFromConfig == "" {
-				langLyricFromConfig = "en"
-			}
-			if p.hasTag && p.subtitles != nil {
-				// First we check if the lyric language prefered is presented
-				for i := range p.subtitles {
-					if strings.Contains(langLyricFromConfig, p.subtitles[i].langExt) {
-						p.subtitle = p.subtitles[i].subtitle
-						p.langLyricCurrentPlaying = p.subtitles[i].langExt
-						break
-					}
-				}
+		}
 
-				// Secondly we check if english lyric is available
-				if p.subtitle == nil {
-					for i := range p.subtitles {
-						if p.subtitles[i].langExt == "en" {
-							p.subtitle = p.subtitles[i].subtitle
-							p.langLyricCurrentPlaying = "en"
-							break
-						}
-					}
-				}
-
-				// Finally we display the first lyric
-				if p.subtitle == nil {
-					p.subtitle = p.subtitles[0].subtitle
-					p.langLyricCurrentPlaying = p.subtitles[0].langExt
+		// Secondly we check if english lyric is available
+		if p.subtitle == nil {
+			for i := range p.subtitles {
+				if p.subtitles[i].langExt == "en" {
+					p.subtitle = p.subtitles[i].subtitle
+					p.langLyricCurrentPlaying = "en"
+					break
 				}
 			}
 		}
+
+		// Finally we display the first lyric
+		if p.subtitle == nil {
+			p.subtitle = p.subtitles[0].subtitle
+			p.langLyricCurrentPlaying = p.subtitles[0].langExt
+		}
 	}
-	defer tag.Close()
 }
 
 // Sets default title and progress bar
@@ -215,16 +189,27 @@ func (p *PlayingBar) stop() {
 	p.skip = true
 }
 
+// When switch lyrics, we reload the lyrics from mp3 to reflect changes
 func (p *PlayingBar) switchLyrics() {
 
+	err := p.loadLyrics(gomu.player.GetCurrentSong().Path())
+	if err != nil {
+		errorPopup(err)
+	}
+	// no subtitle just ignore
 	if len(p.subtitles) == 0 {
 		return
 	}
 
+	// only 1 subtitle, prompt to the user and select this one
 	if len(p.subtitles) == 1 {
 		defaultTimedPopup(" Warning ", p.langLyricCurrentPlaying+" lyric is the only lyric available")
+		p.langLyricCurrentPlaying = p.subtitles[0].langExt
+		p.subtitle = p.subtitles[0].subtitle
 		return
 	}
+
+	// more than 1 subtitle, parse them and select next
 	var langIndex int
 	for i := range p.subtitles {
 		if p.subtitles[i].langExt == p.langLyricCurrentPlaying {
@@ -247,9 +232,49 @@ func (p *PlayingBar) switchLyrics() {
 func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 
 	p.subtitle.Offset += (time.Duration)(lyricDelay) * time.Millisecond
-	err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle.AsLRC(), p.langLyricCurrentPlaying)
+	err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle.AsLRC(), p.langLyricCurrentPlaying, false)
 	if err != nil {
 		return tracerr.Wrap(err)
+	}
+	return nil
+}
+
+func (p *PlayingBar) loadLyrics(currentSongPath string) error {
+	p.hasTag = false
+	p.tag = nil
+	p.subtitles = nil
+	p.subtitle = nil
+
+	var tag *id3v2.Tag
+	var err error
+	tag, err = id3v2.Open(currentSongPath, id3v2.Options{Parse: true})
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	defer tag.Close()
+
+	if tag == nil {
+		return nil
+	}
+	p.hasTag = true
+	p.tag = tag
+
+	usltFrames := tag.GetFrames(tag.CommonID("Unsynchronised lyrics/text transcription"))
+
+	for _, f := range usltFrames {
+		uslf, ok := f.(id3v2.UnsynchronisedLyricsFrame)
+		if !ok {
+			return fmt.Errorf("USLT error")
+		}
+		res, err := lyric.NewFromLRC(uslf.Lyrics)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+		subtitle := &gomuSubtitle{
+			langExt:  uslf.ContentDescriptor,
+			subtitle: &res,
+		}
+		p.subtitles = append(p.subtitles, subtitle)
 	}
 	return nil
 }

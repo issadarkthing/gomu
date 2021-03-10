@@ -126,7 +126,7 @@ func TestEmbedLyric(t *testing.T) {
 		}
 	}()
 
-	err = embedLyric(testFile, lyric, descriptor)
+	err = embedLyric(testFile, lyric, descriptor, false)
 	if err != nil {
 		t.Error(err)
 	}

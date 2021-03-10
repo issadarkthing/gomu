@@ -91,7 +91,7 @@ Each panel has it's own additional keybinding. To view the available keybinding 
 | /               |                find in playlist |
 | s               |       search audio from youtube |
 | t               |                   edit mp3 tags |
-| 1               |         find lyric if available |
+| 1/2             |         find lyric if available |
 
 | Key (Queue)     |                     Description |
 |:----------------|--------------------------------:|

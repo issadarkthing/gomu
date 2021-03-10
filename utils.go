@@ -13,11 +13,14 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/bogem/id3v2"
 	"github.com/ztrue/tracerr"
+
+	"github.com/issadarkthing/gomu/player"
 )
 
 // logError logs the error message.
@@ -242,7 +245,7 @@ func shell(input string) (string, error) {
 	return stdout.String(), nil
 }
 
-func embedLyric(songPath string, lyricContent string, usltContentDescriptor string) (err error) {
+func embedLyric(songPath string, lyricContent string, usltContentDescriptor string, isDelete bool) (err error) {
 	var tag *id3v2.Tag
 	tag, err = id3v2.Open(songPath, id3v2.Options{Parse: true})
 	if err != nil {
@@ -262,16 +265,71 @@ func embedLyric(songPath string, lyricContent string, usltContentDescriptor stri
 		}
 		tag.AddUnsynchronisedLyricsFrame(uslf)
 	}
-	tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
-		Encoding:          id3v2.EncodingUTF8,
-		Language:          "eng",
-		ContentDescriptor: usltContentDescriptor,
-		Lyrics:            lyricContent,
-	})
+	if !isDelete {
+		tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
+			Encoding:          id3v2.EncodingUTF8,
+			Language:          "eng",
+			ContentDescriptor: usltContentDescriptor,
+			Lyrics:            lyricContent,
+		})
+	}
+	err = tag.Save()
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	return err
+}
+
+func embedLength(songPath string) (err error) {
+	var tag *id3v2.Tag
+	tag, err = id3v2.Open(songPath, id3v2.Options{Parse: true})
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	defer tag.Close()
+
+	var lengthSongTimeDuration time.Duration
+	lengthSongTimeDuration, err = player.GetLength(songPath)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	lengthSongString := strconv.FormatInt(lengthSongTimeDuration.Milliseconds(), 10)
+	lengthFrame := id3v2.UserDefinedTextFrame{
+		Encoding:    id3v2.EncodingUTF8,
+		Description: "TLEN",
+		Value:       lengthSongString,
+	}
+	tag.AddUserDefinedTextFrame(lengthFrame)
 
 	err = tag.Save()
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
 	return err
+}
+
+func getTagLength(songPath string) (songLength time.Duration, err error) {
+	var tag *id3v2.Tag
+	tag, err = id3v2.Open(songPath, id3v2.Options{Parse: true})
+	if err != nil {
+		return 0, tracerr.Wrap(err)
+	}
+	defer tag.Close()
+	tlenFrames := tag.GetFrames(tag.CommonID("User defined text information frame"))
+	if tlenFrames == nil {
+		return 0, tracerr.Wrap(err)
+	}
+	for _, tlenFrame := range tlenFrames {
+		if tlenFrame.(id3v2.UserDefinedTextFrame).Description == "TLEN" {
+			songLengthString := tlenFrame.(id3v2.UserDefinedTextFrame).Value
+			songLengthInt64, err := strconv.ParseInt(songLengthString, 10, 64)
+			if err != nil {
+				return 0, tracerr.Wrap(err)
+			}
+			songLength = (time.Duration)(songLengthInt64) * time.Millisecond
+			break
+		}
+	}
+	return songLength, err
 }

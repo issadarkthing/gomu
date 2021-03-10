@@ -274,7 +274,7 @@ func layout(gomu *Gomu) *tview.Flex {
 		AddItem(gomu.playlist, 0, 1, false).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
 			AddItem(gomu.queue, 0, 5, false).
-			AddItem(gomu.playingBar, 9, 0, false), 0, 3, false)
+			AddItem(gomu.playingBar, 9, 0, false), 0, 2, false)
 
 	return flex
 }
@@ -322,17 +322,20 @@ func start(application *tview.Application, args Args) {
 	gomu.initPanels(application, args)
 
 	gomu.player.SetSongStart(func(audio player.Audio) {
-		name := audio.Name()
-		defaultTimedPopup(" Now Playing ", name)
 
-		duration, err := player.GetLength(audio.Path())
-		if err != nil {
-			logError(err)
-			return
+		duration, err := getTagLength(audio.Path())
+		if err != nil || duration == 0 {
+			duration, err = player.GetLength(audio.Path())
+			if err != nil {
+				logError(err)
+				return
+			}
 		}
 
 		audioFile := audio.(*AudioFile)
 		gomu.playingBar.newProgress(audioFile, int(duration.Seconds()))
+		name := audio.Name()
+		defaultTimedPopup(" Now Playing ", fmt.Sprintf("%s \n\n %s lyric loaded", name, gomu.playingBar.langLyricCurrentPlaying))
 
 		go func() {
 			err := gomu.playingBar.run()

@@ -18,8 +18,6 @@ import (
 	"github.com/rivo/tview"
 	spin "github.com/tj/go-spin"
 	"github.com/ztrue/tracerr"
-
-	"github.com/issadarkthing/gomu/player"
 )
 
 // AudioFile represents directories and mp3 files
@@ -75,7 +73,7 @@ func (p *Playlist) help() []string {
 		"/      find in playlist",
 		"s      search audio from youtube",
 		"t      edit mp3 tags",
-		"1/2/3 find lyric if available",
+		"1/2    find lyric if available",
 	}
 
 }
@@ -185,7 +183,6 @@ func newPlaylist(args Args) *Playlist {
 			't': "edit_tags",
 			'1': "fetch_lyric",
 			'2': "fetch_lyric_cn2",
-			'3': "fetch_lyric_cn3",
 		}
 
 		for key, cmd := range cmds {
@@ -342,7 +339,12 @@ func (p *Playlist) addSongToPlaylist(
 	songName := getName(audioPath)
 	node := tview.NewTreeNode(songName)
 
-	audioLength, err := player.GetLength(audioPath)
+	err = embedLength(audioPath)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	populateAudioLength(selPlaylist)
+	audioLength, err := getTagLength(audioPath)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -629,7 +631,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 			}
 			lyricContent := string(byteContent)
 
-			err = embedLyric(audioPath, lyricContent, langExt)
+			err = embedLyric(audioPath, lyricContent, langExt, false)
 			if err != nil {
 				return tracerr.Wrap(err)
 			}
@@ -806,10 +808,18 @@ func populateAudioLength(root *tview.TreeNode) error {
 	root.Walk(func(node *tview.TreeNode, _ *tview.TreeNode) bool {
 		audioFile := node.GetReference().(*AudioFile)
 		if audioFile.isAudioFile {
-			audioLength, err := player.GetLength(audioFile.path)
-			if err != nil {
-				logError(err)
-				return false
+			audioLength, err := getTagLength(audioFile.path)
+			if err != nil || audioLength == 0 {
+				err = embedLength(audioFile.path)
+				if err != nil {
+					logError(err)
+					return false
+				}
+				audioLength, err = getTagLength(audioFile.path)
+				if err != nil {
+					logError(err)
+					return false
+				}
 			}
 			audioFile.length = audioLength
 		}

@@ -115,7 +115,7 @@ func NewFromLRC(s string) (res Lyric, err error) {
 	return
 }
 
-// parseSrtTime parses a lrc subtitle time (duration since start of film)
+// parseLrcTime parses a lrc subtitle time (duration since start of film)
 func parseLrcTime(in string) (time.Time, error) {
 	in = strings.TrimPrefix(in, "[")
 	in = strings.TrimSuffix(in, "]")
@@ -166,7 +166,7 @@ func cleanLRC(s string) (cleanLyric string) {
 	return cleanLyric
 }
 
-// AsLRC renders the sub in .srt format
+// AsLRC renders the sub in .lrc format
 func (lyric Lyric) AsLRC() (res string) {
 
 	if lyric.Offset != 0 {
@@ -181,7 +181,7 @@ func (lyric Lyric) AsLRC() (res string) {
 	return
 }
 
-// AsLRC renders the caption as srt
+// AsLRC renders the caption as one line in lrc
 func (cap Caption) AsLRC() string {
 	// res := fmt.Sprintf("%d", cap.Caption.Seq) + eol +
 	// 	TimeLRC(cap.Caption.Start) + " --> " + TimeLRC(cap.Caption.End) + eol

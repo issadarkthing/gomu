@@ -10,7 +10,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/bogem/id3v2"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/sahilm/fuzzy"
@@ -23,6 +22,7 @@ import (
 
 // this is used to make the popup unique
 // this mitigates the issue of closing all popups when timeout ends
+
 var (
 	popupCounter = 0
 )
@@ -837,80 +837,16 @@ func ytSearchPopup() {
 	})
 }
 
-func tagPopup(node *AudioFile) (err error) {
-	var tag *id3v2.Tag
-	if node.isAudioFile {
-		tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
-		if err != nil {
-			return tracerr.Wrap(err)
-		}
-		defer tag.Close()
-	} else {
-		return nil
-	}
+func lyricPopup(lang string, audioFile *AudioFile) error {
 
-	popupID := "tag-input-popup"
-
-	form := tview.NewForm().
-		AddInputField("Artist", tag.Artist(), 20, nil, nil).
-		AddInputField("Title", tag.Title(), 20, nil, nil).
-		AddInputField("Album", tag.Album(), 20, nil, nil)
-
-	form.SetFieldBackgroundColor(gomu.colors.popup).
-		SetBackgroundColor(gomu.colors.popup).
-		SetTitle(node.name).
-		SetBorder(true).
-		SetBorderPadding(1, 0, 2, 2)
-
-	gomu.pages.
-		AddPage(popupID, center(form, 60, 10), true, true)
-	gomu.popups.push(form)
-
-	form.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
-		switch e.Key() {
-		case tcell.KeyEnter:
-			tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
-			if err != nil {
-				errorPopup(err)
-			}
-			tagArtist := form.GetFormItemByLabel("Artist").(*tview.InputField).GetText()
-			tagTitle := form.GetFormItemByLabel("Title").(*tview.InputField).GetText()
-			tag.SetArtist(tagArtist)
-			tag.SetTitle(tagTitle)
-			tag.SetAlbum(form.GetFormItemByLabel("Album").(*tview.InputField).GetText())
-			err := tag.Save()
-			if err != nil {
-				errorPopup(err)
-				gomu.pages.RemovePage(popupID)
-				gomu.popups.pop()
-				return e
-			}
-
-			defaultTimedPopup(" Success ", "Tag update successfully")
-			gomu.pages.RemovePage(popupID)
-			gomu.popups.pop()
-
-		case tcell.KeyEsc:
-			gomu.pages.RemovePage(popupID)
-			gomu.popups.pop()
-		}
-
-		return e
-	})
-	return err
-}
-
-func lyricPopup(audioFile *AudioFile) error {
-
-	results, err := lyric.GetLyricOptions(audioFile.name)
+	var titles []string
+	results, err := lyric.GetLyricOptions(lang, audioFile.name)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
 
-	titles := make([]string, 0, len(results))
-
-	for result := range results {
-		titles = append(titles, result)
+	for _, v := range results {
+		titles = append(titles, v.TitleForPopup)
 	}
 
 	searchPopup(" Lyrics ", titles, func(selected string) {
@@ -919,63 +855,25 @@ func lyricPopup(audioFile *AudioFile) error {
 		}
 
 		go func() {
-			url := results[selected]
-			lyric, err := lyric.GetLyric(url)
+			var selectedIndex int
+			for i, v := range results {
+				if v.TitleForPopup == selected {
+					selectedIndex = i
+					break
+				}
+			}
+			lyric, err := lyric.GetLyric(results[selectedIndex].LangExt, results[selectedIndex])
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
 			}
 
-			langExt := "en"
-			err = embedLyric(audioFile.path, lyric, langExt)
+			err = embedLyric(audioFile.path, lyric, lang, false)
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
 			} else {
-				infoPopup("Lyric added successfully")
-				gomu.app.Draw()
-			}
-
-		}()
-	})
-
-	return nil
-}
-
-func lyricPopupCN(audioFile *AudioFile, serviceProvider string) error {
-
-	results, err := lyric.GetLyricOptionsChinese(audioFile.name, serviceProvider)
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-
-	titles := make([]string, 0, len(results))
-
-	for result := range results {
-		titles = append(titles, result)
-	}
-
-	searchPopup(" Lyrics ", titles, func(selected string) {
-		if selected == "" {
-			return
-		}
-
-		go func() {
-			lyricID := results[selected]
-			lyric, err := lyric.GetLyricChinese(lyricID, serviceProvider)
-			if err != nil {
-				errorPopup(err)
-				gomu.app.Draw()
-				return
-			}
-
-			langExt := "zh-CN"
-			err = embedLyric(audioFile.path, lyric, langExt)
-			if err != nil {
-				errorPopup(err)
-				gomu.app.Draw()
-			} else {
-				infoPopup("Lyric added successfully")
+				infoPopup(lang + " lyric added successfully")
 				gomu.app.Draw()
 			}
 
