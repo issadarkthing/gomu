@@ -67,6 +67,7 @@ func (p *PlayingBar) run() error {
 		}
 
 		if gomu.player.IsPaused() {
+			time.Sleep(1 * time.Second)
 			continue
 		}
 
