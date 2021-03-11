@@ -110,7 +110,6 @@ func (p *PlayingBar) run() error {
 		}
 
 		gomu.app.QueueUpdateDraw(func() {
-			p.text.Clear()
 			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n\n%v",
 				fmtDuration(start),
 				progressBar,
