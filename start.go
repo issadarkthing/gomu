@@ -473,7 +473,7 @@ func start(application *tview.Application, args Args) {
 
 	init := false
 	gomu.app.SetAfterDrawFunc(func(_ tcell.Screen) {
-		if !init && !gomu.player.IsRunning() {
+		if !init && len(gomu.queue.items) == 0 {
 			gomu.playingBar.setDefault()
 			init = true
 		}
