@@ -38,9 +38,8 @@ type Lyric struct {
 }
 
 type Caption struct {
-	Seq   int
-	Start time.Time
-	Text  []string
+	Timestamp time.Time
+	Text      string
 }
 
 // Eol is the end of line characters to use when writing .srt data
@@ -94,9 +93,8 @@ func NewFromLRC(s string) (res Lyric, err error) {
 		}
 
 		var o Caption
-		o.Seq = outSeq
 
-		o.Start, err = parseLrcTime(matchStart[0])
+		o.Timestamp, err = parseLrcTime(matchStart[0])
 		if err != nil {
 			err = fmt.Errorf("lrc: start error at line %d: %v", i, err)
 			break
@@ -105,7 +103,7 @@ func NewFromLRC(s string) (res Lyric, err error) {
 		r2 := regexp.MustCompile(`^\[.*\]`)
 		s2 := r2.ReplaceAllString(lines[i], "$1")
 		s3 := strings.Trim(s2, "\r ")
-		o.Text = append(o.Text, s3)
+		o.Text = s3
 		// Seems that empty lines are useful and shouldn't be deleted
 		// if len(o.Text) > 0 {
 		res.Captions = append(res.Captions, o)
@@ -168,7 +166,6 @@ func cleanLRC(s string) (cleanLyric string) {
 
 // AsLRC renders the sub in .lrc format
 func (lyric Lyric) AsLRC() (res string) {
-
 	if lyric.Offset != 0 {
 		intOffset := int(lyric.Offset.Milliseconds())
 		stringOffset := strconv.Itoa(intOffset)
@@ -183,16 +180,12 @@ func (lyric Lyric) AsLRC() (res string) {
 
 // AsLRC renders the caption as one line in lrc
 func (cap Caption) AsLRC() string {
-	// res := fmt.Sprintf("%d", cap.Caption.Seq) + eol +
-	// 	TimeLRC(cap.Caption.Start) + " --> " + TimeLRC(cap.Caption.End) + eol
-	res := "[" + TimeLRC(cap.Start) + "]"
-	for _, line := range cap.Text {
-		res += line + eol
-	}
+	res := "[" + TimeLRC(cap.Timestamp) + "]"
+	res += cap.Text + eol
 	return res
 }
 
-// TimeLRC renders a timestamp for use in .srt
+// TimeLRC renders a timestamp for use in .lrc
 func TimeLRC(t time.Time) string {
 	res := t.Format("04:05.00")
 	// return strings.Replace(res, ".", ",", 1)

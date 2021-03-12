@@ -90,10 +90,10 @@ func (p *PlayingBar) run() error {
 		var lyricText string
 		if p.subtitle != nil {
 			for i := range p.subtitle.Captions {
-				startTime := p.subtitle.Captions[i].Start.Add(p.subtitle.Offset)
+				startTime := p.subtitle.Captions[i].Timestamp.Add(p.subtitle.Offset)
 				var endTime time.Time
 				if i < len(p.subtitle.Captions)-1 {
-					endTime = p.subtitle.Captions[i+1].Start.Add(p.subtitle.Offset)
+					endTime = p.subtitle.Captions[i+1].Timestamp.Add(p.subtitle.Offset)
 				} else {
 					// Here we display the last lyric until the end of song
 					endTime = time.Date(0, 1, 1, 0, 0, p.full, 0, time.UTC)
@@ -101,7 +101,7 @@ func (p *PlayingBar) run() error {
 
 				currentTime := time.Date(0, 1, 1, 0, 0, p.progress, 0, time.UTC)
 				if currentTime.After(startTime.Add(-1*time.Second)) && currentTime.Before(endTime) {
-					lyricText = strings.Join(p.subtitle.Captions[i].Text, " ")
+					lyricText = p.subtitle.Captions[i].Text
 					break
 				} else {
 					lyricText = ""
@@ -231,10 +231,12 @@ func (p *PlayingBar) switchLyrics() {
 
 func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 
-	p.subtitle.Offset += (time.Duration)(lyricDelay) * time.Millisecond
-	err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle.AsLRC(), p.langLyricCurrentPlaying, false)
-	if err != nil {
-		return tracerr.Wrap(err)
+	if p.subtitle != nil {
+		p.subtitle.Offset += (time.Duration)(lyricDelay) * time.Millisecond
+		err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle.AsLRC(), p.langLyricCurrentPlaying, false)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
 	}
 	return nil
 }
@@ -276,5 +278,34 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		}
 		p.subtitles = append(p.subtitles, subtitle)
 	}
+
+	// loading syltFrames if available
+	syltFrames := tag.GetFrames(tag.CommonID("Synchronised lyrics/text"))
+
+	for _, f := range syltFrames {
+		sylf, ok := f.(id3v2.SynchronisedLyricsFrame)
+		if !ok {
+			return fmt.Errorf("sylt error")
+		}
+
+		var res []lyric.Caption
+		for _, v := range sylf.SynchronizedTexts {
+			var cap lyric.Caption
+			timeStamp := int(v.Timestamp)
+			cap.Timestamp = time.Date(0, 1, 1, 0, 0, 0, timeStamp*1000*1000, time.UTC)
+			cap.Text = v.Text
+			res = append(res, cap)
+		}
+
+		lyric := lyric.Lyric{
+			Captions: res,
+		}
+		subtitle := &gomuSubtitle{
+			langExt:  sylf.ContentDescriptor + " SYNC",
+			subtitle: &lyric,
+		}
+		p.subtitles = append(p.subtitles, subtitle)
+	}
+
 	return nil
 }

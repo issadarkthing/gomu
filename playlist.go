@@ -339,11 +339,7 @@ func (p *Playlist) addSongToPlaylist(
 	songName := getName(audioPath)
 	node := tview.NewTreeNode(songName)
 
-	err = embedLength(audioPath)
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-	populateAudioLength(selPlaylist)
+	// populateAudioLength(selPlaylist)
 	audioLength, err := getTagLength(audioPath)
 	if err != nil {
 		return tracerr.Wrap(err)
@@ -809,17 +805,9 @@ func populateAudioLength(root *tview.TreeNode) error {
 		audioFile := node.GetReference().(*AudioFile)
 		if audioFile.isAudioFile {
 			audioLength, err := getTagLength(audioFile.path)
-			if err != nil || audioLength == 0 {
-				err = embedLength(audioFile.path)
-				if err != nil {
-					logError(err)
-					return false
-				}
-				audioLength, err = getTagLength(audioFile.path)
-				if err != nil {
-					logError(err)
-					return false
-				}
+			if err != nil {
+				logError(err)
+				return false
 			}
 			audioFile.length = audioLength
 		}

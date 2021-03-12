@@ -6,12 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/bogem/id3v2"
 	"github.com/gdamore/tcell/v2"
-	"github.com/issadarkthing/gomu/lyric"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
+
+	"github.com/issadarkthing/gomu/lyric"
 )
 
 // myFlex extend the flex control to modify the Focus item
@@ -193,7 +195,11 @@ func tagPopup(node *AudioFile) (err error) {
 		SetFieldTextColor(gomu.colors.accent).
 		SetPrefixTextColor(gomu.colors.accent).
 		SetLabel("Fetch Lyrics: ")
-	lyricDropDown.SetBackgroundColor(gomu.colors.popup)
+	getLyricDropDown.SetBackgroundColor(gomu.colors.popup)
+	langLyricFromConfig := gomu.anko.GetString("General.lang_lyric")
+	if strings.Contains(langLyricFromConfig, "zh-CN") {
+		getLyricDropDown.SetCurrentOption(1)
+	}
 
 	getLyricButton.SetSelectedFunc(func() {
 
@@ -370,9 +376,12 @@ func tagPopup(node *AudioFile) (err error) {
 		}
 
 		switch e.Rune() {
-		case '1':
-		case '2':
-		case '3':
+		case 'q':
+			if artistInputField.HasFocus() || titleInputField.HasFocus() || albumInputField.HasFocus() {
+				return e
+			}
+			gomu.pages.RemovePage(popupID)
+			gomu.popups.pop()
 		}
 		return e
 	})
