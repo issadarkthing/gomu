@@ -335,7 +335,16 @@ func start(application *tview.Application, args Args) {
 		audioFile := audio.(*AudioFile)
 		gomu.playingBar.newProgress(audioFile, int(duration.Seconds()))
 		name := audio.Name()
-		defaultTimedPopup(" Now Playing ", fmt.Sprintf("%s \n\n %s lyric loaded", name, gomu.playingBar.langLyricCurrentPlaying))
+		var description string
+
+		if len(gomu.playingBar.subtitles) == 0 {
+			description = name
+		} else {
+			lang := gomu.playingBar.langLyricCurrentPlaying
+			description = fmt.Sprintf("%s \n\n %s lyric loaded", name, lang)
+		}
+
+		defaultTimedPopup(" Now Playing ", description)
 
 		go func() {
 			err := gomu.playingBar.run()
