@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	// "io"
 	"log"
 	"net/http"
 	"os"
@@ -297,10 +298,9 @@ func embedSyncLyric(songPath string, lyricContent string, usltContentDescriptor 
 	}
 	defer tag.Close()
 
+	// We delete the lyric frame with same language by delete all and add others back
 	syltFrames := tag.GetFrames(tag.CommonID("Synchronised lyrics/text"))
 	tag.DeleteFrames(tag.CommonID("Synchronised lyrics/text"))
-
-	// We delete the lyric frame with same language by delete all and add others back
 	for _, f := range syltFrames {
 		sylf, ok := f.(id3v2.SynchronisedLyricsFrame)
 		if !ok {
@@ -320,15 +320,22 @@ func embedSyncLyric(songPath string, lyricContent string, usltContentDescriptor 
 
 		var syncedTextSlice []id3v2.SyncedText
 		for _, v := range lyric.Captions {
-			timeStampDuration := v.Timestamp.Sub(time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC))
-			timeStampDuration += lyric.Offset
-			timeStamp := timeStampDuration.Milliseconds()
-			if timeStamp < 0 {
-				timeStamp = 0
+			// timeStampDuration := v.Timestamp.Sub(time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC))
+			// timeStampDuration += lyric.Offset
+			// timeStamp := timeStampDuration.Milliseconds()
+			timeStamp := v.Timestamp
+			if lyric.Offset >= 0 {
+				timeStamp += uint32(lyric.Offset)
+			} else {
+				if timeStamp > uint32(-lyric.Offset) {
+					timeStamp -= uint32(-lyric.Offset)
+				} else {
+					timeStamp = 0
+				}
 			}
 			syncedText := id3v2.SyncedText{
 				Text:      v.Text,
-				Timestamp: uint32(timeStamp),
+				Timestamp: timeStamp,
 			}
 			syncedTextSlice = append(syncedTextSlice, syncedText)
 		}
@@ -338,7 +345,7 @@ func embedSyncLyric(songPath string, lyricContent string, usltContentDescriptor 
 			Language:          "eng",
 			TimestampFormat:   2,
 			ContentType:       1,
-			ContentDescriptor: usltContentDescriptor,
+			ContentDescriptor: usltContentDescriptor + " Sync",
 			SynchronizedTexts: syncedTextSlice,
 		})
 	}
@@ -418,3 +425,27 @@ func getTagLength(songPath string) (songLength time.Duration, err error) {
 
 	return songLength, err
 }
+
+//func extractLyrics() error {
+
+//	for _, v := range gomu.playingBar.subtitles {
+//		tmpLyric := v.subtitle.AsLRC()
+//		//Fixme
+//		filename := "/home/tramhao/new-." + v.langExt + ".lrc"
+//		file, _ := os.Create(filename)
+//		defer file.Close()
+
+//		io.WriteString(file, tmpLyric)
+//	}
+//	return nil
+//}
+
+//func debugSaveLyric(lyric *lyric.Lyric, filename string) {
+//	tmpLyric := lyric.AsLRC()
+//	//Fixme
+//	file, _ := os.Create(filename)
+//	defer file.Close()
+
+//	io.WriteString(file, tmpLyric)
+
+//}

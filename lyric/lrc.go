@@ -29,16 +29,16 @@ import (
 type Lyric struct {
 	Album               string
 	Artist              string
-	ByCreator           string        // Creator of LRC file
-	Offset              time.Duration // positive means delay lyric
-	RePlayerEditor      string        // Player or Editor to create this LRC file
+	ByCreator           string // Creator of LRC file
+	Offset              int32  // positive means delay lyric
+	RePlayerEditor      string // Player or Editor to create this LRC file
 	Title               string
 	VersionPlayerEditor string // Version of player or editor
 	Captions            []Caption
 }
 
 type Caption struct {
-	Timestamp time.Time
+	Timestamp uint32
 	Text      string
 }
 
@@ -64,7 +64,6 @@ func looksLikeLRC(s string) bool {
 func NewFromLRC(s string) (res Lyric, err error) {
 	s = cleanLRC(s)
 	lines := strings.Split(s, "\n")
-	outSeq := 1
 
 	for i := 0; i < len(lines)-1; i++ {
 		seq := strings.Trim(lines[i], "\r ")
@@ -81,7 +80,7 @@ func NewFromLRC(s string) (res Lyric, err error) {
 			if err != nil {
 				return res, tracerr.Wrap(err)
 			}
-			res.Offset = (time.Duration)(intOffset) * time.Millisecond
+			res.Offset = int32(intOffset)
 		}
 
 		r1 := regexp.MustCompile(`(?U)^\[[0-9].*\]`)
@@ -104,17 +103,13 @@ func NewFromLRC(s string) (res Lyric, err error) {
 		s2 := r2.ReplaceAllString(lines[i], "$1")
 		s3 := strings.Trim(s2, "\r ")
 		o.Text = s3
-		// Seems that empty lines are useful and shouldn't be deleted
-		// if len(o.Text) > 0 {
 		res.Captions = append(res.Captions, o)
-		outSeq++
-		// }
 	}
 	return
 }
 
 // parseLrcTime parses a lrc subtitle time (duration since start of film)
-func parseLrcTime(in string) (time.Time, error) {
+func parseLrcTime(in string) (uint32, error) {
 	in = strings.TrimPrefix(in, "[")
 	in = strings.TrimSuffix(in, "]")
 	// . and , to :
@@ -128,28 +123,27 @@ func parseLrcTime(in string) (time.Time, error) {
 	r1 := regexp.MustCompile("([0-9]+):([0-9]+):([0-9]+):([0-9]+)")
 	matches := r1.FindStringSubmatch(in)
 	if len(matches) < 5 {
-		return time.Now(), fmt.Errorf("[lrc] Regexp didnt match: %s", in)
+		return 0, fmt.Errorf("[lrc] Regexp didnt match: %s", in)
 	}
-	h := 0
 	m, err := strconv.Atoi(matches[1])
 	if err != nil {
-		return time.Now(), err
+		return 0, err
 	}
 	s, err := strconv.Atoi(matches[2])
 	if err != nil {
-		return time.Now(), err
+		return 0, err
 	}
 	ms, err := strconv.Atoi(matches[3])
 	if err != nil {
-		return time.Now(), err
+		return 0, err
 	}
 
-	return makeTime(h, m, s, ms), nil
-}
+	timeStamp := m*60*1000 + s*1000 + ms
+	if timeStamp < 0 {
+		timeStamp = 0
+	}
 
-// makeTime is a helper to create a time duration
-func makeTime(h int, m int, s int, ms int) time.Time {
-	return time.Date(0, 1, 1, h, m, s, ms*1000*1000, time.UTC)
+	return uint32(timeStamp), nil
 }
 
 // cleanLRC clean the string download
@@ -157,7 +151,7 @@ func cleanLRC(s string) (cleanLyric string) {
 	// Clean &apos; to '
 	s = strings.ToValidUTF8(s, " ")
 	s = strings.Replace(s, "&apos;", "'", -1)
-	// It's wierd that sometimes there are two ajacent ''.
+	// It's weird that sometimes there are two adjacent ''.
 	// Replace it anyway
 	cleanLyric = strings.Replace(s, "''", "'", -1)
 
@@ -167,8 +161,7 @@ func cleanLRC(s string) (cleanLyric string) {
 // AsLRC renders the sub in .lrc format
 func (lyric Lyric) AsLRC() (res string) {
 	if lyric.Offset != 0 {
-		intOffset := int(lyric.Offset.Milliseconds())
-		stringOffset := strconv.Itoa(intOffset)
+		stringOffset := strconv.Itoa(int(lyric.Offset))
 		res += "[offset:" + stringOffset + "]" + eol
 	}
 
@@ -186,8 +179,18 @@ func (cap Caption) AsLRC() string {
 }
 
 // TimeLRC renders a timestamp for use in .lrc
-func TimeLRC(t time.Time) string {
-	res := t.Format("04:05.00")
+func TimeLRC(t uint32) string {
+	tDuration := time.Duration(t) * time.Millisecond
+	h := tDuration / time.Hour
+	tDuration -= h * time.Hour
+	m := tDuration / time.Minute
+	tDuration -= m * time.Minute
+	s := tDuration / time.Second
+	tDuration -= s * time.Second
+	ms := tDuration / time.Millisecond
+
+	res := fmt.Sprintf("%02d:%02d.%03d", m, s, ms)
+	// res := tDuration.Format("04:05.00")
 	// return strings.Replace(res, ".", ",", 1)
 	return res
 }
