@@ -320,9 +320,6 @@ func embedSyncLyric(songPath string, lyricContent string, usltContentDescriptor 
 
 		var syncedTextSlice []id3v2.SyncedText
 		for _, v := range lyric.Captions {
-			// timeStampDuration := v.Timestamp.Sub(time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC))
-			// timeStampDuration += lyric.Offset
-			// timeStamp := timeStampDuration.Milliseconds()
 			timeStamp := v.Timestamp
 			if lyric.Offset >= 0 {
 				timeStamp += uint32(lyric.Offset)
@@ -345,7 +342,7 @@ func embedSyncLyric(songPath string, lyricContent string, usltContentDescriptor 
 			Language:          "eng",
 			TimestampFormat:   2,
 			ContentType:       1,
-			ContentDescriptor: usltContentDescriptor + " Sync",
+			ContentDescriptor: usltContentDescriptor,
 			SynchronizedTexts: syncedTextSlice,
 		})
 	}

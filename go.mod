@@ -2,9 +2,9 @@ module github.com/issadarkthing/gomu
 
 go 1.14
 
-replace github.com/bogem/id3v2 v1.2.0 => /home/tramhao/.local/src/id3v2
+// replace github.com/bogem/id3v2 v1.2.0 => /home/tramhao/.local/src/id3v2
 
-// replace github.com/bogem/id3v2 v1.2.0 => github.com/tramhao/id3v2 v1.2.1-0.20210312170538-66359bf3a82d
+replace github.com/bogem/id3v2 v1.2.0 => github.com/tramhao/id3v2 v1.2.1-0.20210314184634-d13ef0e6c7e8
 
 require (
 	github.com/PuerkitoBio/goquery v1.6.1 // indirect

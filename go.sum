@@ -94,6 +94,8 @@ github.com/tramhao/id3v2 v1.2.1-0.20210312065634-d90e31d07ff0 h1:E7hGI929X/GMlik
 github.com/tramhao/id3v2 v1.2.1-0.20210312065634-d90e31d07ff0/go.mod h1:4jmC9bwoDhtGTsDkEBwSUlUgJq/D+8w4626jvM1Oo1k=
 github.com/tramhao/id3v2 v1.2.1-0.20210312170538-66359bf3a82d h1:AOeJZc5ajdVbRNiq41266b+P341CAXwZO8OdRvPmN9c=
 github.com/tramhao/id3v2 v1.2.1-0.20210312170538-66359bf3a82d/go.mod h1:4jmC9bwoDhtGTsDkEBwSUlUgJq/D+8w4626jvM1Oo1k=
+github.com/tramhao/id3v2 v1.2.1-0.20210314184634-d13ef0e6c7e8 h1:MfHRPlPLDZKr0cPNAt7M+ZiHhFAS9NNK7Pkg45CGutA=
+github.com/tramhao/id3v2 v1.2.1-0.20210314184634-d13ef0e6c7e8/go.mod h1:4jmC9bwoDhtGTsDkEBwSUlUgJq/D+8w4626jvM1Oo1k=
 github.com/ztrue/tracerr v0.3.0 h1:lDi6EgEYhPYPnKcjsYzmWw4EkFEoA/gfe+I9Y5f+h6Y=
 github.com/ztrue/tracerr v0.3.0/go.mod h1:qEalzze4VN9O8tnhBXScfCrmoJo10o8TN5ciKjm6Mww=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=

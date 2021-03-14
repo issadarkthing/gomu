@@ -31,6 +31,7 @@ type PlayingBar struct {
 
 type gomuSubtitle struct {
 	langExt  string
+	isSync   bool
 	subtitle *lyric.Lyric
 }
 
@@ -146,22 +147,26 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 		langLyricFromConfig = "en"
 	}
 	if p.hasTag && p.subtitles != nil {
-		// First we check if the lyric language prefered is presented
-		for i := range p.subtitles {
-			if strings.Contains(langLyricFromConfig, p.subtitles[i].langExt) {
-				p.subtitle = p.subtitles[i].subtitle
-				p.langLyricCurrentPlaying = p.subtitles[i].langExt
-				break
+		// First we check if the lyric language preferred is presented
+		for _, v := range p.subtitles {
+			if strings.Contains(langLyricFromConfig, v.langExt) {
+				p.subtitle = v.subtitle
+				p.langLyricCurrentPlaying = v.langExt
+				if v.isSync {
+					break
+				}
 			}
 		}
 
 		// Secondly we check if english lyric is available
 		if p.subtitle == nil {
-			for i := range p.subtitles {
-				if p.subtitles[i].langExt == "en" {
-					p.subtitle = p.subtitles[i].subtitle
+			for _, v := range p.subtitles {
+				if v.langExt == "en" {
+					p.subtitle = v.subtitle
 					p.langLyricCurrentPlaying = "en"
-					break
+					if v.isSync {
+						break
+					}
 				}
 			}
 		}
@@ -278,6 +283,7 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		}
 		subtitle := &gomuSubtitle{
 			langExt:  uslf.ContentDescriptor,
+			isSync:   false,
 			subtitle: &res,
 		}
 		p.subtitles = append(p.subtitles, subtitle)
@@ -305,6 +311,7 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		}
 		subtitle := &gomuSubtitle{
 			langExt:  sylf.ContentDescriptor,
+			isSync:   true,
 			subtitle: &lyric,
 		}
 		p.subtitles = append(p.subtitles, subtitle)

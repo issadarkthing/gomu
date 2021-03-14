@@ -87,7 +87,7 @@ func NewFromLRC(s string) (res Lyric, err error) {
 		matchStart := r1.FindStringSubmatch(lines[i])
 
 		if len(matchStart) < 1 {
-			// Here we continue to parse the subtitle and ignore the lines have no startTime
+			// Here we continue to parse the subtitle and ignore the lines have no timestamp
 			continue
 		}
 
@@ -108,7 +108,7 @@ func NewFromLRC(s string) (res Lyric, err error) {
 	return
 }
 
-// parseLrcTime parses a lrc subtitle time (duration since start of film)
+// parseLrcTime parses a lrc subtitle time (ms since start of song)
 func parseLrcTime(in string) (uint32, error) {
 	in = strings.TrimPrefix(in, "[")
 	in = strings.TrimSuffix(in, "]")
