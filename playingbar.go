@@ -31,6 +31,7 @@ type PlayingBar struct {
 
 type gomuSubtitle struct {
 	langExt  string
+	isSync   bool
 	subtitle *lyric.Lyric
 }
 
@@ -90,18 +91,18 @@ func (p *PlayingBar) run() error {
 		var lyricText string
 		if p.subtitle != nil {
 			for i := range p.subtitle.Captions {
-				startTime := p.subtitle.Captions[i].Start.Add(p.subtitle.Offset)
-				var endTime time.Time
+				startTime := int32(p.subtitle.Captions[i].Timestamp) + p.subtitle.Offset
+				var endTime int32
 				if i < len(p.subtitle.Captions)-1 {
-					endTime = p.subtitle.Captions[i+1].Start.Add(p.subtitle.Offset)
+					endTime = int32(p.subtitle.Captions[i+1].Timestamp) + p.subtitle.Offset
 				} else {
 					// Here we display the last lyric until the end of song
-					endTime = time.Date(0, 1, 1, 0, 0, p.full, 0, time.UTC)
+					endTime = int32(p.full * 1000)
 				}
 
-				currentTime := time.Date(0, 1, 1, 0, 0, p.progress, 0, time.UTC)
-				if currentTime.After(startTime.Add(-1*time.Second)) && currentTime.Before(endTime) {
-					lyricText = strings.Join(p.subtitle.Captions[i].Text, " ")
+				currentTime := int32(p.progress * 1000)
+				if currentTime >= startTime && currentTime <= endTime {
+					lyricText = p.subtitle.Captions[i].Text
 					break
 				} else {
 					lyricText = ""
@@ -146,22 +147,26 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 		langLyricFromConfig = "en"
 	}
 	if p.hasTag && p.subtitles != nil {
-		// First we check if the lyric language prefered is presented
-		for i := range p.subtitles {
-			if strings.Contains(langLyricFromConfig, p.subtitles[i].langExt) {
-				p.subtitle = p.subtitles[i].subtitle
-				p.langLyricCurrentPlaying = p.subtitles[i].langExt
-				break
+		// First we check if the lyric language preferred is presented
+		for _, v := range p.subtitles {
+			if strings.Contains(langLyricFromConfig, v.langExt) {
+				p.subtitle = v.subtitle
+				p.langLyricCurrentPlaying = v.langExt
+				if v.isSync {
+					break
+				}
 			}
 		}
 
 		// Secondly we check if english lyric is available
 		if p.subtitle == nil {
-			for i := range p.subtitles {
-				if p.subtitles[i].langExt == "en" {
-					p.subtitle = p.subtitles[i].subtitle
+			for _, v := range p.subtitles {
+				if v.langExt == "en" {
+					p.subtitle = v.subtitle
 					p.langLyricCurrentPlaying = "en"
-					break
+					if v.isSync {
+						break
+					}
 				}
 			}
 		}
@@ -224,6 +229,10 @@ func (p *PlayingBar) switchLyrics() {
 
 	p.langLyricCurrentPlaying = p.subtitles[langIndex].langExt
 	p.subtitle = p.subtitles[langIndex].subtitle
+	// Fixme
+	// for _, v := range p.subtitles {
+	// 	debugSaveLyric(v.subtitle, "/home/tramhao/new"+v.langExt+".lrc")
+	// }
 
 	defaultTimedPopup(" Success ", p.langLyricCurrentPlaying+" lyric switched successfully.")
 
@@ -231,10 +240,12 @@ func (p *PlayingBar) switchLyrics() {
 
 func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 
-	p.subtitle.Offset += (time.Duration)(lyricDelay) * time.Millisecond
-	err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle.AsLRC(), p.langLyricCurrentPlaying, false)
-	if err != nil {
-		return tracerr.Wrap(err)
+	if p.subtitle != nil {
+		p.subtitle.Offset += int32(lyricDelay)
+		err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle.AsLRC(), p.langLyricCurrentPlaying, false)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
 	}
 	return nil
 }
@@ -272,9 +283,39 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		}
 		subtitle := &gomuSubtitle{
 			langExt:  uslf.ContentDescriptor,
+			isSync:   false,
 			subtitle: &res,
 		}
 		p.subtitles = append(p.subtitles, subtitle)
 	}
+
+	// loading syltFrames if available
+	syltFrames := tag.GetFrames(tag.CommonID("Synchronised lyrics/text"))
+
+	for _, f := range syltFrames {
+		sylf, ok := f.(id3v2.SynchronisedLyricsFrame)
+		if !ok {
+			return fmt.Errorf("sylt error")
+		}
+
+		var caps []lyric.Caption
+		for _, v := range sylf.SynchronizedTexts {
+			var cap lyric.Caption
+			cap.Timestamp = v.Timestamp
+			cap.Text = v.Text
+			caps = append(caps, cap)
+		}
+
+		lyric := lyric.Lyric{
+			Captions: caps,
+		}
+		subtitle := &gomuSubtitle{
+			langExt:  sylf.ContentDescriptor,
+			isSync:   true,
+			subtitle: &lyric,
+		}
+		p.subtitles = append(p.subtitles, subtitle)
+	}
+
 	return nil
 }
