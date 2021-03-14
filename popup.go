@@ -411,6 +411,7 @@ func searchPopup(title string, stringsToMatch []string, handler func(selected st
 	list := tview.NewList().ShowSecondaryText(false)
 	list.SetSelectedBackgroundColor(gomu.colors.accent)
 	list.SetHighlightFullLine(true)
+	list.SetBackgroundColor(gomu.colors.popup)
 
 	for _, v := range stringsToMatch {
 		list.AddItem(v, v, 0, nil)
@@ -501,10 +502,12 @@ func searchPopup(title string, stringsToMatch []string, handler func(selected st
 		AddItem(input, 2, 1, true).
 		AddItem(list, 0, 1, false)
 
-	popup.SetBorder(true).
+	popupBox := tview.NewBox().SetBorder(true).
 		SetBackgroundColor(gomu.colors.popup).
 		SetBorderPadding(1, 1, 2, 2).
 		SetTitle(" " + title + " ")
+
+	popup.Box = popupBox
 
 	gomu.pages.AddPage("search-input-popup", center(popup, 70, 40), true, true)
 	gomu.popups.push(popup)
@@ -709,11 +712,13 @@ func replPopup() {
 		AddItem(input, 3, 1, true).
 		AddItem(textview, 0, 1, false)
 
-	flex.
+	flexBox := tview.NewBox().
 		SetBackgroundColor(gomu.colors.popup).
 		SetBorder(true).
 		SetBorderPadding(1, 1, 2, 2).
 		SetTitle(" REPL ")
+
+	flex.Box = flexBox
 
 	gomu.pages.AddPage(popupId, center(flex, 90, 30), true, true)
 	gomu.popups.push(flex)
