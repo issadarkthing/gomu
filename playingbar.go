@@ -191,10 +191,10 @@ func (p *PlayingBar) stop() {
 // When switch lyrics, we reload the lyrics from mp3 to reflect changes
 func (p *PlayingBar) switchLyrics() {
 
-	err := p.loadLyrics(gomu.player.GetCurrentSong().Path())
-	if err != nil {
-		errorPopup(err)
-	}
+	// err := p.loadLyrics(gomu.player.GetCurrentSong().Path())
+	// if err != nil {
+	// 	errorPopup(err)
+	// }
 	// no subtitle just ignore
 	if len(p.subtitles) == 0 {
 		return
@@ -202,18 +202,20 @@ func (p *PlayingBar) switchLyrics() {
 
 	// only 1 subtitle, prompt to the user and select this one
 	if len(p.subtitles) == 1 {
-		defaultTimedPopup(" Warning ", p.subtitle.LangExt+" lyric is the only lyric available")
+		sync := " unsynchronized"
+		if p.subtitles[0].IsSync {
+			sync = " synchronized"
+		}
+		defaultTimedPopup(" Warning ", p.subtitle.LangExt+sync+" lyric is the only lyric available")
 		p.subtitle = p.subtitles[0]
 		return
 	}
 
-	// more than 1 subtitle, parse them and select next
+	// more than 1 subtitle, cycle through them and select next
 	var langIndex int
 	for i, v := range p.subtitles {
-		if p.subtitle.LangExt == v.LangExt {
-			if p.subtitle.IsSync == v.IsSync {
-				langIndex = i + 1
-			}
+		if p.subtitle.LangExt == v.LangExt && p.subtitle.IsSync == v.IsSync {
+			langIndex = i + 1
 			break
 		}
 	}
@@ -224,11 +226,11 @@ func (p *PlayingBar) switchLyrics() {
 
 	p.subtitle = p.subtitles[langIndex]
 
+	sync := " unsynchronized"
 	if p.subtitle.IsSync {
-		defaultTimedPopup(" Success ", p.subtitle.LangExt+" synchronized lyric switched successfully.")
-	} else {
-		defaultTimedPopup(" Success ", p.subtitle.LangExt+" unsynchronized lyric switched successfully.")
+		sync = " synchronized"
 	}
+	defaultTimedPopup(" Success ", p.subtitle.LangExt+sync+" lyric switched successfully.")
 }
 
 func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
