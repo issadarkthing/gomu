@@ -358,10 +358,7 @@ func (q *Queue) shuffle() {
 // Initiliaze new queue with default values
 func newQueue() *Queue {
 
-	list := tview.NewList().
-		ShowSecondaryText(false)
-
-	list.SetBackgroundColor(gomu.colors.background)
+	list := tview.NewList()
 
 	queue := &Queue{
 		List:           list,
@@ -409,12 +406,19 @@ func newQueue() *Queue {
 	})
 
 	queue.updateTitle()
-	queue.SetBorder(true).SetTitleAlign(tview.AlignLeft)
+
 	queue.
-		SetSelectedBackgroundColor(tcell.ColorDarkCyan).
+		ShowSecondaryText(false).
+		SetSelectedBackgroundColor(gomu.colors.accent).
 		SetSelectedTextColor(tcell.ColorWhite).
-		SetHighlightFullLine(true).
-		SetBorderPadding(0, 0, 1, 1)
+		SetHighlightFullLine(true)
+
+	queue.
+		SetBorder(true).
+		SetTitleAlign(tview.AlignLeft).
+		SetBorderPadding(0, 0, 1, 1).
+		SetBorderColor(gomu.colors.foreground).
+		SetBackgroundColor(gomu.colors.background)
 
 	return queue
 
