@@ -191,10 +191,10 @@ func (p *PlayingBar) stop() {
 // When switch lyrics, we reload the lyrics from mp3 to reflect changes
 func (p *PlayingBar) switchLyrics() {
 
-	// err := p.loadLyrics(gomu.player.GetCurrentSong().Path())
-	// if err != nil {
-	// 	errorPopup(err)
-	// }
+	err := p.loadLyrics(gomu.player.GetCurrentSong().Path())
+	if err != nil {
+		errorPopup(err)
+	}
 	// no subtitle just ignore
 	if len(p.subtitles) == 0 {
 		return
