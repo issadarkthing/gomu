@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
 )
 
 type Colors struct {
@@ -65,4 +68,34 @@ func newColor() *Colors {
 		playlist:   tcell.GetColor(playlist),
 	}
 	return color
+}
+
+func colorsPopup() tview.Primitive {
+
+	textView := tview.NewTextView().
+		SetWrap(true).
+		SetDynamicColors(true).
+		SetWrap(true).
+		SetWordWrap(true)
+
+	textView.
+		SetBorder(true).
+		SetTitle(" Colors ").
+		SetBorderPadding(1, 1, 2, 2)
+
+
+	for i := tcell.ColorBlack; i <= tcell.ColorYellowGreen; i++ {
+		fmt.Fprintf(textView, "%-3d [:#%06x]   [-:-] ", i - tcell.ColorBlack, i.Hex())
+	}
+
+	textView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEsc:
+			gomu.pages.RemovePage("show-color-popup")
+			gomu.popups.pop()
+		}
+		return event
+	})
+
+	return textView
 }

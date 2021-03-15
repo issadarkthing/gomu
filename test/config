@@ -114,6 +114,8 @@ Keybinds.def_q("i", func() {
 	})
 })
 
+Keybinds.def_g("c", show_colors)
+
 # you can get the syntax highlighting for this language here:
 # https://github.com/mattn/anko/tree/master/misc/vim
 # vim: ft=anko
