@@ -34,6 +34,8 @@ type Lyric struct {
 	RePlayerEditor      string // Player or Editor to create this LRC file
 	Title               string
 	VersionPlayerEditor string // Version of player or editor
+	IsSync              bool
+	LangExt             string
 	Captions            []Caption
 }
 

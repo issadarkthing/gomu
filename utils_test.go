@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/bogem/id3v2"
+	"github.com/issadarkthing/gomu/lyric"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -110,7 +112,7 @@ func TestExpandTilde(t *testing.T) {
 func TestEmbedLyric(t *testing.T) {
 
 	testFile := "./test/sample"
-	lyric := "sample"
+	lyricString := "[offset:1000]\n[00:12.000]Lyrics beginning ...\n[00:15.300]Some more lyrics ...\n"
 	descriptor := "en"
 
 	f, err := os.Create(testFile)
@@ -125,8 +127,14 @@ func TestEmbedLyric(t *testing.T) {
 			t.Error(err)
 		}
 	}()
+	lyric, err := lyric.NewFromLRC(lyricString)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(lyric)
+	lyric.LangExt = descriptor
 
-	err = embedLyric(testFile, lyric, descriptor, false)
+	err = embedLyric(testFile, &lyric, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -144,6 +152,6 @@ func TestEmbedLyric(t *testing.T) {
 		t.Error("invalid type")
 	}
 
-	assert.Equal(t, lyric, frame.Lyrics)
+	assert.Equal(t, lyricString, frame.Lyrics)
 	assert.Equal(t, descriptor, frame.ContentDescriptor)
 }

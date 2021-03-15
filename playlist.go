@@ -18,6 +18,8 @@ import (
 	"github.com/rivo/tview"
 	spin "github.com/tj/go-spin"
 	"github.com/ztrue/tracerr"
+
+	"github.com/issadarkthing/gomu/lyric"
 )
 
 // AudioFile represents directories and mp3 files
@@ -601,8 +603,6 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	}
 	defer tag.Close()
 
-	// langLyric := gomu.anko.GetString("General.lang_lyric")
-
 	pathToFile, _ := filepath.Split(audioPath)
 	files, err := ioutil.ReadDir(pathToFile)
 	if err != nil {
@@ -610,7 +610,6 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	}
 	var lyricWritten int = 0
 	for _, file := range files {
-		// songNameWithoutExt := getName(audioPath)
 		fileName := file.Name()
 		fileExt := filepath.Ext(fileName)
 		lyricFileName := filepath.Join(pathToFile, fileName)
@@ -627,7 +626,12 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 			}
 			lyricContent := string(byteContent)
 
-			err = embedLyric(audioPath, lyricContent, langExt, false)
+			lyric, err := lyric.NewFromLRC(lyricContent)
+			if err != nil {
+				return tracerr.Wrap(err)
+			}
+			lyric.LangExt = langExt
+			err = embedLyric(audioPath, &lyric, false)
 			if err != nil {
 				return tracerr.Wrap(err)
 			}

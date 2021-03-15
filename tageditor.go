@@ -144,8 +144,11 @@ func tagPopup(node *AudioFile) (err error) {
 
 	deleteLyricButton.SetSelectedFunc(func() {
 		_, langExt := lyricDropDown.GetCurrentOption()
+		lyric := &lyric.Lyric{
+			LangExt: langExt,
+		}
 		if len(options) > 0 {
-			err := embedLyric(node.path, "", langExt, true)
+			err := embedLyric(node.path, lyric, true)
 			if err != nil {
 				errorPopup(err)
 			} else {
@@ -233,13 +236,20 @@ func tagPopup(node *AudioFile) (err error) {
 									break
 								}
 							}
-							lyric, err := lyric.GetLyric(results[selectedIndex].LangExt, results[selectedIndex])
+							lyricContent, err := lyric.GetLyric(results[selectedIndex].LangExt, results[selectedIndex])
 							if err != nil {
 								errorPopup(err)
 								gomu.app.Draw()
 							}
 
-							err = embedLyric(audioFile.path, lyric, lang, false)
+							lyric, err := lyric.NewFromLRC(lyricContent)
+							if err != nil {
+								errorPopup(err)
+								gomu.app.Draw()
+							}
+							lyric.LangExt = lang
+
+							err = embedLyric(audioFile.path, &lyric, false)
 							if err != nil {
 								errorPopup(err)
 								gomu.app.Draw()

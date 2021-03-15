@@ -17,22 +17,15 @@ import (
 
 type PlayingBar struct {
 	*tview.Frame
-	full                    int
-	update                  chan struct{}
-	progress                int
-	skip                    bool
-	text                    *tview.TextView
-	hasTag                  bool
-	tag                     *id3v2.Tag
-	subtitle                *lyric.Lyric
-	subtitles               []*gomuSubtitle
-	langLyricCurrentPlaying string
-}
-
-type gomuSubtitle struct {
-	langExt  string
-	isSync   bool
-	subtitle *lyric.Lyric
+	full      int
+	update    chan struct{}
+	progress  int
+	skip      bool
+	text      *tview.TextView
+	hasTag    bool
+	tag       *id3v2.Tag
+	subtitle  *lyric.Lyric
+	subtitles []*lyric.Lyric
 }
 
 func (p *PlayingBar) help() []string {
@@ -137,6 +130,10 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 	p.full = full
 	p.progress = 0
 	p.setSongTitle(currentSong.name)
+	p.hasTag = false
+	p.tag = nil
+	p.subtitles = nil
+	p.subtitle = nil
 
 	err := p.loadLyrics(currentSong.path)
 	if err != nil {
@@ -149,10 +146,9 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 	if p.hasTag && p.subtitles != nil {
 		// First we check if the lyric language preferred is presented
 		for _, v := range p.subtitles {
-			if strings.Contains(langLyricFromConfig, v.langExt) {
-				p.subtitle = v.subtitle
-				p.langLyricCurrentPlaying = v.langExt
-				if v.isSync {
+			if strings.Contains(langLyricFromConfig, v.LangExt) {
+				p.subtitle = v
+				if v.IsSync {
 					break
 				}
 			}
@@ -161,10 +157,9 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 		// Secondly we check if english lyric is available
 		if p.subtitle == nil {
 			for _, v := range p.subtitles {
-				if v.langExt == "en" {
-					p.subtitle = v.subtitle
-					p.langLyricCurrentPlaying = "en"
-					if v.isSync {
+				if v.LangExt == "en" {
+					p.subtitle = v
+					if v.IsSync {
 						break
 					}
 				}
@@ -173,8 +168,7 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 
 		// Finally we display the first lyric
 		if p.subtitle == nil {
-			p.subtitle = p.subtitles[0].subtitle
-			p.langLyricCurrentPlaying = p.subtitles[0].langExt
+			p.subtitle = p.subtitles[0]
 		}
 	}
 }
@@ -208,17 +202,18 @@ func (p *PlayingBar) switchLyrics() {
 
 	// only 1 subtitle, prompt to the user and select this one
 	if len(p.subtitles) == 1 {
-		defaultTimedPopup(" Warning ", p.langLyricCurrentPlaying+" lyric is the only lyric available")
-		p.langLyricCurrentPlaying = p.subtitles[0].langExt
-		p.subtitle = p.subtitles[0].subtitle
+		defaultTimedPopup(" Warning ", p.subtitle.LangExt+" lyric is the only lyric available")
+		p.subtitle = p.subtitles[0]
 		return
 	}
 
 	// more than 1 subtitle, parse them and select next
 	var langIndex int
-	for i := range p.subtitles {
-		if p.subtitles[i].langExt == p.langLyricCurrentPlaying {
-			langIndex = i + 1
+	for i, v := range p.subtitles {
+		if p.subtitle.LangExt == v.LangExt {
+			if p.subtitle.IsSync == v.IsSync {
+				langIndex = i + 1
+			}
 			break
 		}
 	}
@@ -227,22 +222,20 @@ func (p *PlayingBar) switchLyrics() {
 		langIndex = 0
 	}
 
-	p.langLyricCurrentPlaying = p.subtitles[langIndex].langExt
-	p.subtitle = p.subtitles[langIndex].subtitle
-	// Fixme
-	// for _, v := range p.subtitles {
-	// 	debugSaveLyric(v.subtitle, "/home/tramhao/new"+v.langExt+".lrc")
-	// }
+	p.subtitle = p.subtitles[langIndex]
 
-	defaultTimedPopup(" Success ", p.langLyricCurrentPlaying+" lyric switched successfully.")
-
+	if p.subtitle.IsSync {
+		defaultTimedPopup(" Success ", p.subtitle.LangExt+" synchronized lyric switched successfully.")
+	} else {
+		defaultTimedPopup(" Success ", p.subtitle.LangExt+" unsynchronized lyric switched successfully.")
+	}
 }
 
 func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 
 	if p.subtitle != nil {
 		p.subtitle.Offset += int32(lyricDelay)
-		err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle.AsLRC(), p.langLyricCurrentPlaying, false)
+		err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle, false)
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
@@ -251,10 +244,7 @@ func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 }
 
 func (p *PlayingBar) loadLyrics(currentSongPath string) error {
-	p.hasTag = false
-	p.tag = nil
 	p.subtitles = nil
-	p.subtitle = nil
 
 	var tag *id3v2.Tag
 	var err error
@@ -270,8 +260,8 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 	p.hasTag = true
 	p.tag = tag
 
+	// load usltFrames if available
 	usltFrames := tag.GetFrames(tag.CommonID("Unsynchronised lyrics/text transcription"))
-
 	for _, f := range usltFrames {
 		uslf, ok := f.(id3v2.UnsynchronisedLyricsFrame)
 		if !ok {
@@ -281,11 +271,9 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
-		subtitle := &gomuSubtitle{
-			langExt:  uslf.ContentDescriptor,
-			isSync:   false,
-			subtitle: &res,
-		}
+		subtitle := &res
+		subtitle.LangExt = uslf.ContentDescriptor
+		subtitle.IsSync = false
 		p.subtitles = append(p.subtitles, subtitle)
 	}
 
@@ -306,15 +294,12 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 			caps = append(caps, cap)
 		}
 
-		lyric := lyric.Lyric{
+		lyric := &lyric.Lyric{
+			LangExt:  sylf.ContentDescriptor,
+			IsSync:   true,
 			Captions: caps,
 		}
-		subtitle := &gomuSubtitle{
-			langExt:  sylf.ContentDescriptor,
-			isSync:   true,
-			subtitle: &lyric,
-		}
-		p.subtitles = append(p.subtitles, subtitle)
+		p.subtitles = append(p.subtitles, lyric)
 	}
 
 	return nil

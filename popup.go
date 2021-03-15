@@ -862,13 +862,19 @@ func lyricPopup(lang string, audioFile *AudioFile) error {
 					break
 				}
 			}
-			lyric, err := lyric.GetLyric(results[selectedIndex].LangExt, results[selectedIndex])
+			lyricContent, err := lyric.GetLyric(results[selectedIndex].LangExt, results[selectedIndex])
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
 			}
 
-			err = embedLyric(audioFile.path, lyric, lang, false)
+			lyric, err := lyric.NewFromLRC(lyricContent)
+			if err != nil {
+				errorPopup(err)
+				gomu.app.Draw()
+			}
+			lyric.LangExt = lang
+			err = embedLyric(audioFile.path, &lyric, false)
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()

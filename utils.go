@@ -247,7 +247,7 @@ func shell(input string) (string, error) {
 	return stdout.String(), nil
 }
 
-func embedLyric(songPath string, lyricContent string, usltContentDescriptor string, isDelete bool) (err error) {
+func embedLyric(songPath string, lyricTobeWritten *lyric.Lyric, isDelete bool) (err error) {
 	var tag *id3v2.Tag
 	tag, err = id3v2.Open(songPath, id3v2.Options{Parse: true})
 	if err != nil {
@@ -262,7 +262,7 @@ func embedLyric(songPath string, lyricContent string, usltContentDescriptor stri
 		if !ok {
 			die(errors.New("USLT error!"))
 		}
-		if uslf.ContentDescriptor == usltContentDescriptor {
+		if uslf.ContentDescriptor == lyricTobeWritten.LangExt {
 			continue
 		}
 		tag.AddUnsynchronisedLyricsFrame(uslf)
@@ -272,8 +272,8 @@ func embedLyric(songPath string, lyricContent string, usltContentDescriptor stri
 		tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
 			Encoding:          id3v2.EncodingUTF8,
 			Language:          "eng",
-			ContentDescriptor: usltContentDescriptor,
-			Lyrics:            lyricContent,
+			ContentDescriptor: lyricTobeWritten.LangExt,
+			Lyrics:            lyricTobeWritten.AsLRC(),
 		})
 	}
 
@@ -282,7 +282,7 @@ func embedLyric(songPath string, lyricContent string, usltContentDescriptor stri
 		return tracerr.Wrap(err)
 	}
 
-	err = embedSyncLyric(songPath, lyricContent, usltContentDescriptor, isDelete)
+	err = embedSyncLyric(songPath, lyricTobeWritten, isDelete)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -290,7 +290,7 @@ func embedLyric(songPath string, lyricContent string, usltContentDescriptor stri
 	return err
 }
 
-func embedSyncLyric(songPath string, lyricContent string, usltContentDescriptor string, isDelete bool) (err error) {
+func embedSyncLyric(songPath string, lyricTobeWritten *lyric.Lyric, isDelete bool) (err error) {
 	var tag *id3v2.Tag
 	tag, err = id3v2.Open(songPath, id3v2.Options{Parse: true})
 	if err != nil {
@@ -306,26 +306,21 @@ func embedSyncLyric(songPath string, lyricContent string, usltContentDescriptor 
 		if !ok {
 			die(errors.New("sylt error"))
 		}
-		if strings.Contains(sylf.ContentDescriptor, usltContentDescriptor) {
+		if strings.Contains(sylf.ContentDescriptor, lyricTobeWritten.LangExt) {
 			continue
 		}
 		tag.AddSynchronisedLyricsFrame(sylf)
 	}
 
 	if !isDelete {
-		lyric, err := lyric.NewFromLRC(lyricContent)
-		if err != nil {
-			return tracerr.Wrap(err)
-		}
-
 		var syncedTextSlice []id3v2.SyncedText
-		for _, v := range lyric.Captions {
+		for _, v := range lyricTobeWritten.Captions {
 			timeStamp := v.Timestamp
-			if lyric.Offset >= 0 {
-				timeStamp += uint32(lyric.Offset)
+			if lyricTobeWritten.Offset >= 0 {
+				timeStamp += uint32(lyricTobeWritten.Offset)
 			} else {
-				if timeStamp > uint32(-lyric.Offset) {
-					timeStamp -= uint32(-lyric.Offset)
+				if timeStamp > uint32(-lyricTobeWritten.Offset) {
+					timeStamp -= uint32(-lyricTobeWritten.Offset)
 				} else {
 					timeStamp = 0
 				}
@@ -342,7 +337,7 @@ func embedSyncLyric(songPath string, lyricContent string, usltContentDescriptor 
 			Language:          "eng",
 			TimestampFormat:   2,
 			ContentType:       1,
-			ContentDescriptor: usltContentDescriptor,
+			ContentDescriptor: lyricTobeWritten.LangExt,
 			SynchronizedTexts: syncedTextSlice,
 		})
 	}
@@ -408,10 +403,6 @@ func getTagLength(songPath string) (songLength time.Duration, err error) {
 			break
 		}
 	}
-	err = tag.Save()
-	if err != nil {
-		return 0, tracerr.Wrap(err)
-	}
 	if songLength != 0 {
 		return songLength, nil
 	}
@@ -422,27 +413,3 @@ func getTagLength(songPath string) (songLength time.Duration, err error) {
 
 	return songLength, err
 }
-
-//func extractLyrics() error {
-
-//	for _, v := range gomu.playingBar.subtitles {
-//		tmpLyric := v.subtitle.AsLRC()
-//		//Fixme
-//		filename := "/home/tramhao/new-." + v.langExt + ".lrc"
-//		file, _ := os.Create(filename)
-//		defer file.Close()
-
-//		io.WriteString(file, tmpLyric)
-//	}
-//	return nil
-//}
-
-//func debugSaveLyric(lyric *lyric.Lyric, filename string) {
-//	tmpLyric := lyric.AsLRC()
-//	//Fixme
-//	file, _ := os.Create(filename)
-//	defer file.Close()
-
-//	io.WriteString(file, tmpLyric)
-
-//}

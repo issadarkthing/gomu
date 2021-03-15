@@ -340,8 +340,15 @@ func start(application *tview.Application, args Args) {
 		if len(gomu.playingBar.subtitles) == 0 {
 			description = name
 		} else {
-			lang := gomu.playingBar.langLyricCurrentPlaying
-			description = fmt.Sprintf("%s \n\n %s lyric loaded", name, lang)
+			lang := gomu.playingBar.subtitle.LangExt
+			var sync string
+			if gomu.playingBar.subtitle.IsSync {
+				sync = "synchronized"
+			} else {
+				sync = "unsynchronized"
+			}
+
+			description = fmt.Sprintf("%s \n\n %s %s lyric loaded", name, lang, sync)
 		}
 
 		defaultTimedPopup(" Now Playing ", description)
