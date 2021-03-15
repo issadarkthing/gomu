@@ -361,6 +361,8 @@ func newQueue() *Queue {
 	list := tview.NewList().
 		ShowSecondaryText(false)
 
+	list.SetBackgroundColor(gomu.colors.background)
+
 	queue := &Queue{
 		List:           list,
 		savedQueuePath: cacheQueuePath,

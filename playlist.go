@@ -115,6 +115,7 @@ func newPlaylist(args Args) *Playlist {
 		SetColor(gomu.colors.accent)
 
 	tree := tview.NewTreeView().SetRoot(root)
+	tree.SetBackgroundColor(gomu.colors.background)
 
 	playlist := &Playlist{
 		TreeView:     tree,
