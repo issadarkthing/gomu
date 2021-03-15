@@ -31,14 +31,13 @@ module Emoji {
 }
 
 module Color {
-	# not all colors can be reproducible in terminal
-	# changing hex colors may or may not produce expected result
-	accent            = "#008B8B"
+	# you may choose colors by pressing 'c'
+	accent            = "darkcyan"
 	background        = "none"
-	foreground        = "#FFFFFF"
-	now_playing_title = "#017702"
-	playlist          = "#008B8B"
-	popup             = "#0A0F14"
+	foreground        = "white"
+	now_playing_title = "darkgreen"
+	playlist          = "white"
+	popup             = "black"
 }
 
 func fib(x) {

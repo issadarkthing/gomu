@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -17,57 +18,65 @@ type Colors struct {
 	playlist tcell.Color
 }
 
+func init() {
+	tcell.ColorNames["none"] = tcell.ColorDefault
+}
+
 func newColor() *Colors {
 
 	defaultColors := map[string]string{
-		"Color.accent":            "#008B8B",
-		"Color.foreground":        "#FFFFFF",
+		"Color.accent":            "darkcyan",
 		"Color.background":        "none",
-		"Color.popup":             "#0A0F14",
-		"Color.now_playing_title": "#017702",
-		"Color.playlist":          "#008B8B",
+		"Color.foreground":        "white",
+		"Color.now_playing_title": "darkgreen",
+		"Color.playlist":          "white",
+		"Color.popup":             "black",
 	}
 
 	anko := gomu.anko
 
-	// Validate hex color
+	// checks for invalid color and set default fallback
 	for k, v := range defaultColors {
 
 		// color from the config file
 		cfgColor := anko.GetString(k)
-		if validHexColor(cfgColor) {
-			continue
+
+		if _, ok := tcell.ColorNames[cfgColor]; !ok {
+			// use default value if invalid hex color was given
+			anko.Set(k, v)
 		}
-
-		// use default value if invalid hex color was given
-		anko.Set(k, v)
 	}
 
-	// handle none background color
-	var bgColor tcell.Color
-	bg := anko.GetString("Color.background")
-
-	if bg == "none" {
-		bgColor = tcell.ColorDefault
-	} else {
-		bgColor = tcell.GetColor(bg)
-	}
 
 	accent := anko.GetString("Color.accent")
 	foreground := anko.GetString("Color.foreground")
+	background := anko.GetString("Color.background")
 	popup := anko.GetString("Color.popup")
 	title := anko.GetString("Color.now_playing_title")
 	playlist := anko.GetString("Color.playlist")
 
 	color := &Colors{
-		accent:     tcell.GetColor(accent),
-		foreground: tcell.GetColor(foreground),
-		background: bgColor,
-		popup:      tcell.GetColor(popup),
-		title:      tcell.GetColor(title),
-		playlist:   tcell.GetColor(playlist),
+		accent:     tcell.ColorNames[accent],
+		foreground: tcell.ColorNames[foreground],
+		background: tcell.ColorNames[background],
+		popup:      tcell.ColorNames[popup],
+		title:      tcell.ColorNames[title],
+		playlist:   tcell.ColorNames[playlist],
 	}
 	return color
+}
+
+func isValidColor(x tcell.Color) bool {
+	return (x == tcell.ColorDefault) || x >= tcell.ColorBlack && x <= tcell.ColorYellowGreen
+}
+
+func intToColor(x int) tcell.Color {
+	
+	if x == -1 {
+		return tcell.ColorDefault
+	}
+
+	return tcell.Color(x) + tcell.ColorBlack
 }
 
 func colorsPopup() tview.Primitive {
@@ -83,9 +92,18 @@ func colorsPopup() tview.Primitive {
 		SetTitle(" Colors ").
 		SetBorderPadding(1, 1, 2, 2)
 
+	i := 0
+	colorPad := strings.Repeat(" ", 5)
 
-	for i := tcell.ColorBlack; i <= tcell.ColorYellowGreen; i++ {
-		fmt.Fprintf(textView, "%-3d [:#%06x]   [-:-] ", i - tcell.ColorBlack, i.Hex())
+	for name := range tcell.ColorNames {
+		fmt.Fprintf(textView, "%20s [:%s]%s[:-] ", name, name, colorPad)
+
+		if i == 2 {
+			fmt.Fprint(textView, "\n")	
+			i = 0
+			continue
+		}
+		i++
 	}
 
 	textView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
