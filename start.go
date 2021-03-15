@@ -317,7 +317,7 @@ func start(application *tview.Application, args Args) {
 	tview.Borders.TopRightFocus = tview.Borders.TopRight
 	tview.Borders.BottomLeftFocus = tview.Borders.BottomLeft
 	tview.Borders.BottomRightFocus = tview.Borders.BottomRight
-	tview.Styles.PrimitiveBackgroundColor = gomu.colors.background
+	tview.Styles.PrimitiveBackgroundColor = gomu.colors.popup
 
 	gomu.initPanels(application, args)
 

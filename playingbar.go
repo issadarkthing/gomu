@@ -42,8 +42,11 @@ func (p *PlayingBar) help() []string {
 func newPlayingBar() *PlayingBar {
 
 	textView := tview.NewTextView().SetTextAlign(tview.AlignCenter)
+	textView.SetBackgroundColor(gomu.colors.background)
+
 	frame := tview.NewFrame(textView).SetBorders(1, 1, 1, 1, 1, 1)
 	frame.SetBorder(true).SetTitle(" Now Playing ")
+	frame.SetBackgroundColor(gomu.colors.background)
 
 	p := &PlayingBar{
 		Frame:  frame,
