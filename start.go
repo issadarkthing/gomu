@@ -227,9 +227,15 @@ module Color {
 	accent            = "darkcyan"
 	background        = "none"
 	foreground        = "white"
-	now_playing_title = "darkgreen"
-	playlist          = "white"
 	popup             = "black"
+
+	playlist_directory = "darkcyan"
+	playlist_highlight = "darkcyan"
+
+	queue_highlight    = "darkcyan"
+
+	now_playing_title = "darkgreen"
+	subtitle          = "darkgoldenrod"
 }
 
 # you can get the syntax highlighting for this language here:

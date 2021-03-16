@@ -409,8 +409,8 @@ func newQueue() *Queue {
 
 	queue.
 		ShowSecondaryText(false).
-		SetSelectedBackgroundColor(gomu.colors.accent).
-		SetSelectedTextColor(tcell.ColorWhite).
+		SetSelectedBackgroundColor(gomu.colors.queueHi).
+		SetSelectedTextColor(gomu.colors.foreground).
 		SetHighlightFullLine(true)
 
 	queue.

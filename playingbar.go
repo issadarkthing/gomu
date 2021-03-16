@@ -43,6 +43,7 @@ func newPlayingBar() *PlayingBar {
 
 	textView := tview.NewTextView().SetTextAlign(tview.AlignCenter)
 	textView.SetBackgroundColor(gomu.colors.background)
+	textView.SetDynamicColors(true)
 
 	frame := tview.NewFrame(textView).SetBorders(1, 1, 1, 1, 1, 1)
 	frame.SetBorder(true).SetTitle(" Now Playing ")
@@ -113,10 +114,11 @@ func (p *PlayingBar) run() error {
 		}
 
 		gomu.app.QueueUpdateDraw(func() {
-			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n\n%v",
+			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n\n[%s]%v[-]",
 				fmtDuration(start),
 				progressBar,
 				fmtDuration(end),
+				gomu.colors.subtitle,
 				lyricText,
 			))
 		})

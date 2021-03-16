@@ -10,12 +10,15 @@ import (
 
 type Colors struct {
 	accent     tcell.Color
-	foreground tcell.Color
 	background tcell.Color
+	foreground tcell.Color
 	// title refers to now_playing_title in config file
-	title    tcell.Color
-	popup    tcell.Color
-	playlist tcell.Color
+	title       tcell.Color
+	popup       tcell.Color
+	playlistHi  tcell.Color
+	playlistDir tcell.Color
+	queueHi     tcell.Color
+	subtitle    string
 }
 
 func init() {
@@ -25,12 +28,15 @@ func init() {
 func newColor() *Colors {
 
 	defaultColors := map[string]string{
-		"Color.accent":            "darkcyan",
-		"Color.background":        "none",
-		"Color.foreground":        "white",
-		"Color.now_playing_title": "darkgreen",
-		"Color.playlist":          "white",
-		"Color.popup":             "black",
+		"Color.accent":             "darkcyan",
+		"Color.background":         "none",
+		"Color.foreground":         "white",
+		"Color.popup":              "black",
+		"Color.playlist_directory": "darkcyan",
+		"Color.playlist_highlight": "darkcyan",
+		"Color.queue_highlight":    "darkcyan",
+		"Color.now_playing_title":  "darkgreen",
+		"Color.subtitle":           "darkgoldenrod",
 	}
 
 	anko := gomu.anko
@@ -47,36 +53,28 @@ func newColor() *Colors {
 		}
 	}
 
-
 	accent := anko.GetString("Color.accent")
-	foreground := anko.GetString("Color.foreground")
 	background := anko.GetString("Color.background")
+	foreground := anko.GetString("Color.foreground")
 	popup := anko.GetString("Color.popup")
+	playlistDir := anko.GetString("Color.playlist_directory")
+	playlistHi := anko.GetString("Color.playlist_highlight")
+	queueHi := anko.GetString("Color.queue_highlight")
 	title := anko.GetString("Color.now_playing_title")
-	playlist := anko.GetString("Color.playlist")
+	subtitle := anko.GetString("Color.subtitle")
 
 	color := &Colors{
-		accent:     tcell.ColorNames[accent],
-		foreground: tcell.ColorNames[foreground],
-		background: tcell.ColorNames[background],
-		popup:      tcell.ColorNames[popup],
-		title:      tcell.ColorNames[title],
-		playlist:   tcell.ColorNames[playlist],
+		accent:      tcell.ColorNames[accent],
+		foreground:  tcell.ColorNames[foreground],
+		background:  tcell.ColorNames[background],
+		popup:       tcell.ColorNames[popup],
+		playlistDir: tcell.ColorNames[playlistDir],
+		playlistHi:  tcell.ColorNames[playlistHi],
+		queueHi:     tcell.ColorNames[queueHi],
+		title:       tcell.ColorNames[title],
+		subtitle:    subtitle,
 	}
 	return color
-}
-
-func isValidColor(x tcell.Color) bool {
-	return (x == tcell.ColorDefault) || x >= tcell.ColorBlack && x <= tcell.ColorYellowGreen
-}
-
-func intToColor(x int) tcell.Color {
-	
-	if x == -1 {
-		return tcell.ColorDefault
-	}
-
-	return tcell.Color(x) + tcell.ColorBlack
 }
 
 func colorsPopup() tview.Primitive {
@@ -99,7 +97,7 @@ func colorsPopup() tview.Primitive {
 		fmt.Fprintf(textView, "%20s [:%s]%s[:-] ", name, name, colorPad)
 
 		if i == 2 {
-			fmt.Fprint(textView, "\n")	
+			fmt.Fprint(textView, "\n")
 			i = 0
 			continue
 		}

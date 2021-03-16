@@ -35,10 +35,15 @@ module Color {
 	accent            = "darkcyan"
 	background        = "none"
 	foreground        = "white"
-	now_playing_title = "darkgreen"
-	# the color of the directory in playlist
-	playlist          = "darkslategray"
 	popup             = "black"
+
+	playlist_directory = "darkcyan"
+	playlist_highlight = "darkcyan"
+
+	queue_highlight    = "darkcyan"
+
+	now_playing_title = "darkgreen"
+	subtitle          = "darkgoldenrod"
 }
 
 func fib(x) {
