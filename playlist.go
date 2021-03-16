@@ -10,7 +10,9 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/bogem/id3v2"
@@ -135,7 +137,7 @@ func newPlaylist(args Args) *Playlist {
 		SetTitleAlign(tview.AlignLeft).
 		SetBorderPadding(0, 0, 1, 1)
 
-	populate(root, rootDir)
+	populate(root, rootDir, gomu.anko.GetBool("General.sort_by_mtime"))
 
 	var firstChild *tview.TreeNode
 
@@ -310,8 +312,9 @@ func (p *Playlist) refresh() {
 	prevFileName := gomu.playlist.GetCurrentNode().GetText()
 
 	root.ClearChildren()
+	node := root.GetReference().(*AudioFile)
 
-	populate(root, root.GetReference().(*AudioFile).path)
+	populate(root, node.path, gomu.anko.GetBool("General.sort_by_mtime"))
 
 	root.Walk(func(node, _ *tview.TreeNode) bool {
 
@@ -651,13 +654,25 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	return nil
 }
 
-// Add songs and their directories in Playlist panel
-func populate(root *tview.TreeNode, rootPath string) error {
+// Add songs and their directories in Playlist panel.
+func populate(root *tview.TreeNode, rootPath string, sortMtime bool) error {
 
 	files, err := ioutil.ReadDir(rootPath)
 
 	if err != nil {
 		return tracerr.Wrap(err)
+	}
+
+	if sortMtime {
+		sort.Slice(files, func(i, j int) bool {
+			stat1 := files[i].Sys().(*syscall.Stat_t)
+			stat2 := files[j].Sys().(*syscall.Stat_t)
+
+			time1 := time.Unix(stat1.Mtim.Unix())
+			time2 := time.Unix(stat2.Mtim.Unix())
+
+			return time1.After(time2)
+		})
 	}
 
 	for _, file := range files {
@@ -721,7 +736,7 @@ func populate(root *tview.TreeNode, rootPath string) error {
 			child.SetColor(gomu.colors.accent)
 			child.SetText(displayText)
 			root.AddChild(child)
-			populate(child, path)
+			populate(child, path, sortMtime)
 
 		}
 
