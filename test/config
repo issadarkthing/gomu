@@ -36,7 +36,8 @@ module Color {
 	background        = "none"
 	foreground        = "white"
 	now_playing_title = "darkgreen"
-	playlist          = "white"
+	# the color of the directory in playlist
+	playlist          = "darkslategray"
 	popup             = "black"
 }
 
