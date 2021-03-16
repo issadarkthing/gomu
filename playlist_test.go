@@ -40,7 +40,7 @@ func prepareTest() *Gomu {
 	}
 
 	root.SetReference(rootAudioFile)
-	populate(root, rootDir)
+	populate(root, rootDir, false)
 	gomu.playlist.SetRoot(root)
 
 	return gomu
@@ -91,7 +91,7 @@ func TestPopulate(t *testing.T) {
 		isAudioFile: false,
 	})
 
-	populate(root, rootDir)
+	populate(root, rootDir, false)
 	gotItems := 0
 	root.Walk(func(node, _ *tview.TreeNode) bool {
 		gotItems++

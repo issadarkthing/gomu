@@ -6,6 +6,7 @@ module General {
 	queue_loop          = false
 	load_prev_queue     = true
 	popup_timeout       = "5s"
+	sort_by_mtime       = false
 	# change this to directory that contains mp3 files
 	music_dir           = "~/Music"
 	# url history of downloaded audio will be saved here
