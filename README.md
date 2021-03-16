@@ -72,6 +72,7 @@ Each panel has it's own additional keybinding. To view the available keybinding 
 | ?               |                     toggle help |
 | m               |                       open repl |
 | T               |                   switch lyrics |
+| c               |                     show colors |
 
 
 | Key (Playlist)  |                     Description |
