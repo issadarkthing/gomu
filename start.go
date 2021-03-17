@@ -209,7 +209,7 @@ module General {
 	invidious_instance  = "https://vid.puffyan.us"
 	# Prefered language for lyrics to be displayed, if not available, english version
 	# will be displayed.
-	# Available tags: en,el,ko,es,th,vi,zh-Hans,zh-Hant, and can be separated with comma. 
+	# Available tags: en,el,ko,es,th,vi,zh-Hans,zh-Hant, and can be separated with comma.
 	# find more tags: youtube-dl --skip-download --list-subs "url"
 	lang_lyric          = "en"
 }
@@ -341,8 +341,15 @@ func start(application *tview.Application, args Args) {
 		if len(gomu.playingBar.subtitles) == 0 {
 			description = name
 		} else {
-			lang := gomu.playingBar.langLyricCurrentPlaying
-			description = fmt.Sprintf("%s \n\n %s lyric loaded", name, lang)
+			lang := gomu.playingBar.subtitle.LangExt
+			var sync string
+			if gomu.playingBar.subtitle.IsSync {
+				sync = "synchronized"
+			} else {
+				sync = "unsynchronized"
+			}
+
+			description = fmt.Sprintf("%s \n\n %s %s lyric loaded", name, lang, sync)
 		}
 
 		defaultTimedPopup(" Now Playing ", description)
