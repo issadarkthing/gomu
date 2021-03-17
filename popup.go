@@ -695,12 +695,14 @@ func replPopup() {
 				}
 			}()
 
+			fmt.Fprintf(textview, "%s%s\n", prompt, text)
+
 			res, err := gomu.anko.Execute(text)
 			if err != nil {
-				fmt.Fprintf(textview, "%s%s\n%v\n\n", prompt, text, err)
+				fmt.Fprintf(textview, "%v\n\n", err)
 				return nil
 			} else {
-				fmt.Fprintf(textview, "%s%s\n%v\n\n", prompt, text, res)
+				fmt.Fprintf(textview, "%v\n\n", res)
 			}
 
 		}
