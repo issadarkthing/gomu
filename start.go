@@ -224,14 +224,19 @@ module Emoji {
 }
 
 module Color {
-	# not all colors can be reproducible in terminal
-	# changing hex colors may or may not produce expected result
-	accent            = "#008B8B"
+	# you may choose colors by pressing 'c'
+	accent            = "darkcyan"
 	background        = "none"
-	foreground        = "#FFFFFF"
-	now_playing_title = "#017702"
-	playlist          = "#008B8B"
-	popup             = "#0A0F14"
+	foreground        = "white"
+	popup             = "black"
+
+	playlist_directory = "darkcyan"
+	playlist_highlight = "darkcyan"
+
+	queue_highlight    = "darkcyan"
+
+	now_playing_title = "darkgreen"
+	subtitle          = "darkgoldenrod"
 }
 
 # you can get the syntax highlighting for this language here:
@@ -465,6 +470,7 @@ func start(application *tview.Application, args Args) {
 			'B': "rewind_fast",
 			'm': "repl",
 			'T': "switch_lyric",
+			'c': "show_colors",
 		}
 
 		for key, cmd := range cmds {

@@ -1,68 +1,117 @@
 package main
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
 )
 
 type Colors struct {
 	accent     tcell.Color
-	foreground tcell.Color
 	background tcell.Color
+	foreground tcell.Color
 	// title refers to now_playing_title in config file
-	title    tcell.Color
-	popup    tcell.Color
-	playlist tcell.Color
+	title       tcell.Color
+	popup       tcell.Color
+	playlistHi  tcell.Color
+	playlistDir tcell.Color
+	queueHi     tcell.Color
+	subtitle    string
+}
+
+func init() {
+	tcell.ColorNames["none"] = tcell.ColorDefault
 }
 
 func newColor() *Colors {
 
 	defaultColors := map[string]string{
-		"Color.accent":            "#008B8B",
-		"Color.foreground":        "#FFFFFF",
-		"Color.background":        "none",
-		"Color.popup":             "#0A0F14",
-		"Color.now_playing_title": "#017702",
-		"Color.playlist":          "#008B8B",
+		"Color.accent":             "darkcyan",
+		"Color.background":         "none",
+		"Color.foreground":         "white",
+		"Color.popup":              "black",
+		"Color.playlist_directory": "darkcyan",
+		"Color.playlist_highlight": "darkcyan",
+		"Color.queue_highlight":    "darkcyan",
+		"Color.now_playing_title":  "darkgreen",
+		"Color.subtitle":           "darkgoldenrod",
 	}
 
 	anko := gomu.anko
 
-	// Validate hex color
+	// checks for invalid color and set default fallback
 	for k, v := range defaultColors {
 
 		// color from the config file
 		cfgColor := anko.GetString(k)
-		if validHexColor(cfgColor) {
-			continue
+
+		if _, ok := tcell.ColorNames[cfgColor]; !ok {
+			// use default value if invalid hex color was given
+			anko.Set(k, v)
 		}
-
-		// use default value if invalid hex color was given
-		anko.Set(k, v)
-	}
-
-	// handle none background color
-	var bgColor tcell.Color
-	bg := anko.GetString("Color.background")
-
-	if bg == "none" {
-		bgColor = tcell.ColorDefault
-	} else {
-		bgColor = tcell.GetColor(bg)
 	}
 
 	accent := anko.GetString("Color.accent")
+	background := anko.GetString("Color.background")
 	foreground := anko.GetString("Color.foreground")
 	popup := anko.GetString("Color.popup")
+	playlistDir := anko.GetString("Color.playlist_directory")
+	playlistHi := anko.GetString("Color.playlist_highlight")
+	queueHi := anko.GetString("Color.queue_highlight")
 	title := anko.GetString("Color.now_playing_title")
-	playlist := anko.GetString("Color.playlist")
+	subtitle := anko.GetString("Color.subtitle")
 
 	color := &Colors{
-		accent:     tcell.GetColor(accent),
-		foreground: tcell.GetColor(foreground),
-		background: bgColor,
-		popup:      tcell.GetColor(popup),
-		title:      tcell.GetColor(title),
-		playlist:   tcell.GetColor(playlist),
+		accent:      tcell.ColorNames[accent],
+		foreground:  tcell.ColorNames[foreground],
+		background:  tcell.ColorNames[background],
+		popup:       tcell.ColorNames[popup],
+		playlistDir: tcell.ColorNames[playlistDir],
+		playlistHi:  tcell.ColorNames[playlistHi],
+		queueHi:     tcell.ColorNames[queueHi],
+		title:       tcell.ColorNames[title],
+		subtitle:    subtitle,
 	}
 	return color
+}
+
+func colorsPopup() tview.Primitive {
+
+	textView := tview.NewTextView().
+		SetWrap(true).
+		SetDynamicColors(true).
+		SetWrap(true).
+		SetWordWrap(true)
+
+	textView.
+		SetBorder(true).
+		SetTitle(" Colors ").
+		SetBorderPadding(1, 1, 2, 2)
+
+	i := 0
+	colorPad := strings.Repeat(" ", 5)
+
+	for name := range tcell.ColorNames {
+		fmt.Fprintf(textView, "%20s [:%s]%s[:-] ", name, name, colorPad)
+
+		if i == 2 {
+			fmt.Fprint(textView, "\n")
+			i = 0
+			continue
+		}
+		i++
+	}
+
+	textView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEsc:
+			gomu.pages.RemovePage("show-color-popup")
+			gomu.popups.pop()
+		}
+		return event
+	})
+
+	return textView
 }

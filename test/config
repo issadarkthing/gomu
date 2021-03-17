@@ -32,14 +32,19 @@ module Emoji {
 }
 
 module Color {
-	# not all colors can be reproducible in terminal
-	# changing hex colors may or may not produce expected result
-	accent            = "#008B8B"
+	# you may choose colors by pressing 'c'
+	accent            = "darkcyan"
 	background        = "none"
-	foreground        = "#FFFFFF"
-	now_playing_title = "#017702"
-	playlist          = "#008B8B"
-	popup             = "#0A0F14"
+	foreground        = "white"
+	popup             = "black"
+
+	playlist_directory = "darkcyan"
+	playlist_highlight = "darkcyan"
+
+	queue_highlight    = "darkcyan"
+
+	now_playing_title = "darkgreen"
+	subtitle          = "darkgoldenrod"
 }
 
 func fib(x) {
@@ -114,6 +119,8 @@ Keybinds.def_q("i", func() {
 		debug_popup(x)
 	})
 })
+
+Keybinds.def_g("c", show_colors)
 
 # you can get the syntax highlighting for this language here:
 # https://github.com/mattn/anko/tree/master/misc/vim

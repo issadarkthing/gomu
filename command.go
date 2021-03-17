@@ -445,6 +445,12 @@ func (c Command) defineCommands() {
 		}
 	})
 
+	c.define("show_colors", func() {
+		cp := colorsPopup()
+		gomu.pages.AddPage("show-color-popup", center(cp, 95, 40), true, true)
+		gomu.popups.push(cp)
+	})
+
 	for name, cmd := range c.commands {
 		err := gomu.anko.Define(name, cmd)
 		if err != nil {

@@ -271,6 +271,7 @@ func helpPopup(panel Panel) {
 		"?      toggle help",
 		"m      open repl",
 		"T      switch lyrics",
+		"c      show colors",
 	}
 
 	list := tview.NewList().ShowSecondaryText(false)
