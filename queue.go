@@ -365,6 +365,28 @@ func newQueue() *Queue {
 		savedQueuePath: cacheQueuePath,
 	}
 
+
+	cmds := map[rune]string{
+		'j': "move_down",
+		'k': "move_up",
+		'd': "delete_item",
+		'D': "clear_queue",
+		'l': "play_selected",
+		'z': "toggle_loop",
+		's': "shuffle_queue",
+		'/': "queue_search",
+		't': "lyric_delay_increase",
+		'r': "lyric_delay_decrease",
+	}
+
+	for key, cmdName := range cmds {
+		src := fmt.Sprintf(`Keybinds.def_q("%c", %s)`, key, cmdName)
+		_, err := gomu.anko.Execute(src)
+		if err != nil {
+			die(err)
+		}
+	}
+
 	queue.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 		if gomu.anko.KeybindExists("queue", e) {
@@ -374,32 +396,6 @@ func newQueue() *Queue {
 				errorPopup(err)
 			}
 
-			return nil
-		}
-
-		cmds := map[rune]string{
-			'j': "move_down",
-			'k': "move_up",
-			'd': "delete_item",
-			'D': "clear_queue",
-			'l': "play_selected",
-			'z': "toggle_loop",
-			's': "shuffle_queue",
-			'/': "queue_search",
-			't': "lyric_delay_increase",
-			'r': "lyric_delay_decrease",
-		}
-
-		for key, cmd := range cmds {
-			if e.Rune() != key {
-				continue
-			}
-			fn, err := gomu.command.getFn(cmd)
-			if err != nil {
-				logError(err)
-				return e
-			}
-			fn()
 		}
 
 		return nil

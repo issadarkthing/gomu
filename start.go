@@ -421,6 +421,34 @@ func start(application *tview.Application, args Args) {
 		}
 	}()
 
+
+	cmds := map[rune]string{
+		'q': "quit",
+		' ': "toggle_pause",
+		'+': "volume_up",
+		'=': "volume_up",
+		'-': "volume_down",
+		'_': "volume_down",
+		'n': "skip",
+		':': "command_search",
+		'?': "toggle_help",
+		'f': "forward",
+		'F': "forward_fast",
+		'b': "rewind",
+		'B': "rewind_fast",
+		'm': "repl",
+		'T': "switch_lyric",
+		'c': "show_colors",
+	}
+
+	for key, cmdName := range cmds {
+		src := fmt.Sprintf(`Keybinds.def_g("%c", %s)`, key, cmdName)
+		_, err := gomu.anko.Execute(src)
+		if err != nil {
+			die(err)
+		}
+	}
+
 	// global keybindings are handled here
 	application.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
@@ -454,36 +482,6 @@ func start(application *tview.Application, args Args) {
 			return nil
 		}
 
-		cmds := map[rune]string{
-			'q': "quit",
-			' ': "toggle_pause",
-			'+': "volume_up",
-			'=': "volume_up",
-			'-': "volume_down",
-			'_': "volume_down",
-			'n': "skip",
-			':': "command_search",
-			'?': "toggle_help",
-			'f': "forward",
-			'F': "forward_fast",
-			'b': "rewind",
-			'B': "rewind_fast",
-			'm': "repl",
-			'T': "switch_lyric",
-			'c': "show_colors",
-		}
-
-		for key, cmd := range cmds {
-			if e.Rune() != key {
-				continue
-			}
-			fn, err := gomu.command.getFn(cmd)
-			if err != nil {
-				logError(err)
-				return e
-			}
-			fn()
-		}
 
 		return e
 	})

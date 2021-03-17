@@ -160,6 +160,34 @@ func newPlaylist(args Args) *Playlist {
 		node.SetExpanded(!node.IsExpanded())
 	})
 
+
+	cmds := map[rune]string{
+		'a': "create_playlist",
+		'D': "delete_playlist",
+		'd': "delete_file",
+		'Y': "download_audio",
+		's': "youtube_search",
+		'l': "add_queue",
+		'L': "bulk_add",
+		'h': "close_node",
+		'r': "refresh",
+		'R': "rename",
+		'y': "yank",
+		'p': "paste",
+		'/': "playlist_search",
+		't': "edit_tags",
+		'1': "fetch_lyric",
+		'2': "fetch_lyric_cn2",
+	}
+
+	for key, cmdName := range cmds {
+		src := fmt.Sprintf(`Keybinds.def_p("%c", %s)`, key, cmdName)
+		_, err := anko.Execute(src)
+		if err != nil {
+			die(err)
+		}
+	}
+
 	playlist.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 		if gomu.anko.KeybindExists("playlist", e) {
@@ -170,37 +198,6 @@ func newPlaylist(args Args) *Playlist {
 			}
 
 			return nil
-		}
-
-		cmds := map[rune]string{
-			'a': "create_playlist",
-			'D': "delete_playlist",
-			'd': "delete_file",
-			'Y': "download_audio",
-			's': "youtube_search",
-			'l': "add_queue",
-			'L': "bulk_add",
-			'h': "close_node",
-			'r': "refresh",
-			'R': "rename",
-			'y': "yank",
-			'p': "paste",
-			'/': "playlist_search",
-			't': "edit_tags",
-			'1': "fetch_lyric",
-			'2': "fetch_lyric_cn2",
-		}
-
-		for key, cmd := range cmds {
-			if e.Rune() != key {
-				continue
-			}
-			fn, err := gomu.command.getFn(cmd)
-			if err != nil {
-				errorPopup(err)
-				return e
-			}
-			fn()
 		}
 
 		// disable default key handler for space
