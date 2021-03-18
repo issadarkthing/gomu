@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -107,6 +108,9 @@ func NewFromLRC(s string) (res Lyric, err error) {
 		o.Text = s3
 		res.Captions = append(res.Captions, o)
 	}
+	sort.SliceStable(res.Captions, func(i, j int) bool {
+		return res.Captions[i].Timestamp < res.Captions[j].Timestamp
+	})
 	return
 }
 
