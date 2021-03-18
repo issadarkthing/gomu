@@ -108,9 +108,14 @@ func NewFromLRC(s string) (res Lyric, err error) {
 		o.Text = s3
 		res.Captions = append(res.Captions, o)
 	}
+
+	// we sort the cpations by Timestamp. This is to fix some lyrics downloaded are not sorted
 	sort.SliceStable(res.Captions, func(i, j int) bool {
 		return res.Captions[i].Timestamp < res.Captions[j].Timestamp
 	})
+
+	res = mergeLRC(res)
+
 	return
 }
 
@@ -164,6 +169,25 @@ func cleanLRC(s string) (cleanLyric string) {
 	return cleanLyric
 }
 
+// merge lyric if the time between two captions less than 2 seconds
+func mergeLRC(lyric Lyric) (res Lyric) {
+
+	lenLyric := len(lyric.Captions)
+	for i := 0; i < lenLyric-1; i++ {
+		if lyric.Captions[i].Timestamp+2000 > lyric.Captions[i+1].Timestamp {
+			lyric.Captions[i].Text = lyric.Captions[i].Text + " " + lyric.Captions[i+1].Text
+			lyric.Captions = remove(lyric.Captions, i+1)
+			i--
+			lenLyric--
+		}
+	}
+	return lyric
+}
+
+func remove(slice []Caption, s int) []Caption {
+	return append(slice[:s], slice[s+1:]...)
+}
+
 // AsLRC renders the sub in .lrc format
 func (lyric Lyric) AsLRC() (res string) {
 	if lyric.Offset != 0 {
@@ -196,7 +220,5 @@ func TimeLRC(t uint32) string {
 	ms := tDuration / time.Millisecond
 
 	res := fmt.Sprintf("%02d:%02d.%03d", m, s, ms)
-	// res := tDuration.Format("04:05.00")
-	// return strings.Replace(res, ".", ",", 1)
 	return res
 }
