@@ -86,17 +86,17 @@ func NewFromLRC(s string) (res Lyric, err error) {
 			res.Offset = int32(intOffset)
 		}
 
-		r1 := regexp.MustCompile(`(?U)^\[[0-9].*\]`)
-		matchStart := r1.FindStringSubmatch(lines[i])
+		timestampPattern := regexp.MustCompile(`(?U)^\[[0-9].*\]`)
+		matchTimestamp := timestampPattern.FindStringSubmatch(lines[i])
 
-		if len(matchStart) < 1 {
+		if len(matchTimestamp) < 1 {
 			// Here we continue to parse the subtitle and ignore the lines have no timestamp
 			continue
 		}
 
 		var o Caption
 
-		o.Timestamp, err = parseLrcTime(matchStart[0])
+		o.Timestamp, err = parseLrcTime(matchTimestamp[0])
 		if err != nil {
 			err = fmt.Errorf("lrc: start error at line %d: %v", i, err)
 			break
@@ -104,7 +104,11 @@ func NewFromLRC(s string) (res Lyric, err error) {
 
 		r2 := regexp.MustCompile(`^\[.*\]`)
 		s2 := r2.ReplaceAllString(lines[i], "$1")
-		s3 := strings.Trim(s2, "\r ")
+		s3 := strings.Trim(s2, "\r")
+		s3 = strings.Trim(s3, "\n")
+		s3 = strings.TrimSpace(s3)
+		singleSpacePattern := regexp.MustCompile(`\s+`)
+		s3 = singleSpacePattern.ReplaceAllString(s3, " ")
 		o.Text = s3
 		res.Captions = append(res.Captions, o)
 	}
@@ -169,12 +173,12 @@ func cleanLRC(s string) (cleanLyric string) {
 	return cleanLyric
 }
 
-// merge lyric if the time between two captions less than 2 seconds
+// merge lyric if the time between two captions is less than 2 seconds
 func mergeLRC(lyric Lyric) (res Lyric) {
 
 	lenLyric := len(lyric.Captions)
 	for i := 0; i < lenLyric-1; i++ {
-		if lyric.Captions[i].Timestamp+2000 > lyric.Captions[i+1].Timestamp {
+		if lyric.Captions[i].Timestamp+2000 > lyric.Captions[i+1].Timestamp && lyric.Captions[i].Text != "" && lyric.Captions[i+1].Text != "" {
 			lyric.Captions[i].Text = lyric.Captions[i].Text + " " + lyric.Captions[i+1].Text
 			lyric.Captions = remove(lyric.Captions, i+1)
 			i--
