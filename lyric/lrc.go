@@ -118,7 +118,7 @@ func NewFromLRC(s string) (res Lyric, err error) {
 		return res.Captions[i].Timestamp < res.Captions[j].Timestamp
 	})
 
-	res = mergeLRC(res)
+	res = MergeLRC(res)
 
 	return
 }
@@ -173,12 +173,12 @@ func cleanLRC(s string) (cleanLyric string) {
 	return cleanLyric
 }
 
-// merge lyric if the time between two captions is less than 2 seconds
-func mergeLRC(lyric Lyric) (res Lyric) {
+// MergeLRC merge lyric if the time between two captions is less than 2 seconds
+func MergeLRC(lyric Lyric) (res Lyric) {
 
 	lenLyric := len(lyric.Captions)
 	for i := 0; i < lenLyric-1; i++ {
-		if lyric.Captions[i].Timestamp+2000 > lyric.Captions[i+1].Timestamp && lyric.Captions[i].Text != "" && lyric.Captions[i+1].Text != "" {
+		if lyric.Captions[i].Timestamp+2000 > lyric.Captions[i+1].Timestamp && lyric.Captions[i].Text != "" {
 			lyric.Captions[i].Text = lyric.Captions[i].Text + " " + lyric.Captions[i+1].Text
 			lyric.Captions = remove(lyric.Captions, i+1)
 			i--
@@ -212,7 +212,7 @@ func (cap Caption) AsLRC() string {
 	return res
 }
 
-// TimeLRC renders a timestamp for use in .lrc
+// TimeLRC renders a timestamp for use in lrc
 func TimeLRC(t uint32) string {
 	tDuration := time.Duration(t) * time.Millisecond
 	h := tDuration / time.Hour
