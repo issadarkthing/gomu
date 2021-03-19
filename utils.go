@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+
 	// "io"
 	"log"
 	"net/http"
@@ -260,7 +261,7 @@ func embedLyric(songPath string, lyricTobeWritten *lyric.Lyric, isDelete bool) (
 	for _, f := range usltFrames {
 		uslf, ok := f.(id3v2.UnsynchronisedLyricsFrame)
 		if !ok {
-			die(errors.New("USLT error!"))
+			die(errors.New("USLT error"))
 		}
 		if uslf.ContentDescriptor == lyricTobeWritten.LangExt {
 			continue
@@ -314,6 +315,8 @@ func embedSyncLyric(songPath string, lyricTobeWritten *lyric.Lyric, isDelete boo
 
 	if !isDelete {
 		var syncedTextSlice []id3v2.SyncedText
+		var tmpLyricCaptionSlice []lyric.Caption
+		// Here we build a lyric calculated with offset
 		for _, v := range lyricTobeWritten.Captions {
 			timeStamp := v.Timestamp
 			if lyricTobeWritten.Offset >= 0 {
@@ -325,9 +328,23 @@ func embedSyncLyric(songPath string, lyricTobeWritten *lyric.Lyric, isDelete boo
 					timeStamp = 0
 				}
 			}
-			syncedText := id3v2.SyncedText{
+			tmpLyricCaption := lyric.Caption{
 				Text:      v.Text,
 				Timestamp: timeStamp,
+			}
+			tmpLyricCaptionSlice = append(tmpLyricCaptionSlice, tmpLyricCaption)
+		}
+
+		tmpLyric := lyric.Lyric{
+			Captions: tmpLyricCaptionSlice,
+		}
+		// here we merge adjacent lines in the lyric
+		tmpLyric2 := lyric.MergeLRC(tmpLyric)
+
+		for _, v := range tmpLyric2.Captions {
+			syncedText := id3v2.SyncedText{
+				Text:      v.Text,
+				Timestamp: v.Timestamp,
 			}
 			syncedTextSlice = append(syncedTextSlice, syncedText)
 		}
