@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -85,17 +86,17 @@ func NewFromLRC(s string) (res Lyric, err error) {
 			res.Offset = int32(intOffset)
 		}
 
-		r1 := regexp.MustCompile(`(?U)^\[[0-9].*\]`)
-		matchStart := r1.FindStringSubmatch(lines[i])
+		timestampPattern := regexp.MustCompile(`(?U)^\[[0-9].*\]`)
+		matchTimestamp := timestampPattern.FindStringSubmatch(lines[i])
 
-		if len(matchStart) < 1 {
+		if len(matchTimestamp) < 1 {
 			// Here we continue to parse the subtitle and ignore the lines have no timestamp
 			continue
 		}
 
 		var o Caption
 
-		o.Timestamp, err = parseLrcTime(matchStart[0])
+		o.Timestamp, err = parseLrcTime(matchTimestamp[0])
 		if err != nil {
 			err = fmt.Errorf("lrc: start error at line %d: %v", i, err)
 			break
@@ -103,10 +104,22 @@ func NewFromLRC(s string) (res Lyric, err error) {
 
 		r2 := regexp.MustCompile(`^\[.*\]`)
 		s2 := r2.ReplaceAllString(lines[i], "$1")
-		s3 := strings.Trim(s2, "\r ")
+		s3 := strings.Trim(s2, "\r")
+		s3 = strings.Trim(s3, "\n")
+		s3 = strings.TrimSpace(s3)
+		singleSpacePattern := regexp.MustCompile(`\s+`)
+		s3 = singleSpacePattern.ReplaceAllString(s3, " ")
 		o.Text = s3
 		res.Captions = append(res.Captions, o)
 	}
+
+	// we sort the cpations by Timestamp. This is to fix some lyrics downloaded are not sorted
+	sort.SliceStable(res.Captions, func(i, j int) bool {
+		return res.Captions[i].Timestamp < res.Captions[j].Timestamp
+	})
+
+	res = MergeLRC(res)
+
 	return
 }
 
@@ -160,6 +173,25 @@ func cleanLRC(s string) (cleanLyric string) {
 	return cleanLyric
 }
 
+// MergeLRC merge lyric if the time between two captions is less than 2 seconds
+func MergeLRC(lyric Lyric) (res Lyric) {
+
+	lenLyric := len(lyric.Captions)
+	for i := 0; i < lenLyric-1; i++ {
+		if lyric.Captions[i].Timestamp+2000 > lyric.Captions[i+1].Timestamp && lyric.Captions[i].Text != "" {
+			lyric.Captions[i].Text = lyric.Captions[i].Text + " " + lyric.Captions[i+1].Text
+			lyric.Captions = remove(lyric.Captions, i+1)
+			i--
+			lenLyric--
+		}
+	}
+	return lyric
+}
+
+func remove(slice []Caption, s int) []Caption {
+	return append(slice[:s], slice[s+1:]...)
+}
+
 // AsLRC renders the sub in .lrc format
 func (lyric Lyric) AsLRC() (res string) {
 	if lyric.Offset != 0 {
@@ -180,7 +212,7 @@ func (cap Caption) AsLRC() string {
 	return res
 }
 
-// TimeLRC renders a timestamp for use in .lrc
+// TimeLRC renders a timestamp for use in lrc
 func TimeLRC(t uint32) string {
 	tDuration := time.Duration(t) * time.Millisecond
 	h := tDuration / time.Hour
@@ -192,7 +224,5 @@ func TimeLRC(t uint32) string {
 	ms := tDuration / time.Millisecond
 
 	res := fmt.Sprintf("%02d:%02d.%03d", m, s, ms)
-	// res := tDuration.Format("04:05.00")
-	// return strings.Replace(res, ".", ",", 1)
 	return res
 }
