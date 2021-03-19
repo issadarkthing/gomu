@@ -381,10 +381,7 @@ func newQueue() *Queue {
 
 	for key, cmdName := range cmds {
 		src := fmt.Sprintf(`Keybinds.def_q("%c", %s)`, key, cmdName)
-		_, err := gomu.anko.Execute(src)
-		if err != nil {
-			die(err)
-		}
+		gomu.anko.Execute(src)
 	}
 
 	queue.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {

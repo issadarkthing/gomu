@@ -443,10 +443,7 @@ func start(application *tview.Application, args Args) {
 
 	for key, cmdName := range cmds {
 		src := fmt.Sprintf(`Keybinds.def_g("%c", %s)`, key, cmdName)
-		_, err := gomu.anko.Execute(src)
-		if err != nil {
-			die(err)
-		}
+		gomu.anko.Execute(src)
 	}
 
 	// global keybindings are handled here

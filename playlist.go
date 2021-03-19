@@ -182,10 +182,7 @@ func newPlaylist(args Args) *Playlist {
 
 	for key, cmdName := range cmds {
 		src := fmt.Sprintf(`Keybinds.def_p("%c", %s)`, key, cmdName)
-		_, err := anko.Execute(src)
-		if err != nil {
-			die(err)
-		}
+		anko.Execute(src)
 	}
 
 	playlist.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
