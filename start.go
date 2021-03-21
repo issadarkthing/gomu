@@ -69,6 +69,19 @@ func defineBuiltins() {
 func defineInternals() {
 	playlist, _ := gomu.anko.NewModule("Playlist")
 	playlist.Define("get_focused", gomu.playlist.getCurrentFile)
+	playlist.Define("focus", func(filename string) {
+		
+		root := gomu.playlist.GetRoot()
+		root.Walk(func(node, _ *tview.TreeNode) bool {
+
+			if node.GetReference().(*AudioFile).Name() == filename {
+				gomu.playlist.setHighlight(node)
+				return false
+			}
+
+			return true
+		})
+	})
 
 	queue, _ := gomu.anko.NewModule("Queue")
 	queue.Define("get_focused", func() *AudioFile {

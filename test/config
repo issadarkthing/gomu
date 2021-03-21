@@ -135,6 +135,7 @@ Keybinds.def_g("R", func() {
 		cmd.Run()
 		os.Remove(file.Path())
 		refresh()
+		Playlist.focus(new_name)
 	})
 })
 
