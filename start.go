@@ -58,12 +58,30 @@ func getArgs() Args {
 
 // built-in functions
 func defineBuiltins() {
-	gomu.anko.Define("debug_popup", debugPopup)
-	gomu.anko.Define("info_popup", infoPopup)
-	gomu.anko.Define("input_popup", inputPopup)
-	gomu.anko.Define("show_popup", defaultTimedPopup)
-	gomu.anko.Define("search_popup", searchPopup)
-	gomu.anko.Define("shell", shell)
+	gomu.anko.DefineGlobal("debug_popup", debugPopup)
+	gomu.anko.DefineGlobal("info_popup", infoPopup)
+	gomu.anko.DefineGlobal("input_popup", inputPopup)
+	gomu.anko.DefineGlobal("show_popup", defaultTimedPopup)
+	gomu.anko.DefineGlobal("search_popup", searchPopup)
+	gomu.anko.DefineGlobal("shell", shell)
+}
+
+func defineInternals() {
+	playlist, _ := gomu.anko.NewModule("Playlist")
+	playlist.Define("get_focused", gomu.playlist.getCurrentFile)
+
+	queue, _ := gomu.anko.NewModule("Queue")
+	queue.Define("get_focused", func() *AudioFile {
+		index := gomu.queue.GetCurrentItem()
+		if index < 0 || index > len(gomu.queue.items)-1 {
+			return nil
+		}
+		item := gomu.queue.items[index]
+		return item
+	})
+
+	player, _ := gomu.anko.NewModule("Player")
+	player.Define("current_audio", gomu.player.GetCurrentSong)
 }
 
 func setupHooks(hook *hook.EventHook, anko *anko.Anko) {
@@ -326,6 +344,7 @@ func start(application *tview.Application, args Args) {
 	tview.Styles.PrimitiveBackgroundColor = gomu.colors.popup
 
 	gomu.initPanels(application, args)
+	defineInternals()
 
 	gomu.player.SetSongStart(func(audio player.Audio) {
 

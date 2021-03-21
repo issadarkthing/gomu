@@ -122,6 +122,22 @@ Keybinds.def_q("i", func() {
 
 Keybinds.def_g("c", show_colors)
 
+# better rename command which does not change the mtime of file
+Keybinds.def_g("R", func() {
+	exec = import("os/exec")
+	os = import("os")
+
+	file = Playlist.get_focused()
+	dir = file.GetParent().Path()
+
+	input_popup("New name", file.Name(), func(new_name) {
+		cmd = exec.Command("cp", "-p", file.Path(), dir + "/" + new_name)
+		cmd.Run()
+		os.Remove(file.Path())
+		refresh()
+	})
+})
+
 # you can get the syntax highlighting for this language here:
 # https://github.com/mattn/anko/tree/master/misc/vim
 # vim: ft=anko

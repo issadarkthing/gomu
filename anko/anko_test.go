@@ -10,7 +10,7 @@ import (
 
 func TestDefine(t *testing.T) {
 	a := NewAnko()
-	err := a.Define("x", 12)
+	err := a.DefineGlobal("x", 12)
 	if err != nil {
 		t.Error(err)
 	}
@@ -18,7 +18,7 @@ func TestDefine(t *testing.T) {
 
 func TestSet(t *testing.T) {
 	a := NewAnko()
-	err := a.Define("x", 12)
+	err := a.DefineGlobal("x", 12)
 	if err != nil {
 		t.Error(err)
 	}
@@ -33,7 +33,7 @@ func TestGet(t *testing.T) {
 	a := NewAnko()
 
 	expect := 12
-	err := a.Define("x", expect)
+	err := a.DefineGlobal("x", expect)
 	if err != nil {
 		t.Error(err)
 	}
@@ -73,7 +73,7 @@ func TestGetInt(t *testing.T) {
 	got = a.GetInt("S.y")
 	assert.Equal(t, 0, got)
 
-	a.Define("z", expect)
+	a.DefineGlobal("z", expect)
 	val := a.GetInt("z")
 
 	assert.Equal(t, expect, val)
@@ -102,7 +102,7 @@ func TestGetString(t *testing.T) {
 	got = a.GetString("S.y")
 	assert.Equal(t, "", got)
 
-	a.Define("z", expect)
+	a.DefineGlobal("z", expect)
 	val := a.GetString("z")
 
 	assert.Equal(t, expect, val)
@@ -111,7 +111,7 @@ func TestGetString(t *testing.T) {
 func TestGetBool(t *testing.T) {
 	expect := true
 	a := NewAnko()
-	a.Define("x", expect)
+	a.DefineGlobal("x", expect)
 
 	_, err := a.Execute(`module S { x = true }`)
 	if err != nil {

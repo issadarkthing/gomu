@@ -601,10 +601,11 @@ func infoPopup(message string) {
 	defaultTimedPopup(" Info ", message)
 }
 
-func inputPopup(prompt string, handler func(string)) {
+func inputPopup(prompt, placeholder string, handler func(string)) {
 
 	popupID := "general-input-popup"
 	input := newInputPopup(popupID, "", prompt+": ", "")
+	input.SetText(placeholder)
 	input.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 		switch e.Key() {
@@ -640,15 +641,16 @@ func replPopup() {
 	history := []string{}
 	upCount := 0
 
-	gomu.anko.Define("println", func(x ...interface{}) {
+	gomu.anko.DefineGlobal("println", func(x ...interface{}) {
 		fmt.Fprintln(textview, x...)
 	})
-	gomu.anko.Define("print", func(x ...interface{}) {
+	gomu.anko.DefineGlobal("print", func(x ...interface{}) {
 		fmt.Fprint(textview, x...)
 	})
-	gomu.anko.Define("printf", func(format string, x ...interface{}) {
+	gomu.anko.DefineGlobal("printf", func(format string, x ...interface{}) {
 		fmt.Fprintf(textview, format, x...)
 	})
+
 
 	input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 
