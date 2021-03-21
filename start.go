@@ -69,12 +69,12 @@ func defineBuiltins() {
 func defineInternals() {
 	playlist, _ := gomu.anko.NewModule("Playlist")
 	playlist.Define("get_focused", gomu.playlist.getCurrentFile)
-	playlist.Define("focus", func(filename string) {
+	playlist.Define("focus", func(filepath string) {
 		
 		root := gomu.playlist.GetRoot()
 		root.Walk(func(node, _ *tview.TreeNode) bool {
 
-			if node.GetReference().(*AudioFile).Name() == filename {
+			if node.GetReference().(*AudioFile).Path() == filepath {
 				gomu.playlist.setHighlight(node)
 				return false
 			}

@@ -330,8 +330,8 @@ func (p *Playlist) addAllToQueue(root *tview.TreeNode) {
 func (p *Playlist) refresh() {
 
 	root := gomu.playlist.GetRoot()
-
-	prevFileName := gomu.playlist.GetCurrentNode().GetText()
+	prevNode := gomu.playlist.GetCurrentNode()
+	prevFilepath := prevNode.GetReference().(*AudioFile).Path()
 
 	root.ClearChildren()
 	node := root.GetReference().(*AudioFile)
@@ -341,7 +341,7 @@ func (p *Playlist) refresh() {
 	root.Walk(func(node, _ *tview.TreeNode) bool {
 
 		// to preserve previously highlighted node
-		if node.GetText() == prevFileName {
+		if node.GetReference().(*AudioFile).Path() == prevFilepath {
 			p.setHighlight(node)
 			return false
 		}
