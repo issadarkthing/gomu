@@ -249,6 +249,7 @@ func shell(input string) (string, error) {
 }
 
 func embedLyric(songPath string, lyricTobeWritten *lyric.Lyric, isDelete bool) (err error) {
+
 	var tag *id3v2.Tag
 	tag, err = id3v2.Open(songPath, id3v2.Options{Parse: true})
 	if err != nil {
@@ -261,45 +262,13 @@ func embedLyric(songPath string, lyricTobeWritten *lyric.Lyric, isDelete bool) (
 	for _, f := range usltFrames {
 		uslf, ok := f.(id3v2.UnsynchronisedLyricsFrame)
 		if !ok {
-			die(errors.New("USLT error"))
+			die(errors.New("uslt error"))
 		}
 		if uslf.ContentDescriptor == lyricTobeWritten.LangExt {
 			continue
 		}
 		tag.AddUnsynchronisedLyricsFrame(uslf)
 	}
-
-	if !isDelete {
-		tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
-			Encoding:          id3v2.EncodingUTF8,
-			Language:          "eng",
-			ContentDescriptor: lyricTobeWritten.LangExt,
-			Lyrics:            lyricTobeWritten.AsLRC(),
-		})
-	}
-
-	err = tag.Save()
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-
-	err = embedSyncLyric(songPath, lyricTobeWritten, isDelete)
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-
-	return err
-}
-
-func embedSyncLyric(songPath string, lyricTobeWritten *lyric.Lyric, isDelete bool) (err error) {
-	var tag *id3v2.Tag
-	tag, err = id3v2.Open(songPath, id3v2.Options{Parse: true})
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-	defer tag.Close()
-
-	// We delete the lyric frame with same language by delete all and add others back
 	syltFrames := tag.GetFrames(tag.CommonID("Synchronised lyrics/text"))
 	tag.DeleteFrames(tag.CommonID("Synchronised lyrics/text"))
 	for _, f := range syltFrames {
@@ -314,56 +283,34 @@ func embedSyncLyric(songPath string, lyricTobeWritten *lyric.Lyric, isDelete boo
 	}
 
 	if !isDelete {
-		var syncedTextSlice []id3v2.SyncedText
-		var tmpLyricCaptionSlice []lyric.Caption
-		// Here we build a lyric calculated with offset
-		for _, v := range lyricTobeWritten.Captions {
-			timeStamp := v.Timestamp
-			if lyricTobeWritten.Offset >= 0 {
-				timeStamp += uint32(lyricTobeWritten.Offset)
-			} else {
-				if timeStamp > uint32(-lyricTobeWritten.Offset) {
-					timeStamp -= uint32(-lyricTobeWritten.Offset)
-				} else {
-					timeStamp = 0
-				}
-			}
-			tmpLyricCaption := lyric.Caption{
-				Text:      v.Text,
-				Timestamp: timeStamp,
-			}
-			tmpLyricCaptionSlice = append(tmpLyricCaptionSlice, tmpLyricCaption)
+		tag.AddUnsynchronisedLyricsFrame(id3v2.UnsynchronisedLyricsFrame{
+			Encoding:          id3v2.EncodingUTF8,
+			Language:          "eng",
+			ContentDescriptor: lyricTobeWritten.LangExt,
+			Lyrics:            lyricTobeWritten.AsLRC(),
+		})
+		lyric, err := lyric.NewFromLRC(lyricTobeWritten.AsLRC())
+		if err != nil {
+			return tracerr.Wrap(err)
 		}
-
-		tmpLyric := lyric.Lyric{
-			Captions: tmpLyricCaptionSlice,
-		}
-		// here we merge adjacent lines in the lyric
-		tmpLyric2 := lyric.MergeLRC(tmpLyric)
-
-		for _, v := range tmpLyric2.Captions {
-			syncedText := id3v2.SyncedText{
-				Text:      v.Text,
-				Timestamp: v.Timestamp,
-			}
-			syncedTextSlice = append(syncedTextSlice, syncedText)
-		}
-
 		tag.AddSynchronisedLyricsFrame(id3v2.SynchronisedLyricsFrame{
 			Encoding:          id3v2.EncodingUTF8,
 			Language:          "eng",
 			TimestampFormat:   2,
 			ContentType:       1,
 			ContentDescriptor: lyricTobeWritten.LangExt,
-			SynchronizedTexts: syncedTextSlice,
+			SynchronizedTexts: lyric.SyncedCaptions,
 		})
+
 	}
 
 	err = tag.Save()
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
+
 	return err
+
 }
 
 func embedLength(songPath string) (time.Duration, error) {
