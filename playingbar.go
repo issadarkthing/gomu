@@ -200,6 +200,7 @@ func (p *PlayingBar) switchLyrics() {
 	}
 	// no subtitle just ignore
 	if len(p.subtitles) == 0 {
+		defaultTimedPopup(" Warning ", "No embed lyric found")
 		p.subtitle = nil
 		return
 	}
