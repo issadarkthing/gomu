@@ -283,20 +283,20 @@ func tagPopup(node *AudioFile) (err error) {
 					options = newOptions
 					// Update dropdown options
 					lyricDropDown.SetOptions(newOptions, nil).
-					SetCurrentOption(0).
-					SetSelectedFunc(func(text string, _ int) {
-						lyricTextView.SetText(popupLyricMap[text]).
-						SetTitle(" " + text + " lyric preview ")
-					})
+						SetCurrentOption(0).
+						SetSelectedFunc(func(text string, _ int) {
+							lyricTextView.SetText(popupLyricMap[text]).
+								SetTitle(" " + text + " lyric preview ")
+						})
 
 					// Update lyric preview
 					if len(newOptions) > 0 {
 						_, langExt := lyricDropDown.GetCurrentOption()
 						lyricTextView.SetText(popupLyricMap[langExt]).
-						SetTitle(" " + langExt + " lyric preview ")
+							SetTitle(" " + langExt + " lyric preview ")
 					} else {
 						lyricTextView.SetText("No lyric embeded.").
-						SetTitle(" lyric preview ")
+							SetTitle(" lyric preview ")
 					}
 
 				}()
