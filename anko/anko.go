@@ -48,9 +48,21 @@ func NewAnko() *Anko {
 	return &Anko{env}
 }
 
-// Define defines new symbol and value to the Anko env.
-func (a *Anko) Define(symbol string, value interface{}) error {
+// DefineGlobal defines new symbol and value to the Anko env.
+func (a *Anko) DefineGlobal(symbol string, value interface{}) error {
 	return a.env.DefineGlobal(symbol, value)
+}
+
+func (a *Anko) NewModule(name string) (*Anko, error) {
+	env, err := a.env.NewModule(name)
+	if err != nil {
+		return nil, err
+	}
+	return &Anko{env}, nil
+}
+
+func (a *Anko) Define(name string, value interface{}) error {
+	return a.env.Define(name, value)
 }
 
 // Set sets new value to existing symbol. Use this when change value under an

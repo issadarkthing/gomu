@@ -452,7 +452,7 @@ func (c Command) defineCommands() {
 	})
 
 	for name, cmd := range c.commands {
-		err := gomu.anko.Define(name, cmd)
+		err := gomu.anko.DefineGlobal(name, cmd)
 		if err != nil {
 			logError(err)
 		}

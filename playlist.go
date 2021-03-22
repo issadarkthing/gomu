@@ -22,7 +22,10 @@ import (
 	"github.com/ztrue/tracerr"
 
 	"github.com/issadarkthing/gomu/lyric"
+	"github.com/issadarkthing/gomu/player"
 )
+
+var _ player.Audio = (*AudioFile)(nil)
 
 // AudioFile represents directories and mp3 files
 // isAudioFile equals to false if it is a directory
@@ -42,6 +45,29 @@ func (a *AudioFile) Name() string {
 func (a *AudioFile) Path() string {
 	return a.path
 }
+
+func (a *AudioFile) IsAudioFile() bool {
+	return a.isAudioFile
+}
+
+func (a *AudioFile) Len() time.Duration {
+	return a.length
+}
+
+func (a *AudioFile) GetParent() *AudioFile {
+	if a.parent == nil {
+		return nil
+	}
+	return a.parent.GetReference().(*AudioFile)
+}
+
+func (a *AudioFile) String() string {
+	if a == nil {
+		return "nil"
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
 
 // Playlist struct represents playlist panel
 // that shows the tree of the music directory
@@ -206,7 +232,6 @@ func newPlaylist(args Args) *Playlist {
 	})
 
 	return playlist
-
 }
 
 // Returns the current file highlighted in the playlist

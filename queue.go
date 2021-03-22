@@ -414,7 +414,6 @@ func newQueue() *Queue {
 		SetBackgroundColor(gomu.colors.background)
 
 	return queue
-
 }
 
 // Convert string to sha1.
