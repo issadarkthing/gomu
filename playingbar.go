@@ -242,6 +242,12 @@ func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
+		for _, v := range p.subtitles {
+			if strings.Contains(v.LangExt, p.subtitle.LangExt) {
+				p.subtitle = v
+				break
+			}
+		}
 	}
 	return nil
 }
