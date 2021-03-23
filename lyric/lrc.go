@@ -39,7 +39,6 @@ type Lyric struct {
 	LangExt             string
 	UnsyncedCaptions    []UnsyncedCaption  // USLT captions
 	SyncedCaptions      []id3v2.SyncedText // SYLT captions
-
 }
 
 type UnsyncedCaption struct {
@@ -120,7 +119,9 @@ func NewFromLRC(s string) (res Lyric, err error) {
 		return res.UnsyncedCaptions[i].Timestamp < res.UnsyncedCaptions[j].Timestamp
 	})
 
-	res = MergeLRC(res)
+	res = mergeLRC(res)
+
+	// add synced lyric by calculating offset of unsynced lyric
 	for _, v := range res.UnsyncedCaptions {
 		var s id3v2.SyncedText
 		s.Text = v.Text
@@ -136,7 +137,8 @@ func NewFromLRC(s string) (res Lyric, err error) {
 		res.SyncedCaptions = append(res.SyncedCaptions, s)
 	}
 
-	res = MergeSyncLRC(res)
+	// merge again because timestamp 0 could overlap if offset is negative
+	res = mergeSyncLRC(res)
 	return
 }
 
@@ -190,14 +192,14 @@ func cleanLRC(s string) (cleanLyric string) {
 	return cleanLyric
 }
 
-// MergeLRC merge lyric if the time between two captions is less than 2 seconds
-func MergeLRC(lyric Lyric) (res Lyric) {
+// mergeLRC merge lyric if the time between two captions is less than 2 seconds
+func mergeLRC(lyric Lyric) (res Lyric) {
 
 	lenLyric := len(lyric.UnsyncedCaptions)
 	for i := 0; i < lenLyric-1; i++ {
 		if lyric.UnsyncedCaptions[i].Timestamp+2000 > lyric.UnsyncedCaptions[i+1].Timestamp && lyric.UnsyncedCaptions[i].Text != "" {
 			lyric.UnsyncedCaptions[i].Text = lyric.UnsyncedCaptions[i].Text + " " + lyric.UnsyncedCaptions[i+1].Text
-			lyric.UnsyncedCaptions = remove(lyric.UnsyncedCaptions, i+1)
+			lyric.UnsyncedCaptions = removeUnsynced(lyric.UnsyncedCaptions, i+1)
 			i--
 			lenLyric--
 		}
@@ -205,7 +207,9 @@ func MergeLRC(lyric Lyric) (res Lyric) {
 	return lyric
 }
 
-func MergeSyncLRC(lyric Lyric) (res Lyric) {
+// mergeSyncLRC merge lyric if the time between two captions is less than 2 seconds
+// this is specially useful when offset is negative and several timestamp 0 in synced lyric
+func mergeSyncLRC(lyric Lyric) (res Lyric) {
 
 	lenLyric := len(lyric.SyncedCaptions)
 	for i := 0; i < lenLyric-1; i++ {
@@ -219,7 +223,7 @@ func MergeSyncLRC(lyric Lyric) (res Lyric) {
 	return lyric
 }
 
-func remove(slice []UnsyncedCaption, s int) []UnsyncedCaption {
+func removeUnsynced(slice []UnsyncedCaption, s int) []UnsyncedCaption {
 	return append(slice[:s], slice[s+1:]...)
 }
 
@@ -235,20 +239,20 @@ func (lyric Lyric) AsLRC() (res string) {
 	}
 
 	for _, sub := range lyric.UnsyncedCaptions {
-		res += sub.AsLRC()
+		res += sub.asLRC()
 	}
 	return
 }
 
-// AsLRC renders the caption as one line in lrc
-func (cap UnsyncedCaption) AsLRC() string {
-	res := "[" + TimeLRC(cap.Timestamp) + "]"
+// asLRC renders the caption as one line in lrc
+func (cap UnsyncedCaption) asLRC() string {
+	res := "[" + timeLRC(cap.Timestamp) + "]"
 	res += cap.Text + eol
 	return res
 }
 
-// TimeLRC renders a timestamp for use in lrc
-func TimeLRC(t uint32) string {
+// timeLRC renders a timestamp for use in lrc
+func timeLRC(t uint32) string {
 	tDuration := time.Duration(t) * time.Millisecond
 	h := tDuration / time.Hour
 	tDuration -= h * time.Hour
