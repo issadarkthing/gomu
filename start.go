@@ -366,14 +366,8 @@ func start(application *tview.Application, args Args) {
 			description = name
 		} else {
 			lang := gomu.playingBar.subtitle.LangExt
-			var sync string
-			if gomu.playingBar.subtitle.IsSync {
-				sync = "synchronized"
-			} else {
-				sync = "unsynchronized"
-			}
 
-			description = fmt.Sprintf("%s \n\n %s %s lyric loaded", name, lang, sync)
+			description = fmt.Sprintf("%s \n\n %s lyric loaded", name, lang)
 		}
 
 		defaultTimedPopup(" Now Playing ", description)
@@ -440,7 +434,6 @@ func start(application *tview.Application, args Args) {
 		}
 	}()
 
-
 	cmds := map[rune]string{
 		'q': "quit",
 		' ': "toggle_pause",
@@ -479,6 +472,11 @@ func start(application *tview.Application, args Args) {
 			return e
 		}
 
+		// disables keybindings when popup messages
+		if strings.Contains(popupName, "timeout-popup") {
+			return e
+		}
+
 		switch e.Key() {
 		// cycle through each section
 		case tcell.KeyTAB:
@@ -497,7 +495,6 @@ func start(application *tview.Application, args Args) {
 
 			return nil
 		}
-
 
 		return e
 	})

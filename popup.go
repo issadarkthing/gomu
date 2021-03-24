@@ -512,6 +512,8 @@ func searchPopup(title string, stringsToMatch []string, handler func(selected st
 
 	gomu.pages.AddPage("search-input-popup", center(popup, 70, 40), true, true)
 	gomu.popups.push(popup)
+	// This is to ensure the popup is shown even when paused
+	gomu.app.Draw()
 }
 
 // Creates new popup widget with default settings
@@ -650,7 +652,6 @@ func replPopup() {
 	gomu.anko.DefineGlobal("printf", func(format string, x ...interface{}) {
 		fmt.Fprintf(textview, format, x...)
 	})
-
 
 	input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 

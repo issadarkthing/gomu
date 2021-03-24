@@ -1,6 +1,7 @@
 package lyric
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -9,6 +10,30 @@ import (
 	"github.com/asmcos/requests"
 	"github.com/ztrue/tracerr"
 )
+
+// tagNetease is the tag get from netease
+type tagNetease struct {
+	Album   string   `json:"album"`
+	Artist  []string `json:"artist"`
+	ID      int64    `json:"id"`
+	LyricID int64    `json:"lyric_id"`
+	Name    string   `json:"name"`
+	PicID   string   `json:"pic_id"`
+	Source  string   `json:"source"`
+	URLID   int64    `json:"url_id"`
+}
+
+// tagKugou is the tag get from kugou
+type tagKugou struct {
+	Album   string   `json:"album"`
+	Artist  []string `json:"artist"`
+	ID      string   `json:"id"`
+	LyricID string   `json:"lyric_id"`
+	Name    string   `json:"name"`
+	PicID   string   `json:"pic_id"`
+	Source  string   `json:"source"`
+	URLID   string   `json:"url_id"`
+}
 
 // getLyricOptionsCn queries available song lyrics. It returns slice of SongTag
 func getLyricOptionsCn(search string) ([]*SongTag, error) {
@@ -75,50 +100,58 @@ func getLyricOptionsCnByProvider(search string, serviceProvider string) ([]*Song
 		return nil, tracerr.Wrap(err)
 	}
 
-	var dataMap []map[string]interface{}
-	err = resp.Json(&dataMap)
-	if err != nil {
-		return nil, tracerr.Wrap(err)
-	}
-	for _, v := range dataMap {
-		songName := v["name"]
-		resultName := fmt.Sprintf("%s", songName)
-		songArtist := v["artist"]
-		resultArtist := fmt.Sprintf("%s", songArtist)
-		songAlbum := v["album"]
-		resultAlbum := fmt.Sprintf("%s", songAlbum)
-		var resultLyricID string
-		if serviceProvider == "netease" {
-			lyricIDfloat64 := v["lyric_id"]
-			resultLyricID = strconv.FormatFloat(lyricIDfloat64.(float64), 'f', -1, 64)
-		} else if serviceProvider == "kugou" {
-			resultLyricID = v["lyric_id"].(string)
-		}
-		var resultSongID string
-		if serviceProvider == "netease" {
-			songIDfloat64 := v["id"]
-			resultSongID = strconv.FormatFloat(songIDfloat64.(float64), 'f', -1, 64)
-		} else if serviceProvider == "kugou" {
-			resultSongID = v["id"].(string)
+	switch serviceProvider {
+	case "kugou":
+		var tagKugou []tagKugou
+		err = json.Unmarshal(resp.Content(), &tagKugou)
+		if err != nil {
+			return nil, tracerr.Wrap(err)
 		}
 
-		resultArtist = strings.TrimPrefix(resultArtist, "[")
-		resultArtist = strings.TrimSuffix(resultArtist, "]")
-		songTitle := fmt.Sprintf("%s - %s : %s", resultArtist, songName, resultAlbum)
-		if resultLyricID == "" || resultSongID == "" {
-			continue
+		for _, v := range tagKugou {
+			resultArtist := strings.Join(v.Artist, " ")
+			songName := v.Name
+			resultAlbum := v.Album
+			songTitleForPopup := fmt.Sprintf("%s - %s : %s", resultArtist, songName, resultAlbum)
+			songTag := &SongTag{
+				Artist:          resultArtist,
+				Title:           v.Name,
+				Album:           v.Album,
+				TitleForPopup:   songTitleForPopup,
+				LangExt:         "zh-CN",
+				ServiceProvider: serviceProvider,
+				SongID:          v.ID,
+				LyricID:         v.LyricID,
+			}
+			resultTags = append(resultTags, songTag)
 		}
-		songTag := &SongTag{
-			Artist:          resultArtist,
-			Title:           resultName,
-			Album:           resultAlbum,
-			TitleForPopup:   songTitle,
-			LangExt:         "zh-CN",
-			ServiceProvider: serviceProvider,
-			SongID:          resultSongID,
-			LyricID:         resultLyricID,
+
+	case "netease":
+		var tagNetease []tagNetease
+		err = json.Unmarshal(resp.Content(), &tagNetease)
+		if err != nil {
+			return nil, tracerr.Wrap(err)
 		}
-		resultTags = append(resultTags, songTag)
+
+		for _, v := range tagNetease {
+			resultArtist := strings.Join(v.Artist, " ")
+			songName := v.Name
+			resultAlbum := v.Album
+			songTitleForPopup := fmt.Sprintf("%s - %s : %s", resultArtist, songName, resultAlbum)
+			songTag := &SongTag{
+				Artist:          resultArtist,
+				Title:           v.Name,
+				Album:           v.Album,
+				URL:             "",
+				TitleForPopup:   songTitleForPopup,
+				LangExt:         "zh-CN",
+				ServiceProvider: serviceProvider,
+				SongID:          strconv.FormatInt(v.ID, 10),
+				LyricID:         strconv.FormatInt(v.LyricID, 10),
+			}
+			resultTags = append(resultTags, songTag)
+		}
+
 	}
 
 	return resultTags, nil

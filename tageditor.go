@@ -76,39 +76,41 @@ func tagPopup(node *AudioFile) (err error) {
 			titles = append(titles, v.TitleForPopup)
 		}
 
-		searchPopup(" Song Tags ", titles, func(selected string) {
-			if selected == "" {
-				return
-			}
-
-			var selectedIndex int
-			for i, v := range results {
-				if v.TitleForPopup == selected {
-					selectedIndex = i
-					break
+		go func() {
+			searchPopup(" Song Tags ", titles, func(selected string) {
+				if selected == "" {
+					return
 				}
-			}
 
-			newTag := results[selectedIndex]
-			artistInputField.SetText(newTag.Artist)
-			titleInputField.SetText(newTag.Title)
-			albumInputField.SetText(newTag.Album)
+				var selectedIndex int
+				for i, v := range results {
+					if v.TitleForPopup == selected {
+						selectedIndex = i
+						break
+					}
+				}
 
-			tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
-			if err != nil {
-				errorPopup(err)
-			}
-			defer tag.Close()
-			tag.SetArtist(newTag.Artist)
-			tag.SetTitle(newTag.Title)
-			tag.SetAlbum(newTag.Album)
-			err = tag.Save()
-			if err != nil {
-				errorPopup(err)
-			} else {
-				defaultTimedPopup(" Success ", "Tag update successfully")
-			}
-		})
+				newTag := results[selectedIndex]
+				artistInputField.SetText(newTag.Artist)
+				titleInputField.SetText(newTag.Title)
+				albumInputField.SetText(newTag.Album)
+
+				tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+				if err != nil {
+					errorPopup(err)
+				}
+				defer tag.Close()
+				tag.SetArtist(newTag.Artist)
+				tag.SetTitle(newTag.Title)
+				tag.SetAlbum(newTag.Album)
+				err = tag.Save()
+				if err != nil {
+					errorPopup(err)
+				} else {
+					defaultTimedPopup(" Success ", "Tag update successfully")
+				}
+			})
+		}()
 	}).
 		SetBackgroundColorActivated(gomu.colors.popup).
 		SetLabelColorActivated(gomu.colors.accent).
@@ -283,20 +285,20 @@ func tagPopup(node *AudioFile) (err error) {
 					options = newOptions
 					// Update dropdown options
 					lyricDropDown.SetOptions(newOptions, nil).
-					SetCurrentOption(0).
-					SetSelectedFunc(func(text string, _ int) {
-						lyricTextView.SetText(popupLyricMap[text]).
-						SetTitle(" " + text + " lyric preview ")
-					})
+						SetCurrentOption(0).
+						SetSelectedFunc(func(text string, _ int) {
+							lyricTextView.SetText(popupLyricMap[text]).
+								SetTitle(" " + text + " lyric preview ")
+						})
 
 					// Update lyric preview
 					if len(newOptions) > 0 {
 						_, langExt := lyricDropDown.GetCurrentOption()
 						lyricTextView.SetText(popupLyricMap[langExt]).
-						SetTitle(" " + langExt + " lyric preview ")
+							SetTitle(" " + langExt + " lyric preview ")
 					} else {
 						lyricTextView.SetText("No lyric embeded.").
-						SetTitle(" lyric preview ")
+							SetTitle(" lyric preview ")
 					}
 
 				}()

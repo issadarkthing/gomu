@@ -3,6 +3,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -87,19 +88,20 @@ func (p *PlayingBar) run() error {
 		// our progress bar
 		var lyricText string
 		if p.subtitle != nil {
-			for i := range p.subtitle.Captions {
-				startTime := int32(p.subtitle.Captions[i].Timestamp) + p.subtitle.Offset
+			for i := range p.subtitle.SyncedCaptions {
+				startTime := int32(p.subtitle.SyncedCaptions[i].Timestamp)
 				var endTime int32
-				if i < len(p.subtitle.Captions)-1 {
-					endTime = int32(p.subtitle.Captions[i+1].Timestamp) + p.subtitle.Offset
+				if i < len(p.subtitle.SyncedCaptions)-1 {
+					endTime = int32(p.subtitle.SyncedCaptions[i+1].Timestamp)
 				} else {
 					// Here we display the last lyric until the end of song
 					endTime = int32(p.full * 1000)
 				}
 
-				currentTime := int32(p.progress * 1000)
+				// here the currentTime is delayed 1 second because we want to show lyrics earlier
+				currentTime := int32(p.progress*1000) + 1000
 				if currentTime >= startTime && currentTime <= endTime {
-					lyricText = p.subtitle.Captions[i].Text
+					lyricText = p.subtitle.SyncedCaptions[i].Text
 					break
 				} else {
 					lyricText = ""
@@ -153,9 +155,7 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 		for _, v := range p.subtitles {
 			if strings.Contains(langLyricFromConfig, v.LangExt) {
 				p.subtitle = v
-				if v.IsSync {
-					break
-				}
+				break
 			}
 		}
 
@@ -164,9 +164,7 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 			for _, v := range p.subtitles {
 				if v.LangExt == "en" {
 					p.subtitle = v
-					if v.IsSync {
-						break
-					}
+					break
 				}
 			}
 		}
@@ -202,16 +200,14 @@ func (p *PlayingBar) switchLyrics() {
 	}
 	// no subtitle just ignore
 	if len(p.subtitles) == 0 {
+		defaultTimedPopup(" Warning ", "No embed lyric found")
+		p.subtitle = nil
 		return
 	}
 
 	// only 1 subtitle, prompt to the user and select this one
 	if len(p.subtitles) == 1 {
-		sync := " unsynchronized"
-		if p.subtitles[0].IsSync {
-			sync = " synchronized"
-		}
-		defaultTimedPopup(" Warning ", p.subtitle.LangExt+sync+" lyric is the only lyric available")
+		defaultTimedPopup(" Warning ", p.subtitle.LangExt+" lyric is the only lyric available")
 		p.subtitle = p.subtitles[0]
 		return
 	}
@@ -219,7 +215,7 @@ func (p *PlayingBar) switchLyrics() {
 	// more than 1 subtitle, cycle through them and select next
 	var langIndex int
 	for i, v := range p.subtitles {
-		if p.subtitle.LangExt == v.LangExt && p.subtitle.IsSync == v.IsSync {
+		if p.subtitle.LangExt == v.LangExt {
 			langIndex = i + 1
 			break
 		}
@@ -231,11 +227,7 @@ func (p *PlayingBar) switchLyrics() {
 
 	p.subtitle = p.subtitles[langIndex]
 
-	sync := " unsynchronized"
-	if p.subtitle.IsSync {
-		sync = " synchronized"
-	}
-	defaultTimedPopup(" Success ", p.subtitle.LangExt+sync+" lyric switched successfully.")
+	defaultTimedPopup(" Success ", p.subtitle.LangExt+" lyric switched successfully.")
 }
 
 func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
@@ -245,6 +237,16 @@ func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 		err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle, false)
 		if err != nil {
 			return tracerr.Wrap(err)
+		}
+		err = p.loadLyrics(gomu.player.GetCurrentSong().Path())
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+		for _, v := range p.subtitles {
+			if strings.Contains(v.LangExt, p.subtitle.LangExt) {
+				p.subtitle = v
+				break
+			}
 		}
 	}
 	return nil
@@ -267,46 +269,29 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 	p.hasTag = true
 	p.tag = tag
 
-	// load usltFrames if available
-	usltFrames := tag.GetFrames(tag.CommonID("Unsynchronised lyrics/text transcription"))
-	for _, f := range usltFrames {
-		uslf, ok := f.(id3v2.UnsynchronisedLyricsFrame)
-		if !ok {
-			return fmt.Errorf("USLT error")
-		}
-		res, err := lyric.NewFromLRC(uslf.Lyrics)
-		if err != nil {
-			return tracerr.Wrap(err)
-		}
-		subtitle := &res
-		subtitle.LangExt = uslf.ContentDescriptor
-		subtitle.IsSync = false
-		p.subtitles = append(p.subtitles, subtitle)
-	}
-
-	// loading syltFrames if available
 	syltFrames := tag.GetFrames(tag.CommonID("Synchronised lyrics/text"))
+	usltFrames := tag.GetFrames(tag.CommonID("Unsynchronised lyrics/text transcription"))
 
 	for _, f := range syltFrames {
 		sylf, ok := f.(id3v2.SynchronisedLyricsFrame)
 		if !ok {
 			return fmt.Errorf("sylt error")
 		}
-
-		var caps []lyric.Caption
-		for _, v := range sylf.SynchronizedTexts {
-			var cap lyric.Caption
-			cap.Timestamp = v.Timestamp
-			cap.Text = v.Text
-			caps = append(caps, cap)
+		for _, u := range usltFrames {
+			uslf, ok := u.(id3v2.UnsynchronisedLyricsFrame)
+			if !ok {
+				return errors.New("USLT error")
+			}
+			if sylf.ContentDescriptor == uslf.ContentDescriptor {
+				lyric, err := lyric.NewFromLRC(uslf.Lyrics)
+				if err != nil {
+					return tracerr.Wrap(err)
+				}
+				lyric.SyncedCaptions = sylf.SynchronizedTexts
+				lyric.LangExt = sylf.ContentDescriptor
+				p.subtitles = append(p.subtitles, &lyric)
+			}
 		}
-
-		lyric := &lyric.Lyric{
-			LangExt:  sylf.ContentDescriptor,
-			IsSync:   true,
-			Captions: caps,
-		}
-		p.subtitles = append(p.subtitles, lyric)
 	}
 
 	return nil
