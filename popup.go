@@ -848,7 +848,7 @@ func ytSearchPopup() {
 	})
 }
 
-func lyricPopup(lang string, audioFile *AudioFile) error {
+func lyricPopup(lang string, audioFile *AudioFile, wg *sync.WaitGroup) error {
 
 	var titles []string
 	results, err := lyric.GetLyricOptions(lang, audioFile.name)
@@ -866,6 +866,7 @@ func lyricPopup(lang string, audioFile *AudioFile) error {
 		}
 
 		go func() {
+			defer wg.Done()
 			var selectedIndex int
 			for i, v := range results {
 				if v.TitleForPopup == selected {
@@ -877,21 +878,25 @@ func lyricPopup(lang string, audioFile *AudioFile) error {
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
+				return
 			}
 
 			lyric, err := lyric.NewFromLRC(lyricContent)
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
+				return
 			}
 			lyric.LangExt = lang
 			err = embedLyric(audioFile.path, &lyric, false)
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
+				return
 			} else {
 				infoPopup(lang + " lyric added successfully")
 				gomu.app.Draw()
+				return
 			}
 
 		}()
