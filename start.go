@@ -472,6 +472,11 @@ func start(application *tview.Application, args Args) {
 			return e
 		}
 
+		// disables keybindings when popup messages
+		if strings.Contains(popupName, "timeout-popup") {
+			return e
+		}
+
 		switch e.Key() {
 		// cycle through each section
 		case tcell.KeyTAB:
