@@ -342,7 +342,7 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 			if re.MatchString(url) {
 				go func() {
 					if err := ytdl(url, selPlaylist); err != nil {
-						logError(err)
+						errorPopup(err)
 					}
 				}()
 			} else {
@@ -828,7 +828,7 @@ func ytSearchPopup() {
 					go func() {
 						url := urls[title]
 						if err := ytdl(url, dir); err != nil {
-							logError(err)
+							errorPopup(err)
 						}
 						gomu.playlist.refresh()
 					}()

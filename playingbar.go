@@ -145,6 +145,7 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 	err := p.loadLyrics(currentSong.path)
 	if err != nil {
 		errorPopup(err)
+		return
 	}
 	langLyricFromConfig := gomu.anko.GetString("General.lang_lyric")
 	if langLyricFromConfig == "" {
@@ -197,6 +198,7 @@ func (p *PlayingBar) switchLyrics() {
 	err := p.loadLyrics(gomu.player.GetCurrentSong().Path())
 	if err != nil {
 		errorPopup(err)
+		return
 	}
 	// no subtitle just ignore
 	if len(p.subtitles) == 0 {

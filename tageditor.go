@@ -99,6 +99,7 @@ func tagPopup(node *AudioFile) (err error) {
 				tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
 				if err != nil {
 					errorPopup(err)
+					return
 				}
 				defer tag.Close()
 				tag.SetArtist(newTag.Artist)
@@ -107,6 +108,7 @@ func tagPopup(node *AudioFile) (err error) {
 				err = tag.Save()
 				if err != nil {
 					errorPopup(err)
+					return
 				} else {
 					defaultTimedPopup(" Success ", "Tag update successfully")
 				}
@@ -123,6 +125,7 @@ func tagPopup(node *AudioFile) (err error) {
 		tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
 		if err != nil {
 			errorPopup(err)
+			return
 		}
 		defer tag.Close()
 		tag.SetArtist(artistInputField.GetText())
@@ -131,6 +134,7 @@ func tagPopup(node *AudioFile) (err error) {
 		err = tag.Save()
 		if err != nil {
 			errorPopup(err)
+			return
 		} else {
 			defaultTimedPopup(" Success ", "Tag update successfully")
 		}
@@ -162,6 +166,7 @@ func tagPopup(node *AudioFile) (err error) {
 			err := embedLyric(node.path, lyric, true)
 			if err != nil {
 				errorPopup(err)
+				return
 			} else {
 				infoPopup(langExt + " lyric deleted successfully.")
 			}

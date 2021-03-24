@@ -68,7 +68,6 @@ func (a *AudioFile) String() string {
 	return fmt.Sprintf("%#v", a)
 }
 
-
 // Playlist struct represents playlist panel
 // that shows the tree of the music directory
 type Playlist struct {
@@ -185,7 +184,6 @@ func newPlaylist(args Args) *Playlist {
 	playlist.SetSelectedFunc(func(node *tview.TreeNode) {
 		node.SetExpanded(!node.IsExpanded())
 	})
-
 
 	cmds := map[rune]string{
 		'a': "create_playlist",
@@ -602,7 +600,6 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	gomu.playlist.done <- struct{}{}
 
 	if err != nil {
-		errorPopup(err)
 		return tracerr.Wrap(err)
 	}
 

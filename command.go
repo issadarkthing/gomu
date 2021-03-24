@@ -412,10 +412,6 @@ func (c Command) defineCommands() {
 					gomu.app.Draw()
 				}
 			}()
-			go func() {
-				wg.Wait()
-			}()
-
 		}
 	})
 
