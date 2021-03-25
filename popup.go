@@ -850,14 +850,18 @@ func ytSearchPopup() {
 func lyricPopup(lang string, audioFile *AudioFile, wg *sync.WaitGroup) error {
 
 	var titles []string
+
+	// below we chose languages with GetLyrics interfaces
 	var getLyric lyric.GetLyrics
-	if lang == "zh-CN" {
-		getLyric = lyric.GetLyricCn{}
-	} else if lang == "en" {
+	switch lang {
+	case "en":
 		getLyric = lyric.GetLyricEn{}
-	} else {
+	case "zh-CN":
+		getLyric = lyric.GetLyricCn{}
+	default:
 		getLyric = lyric.GetLyricEn{}
 	}
+
 	results, err := getLyric.GetLyricOptions(audioFile.name)
 	if err != nil {
 		return tracerr.Wrap(err)
