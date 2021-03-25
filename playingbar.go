@@ -286,7 +286,8 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 				return errors.New("USLT error")
 			}
 			if sylf.ContentDescriptor == uslf.ContentDescriptor {
-				lyric, err := lyric.NewFromLRC(uslf.Lyrics)
+				var lyric lyric.Lyric
+				err := lyric.NewFromLRC(uslf.Lyrics)
 				if err != nil {
 					return tracerr.Wrap(err)
 				}

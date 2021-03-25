@@ -654,7 +654,8 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 			}
 			lyricContent := string(byteContent)
 
-			lyric, err := lyric.NewFromLRC(lyricContent)
+			var lyric lyric.Lyric
+			err = lyric.NewFromLRC(lyricContent)
 			if err != nil {
 				return tracerr.Wrap(err)
 			}

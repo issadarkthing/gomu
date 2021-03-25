@@ -880,7 +880,8 @@ func lyricPopup(lang string, audioFile *AudioFile, wg *sync.WaitGroup) error {
 				return
 			}
 
-			lyric, err := lyric.NewFromLRC(lyricContent)
+			var lyric lyric.Lyric
+			err = lyric.NewFromLRC(lyricContent)
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()

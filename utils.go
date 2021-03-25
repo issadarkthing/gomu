@@ -289,7 +289,8 @@ func embedLyric(songPath string, lyricTobeWritten *lyric.Lyric, isDelete bool) (
 			ContentDescriptor: lyricTobeWritten.LangExt,
 			Lyrics:            lyricTobeWritten.AsLRC(),
 		})
-		lyric, err := lyric.NewFromLRC(lyricTobeWritten.AsLRC())
+		var lyric lyric.Lyric
+		err := lyric.NewFromLRC(lyricTobeWritten.AsLRC())
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
