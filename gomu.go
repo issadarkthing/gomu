@@ -9,10 +9,12 @@ import (
 	"github.com/issadarkthing/gomu/player"
 )
 
+// VERSION is version information of gomu
 var VERSION = "N/A"
 
 var gomu *Gomu
 
+// Gomu is the application from tview
 type Gomu struct {
 	app        *tview.Application
 	playingBar *PlayingBar

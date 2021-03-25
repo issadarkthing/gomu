@@ -19,6 +19,7 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
+// Queue shows queued songs for playing
 type Queue struct {
 	*tview.List
 	savedQueuePath string
@@ -364,7 +365,6 @@ func newQueue() *Queue {
 		List:           list,
 		savedQueuePath: cacheQueuePath,
 	}
-
 
 	cmds := map[rune]string{
 		'j': "move_down",

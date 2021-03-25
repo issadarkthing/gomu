@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// SongTag is the tag information for songs
 type SongTag struct {
 	Artist          string
 	Title           string

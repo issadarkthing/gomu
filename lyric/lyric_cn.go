@@ -36,6 +36,7 @@ type tagKugou struct {
 	URLID   string   `json:"url_id"`
 }
 
+// tagLyric is the lyric json get from both netease and kugou
 type tagLyric struct {
 	Lyric  string `json:"lyric"`
 	Tlyric string `json:"tlyric"`

@@ -16,6 +16,7 @@ import (
 	"github.com/issadarkthing/gomu/lyric"
 )
 
+// PlayingBar shows song name, progress and lyric
 type PlayingBar struct {
 	*tview.Frame
 	full      int

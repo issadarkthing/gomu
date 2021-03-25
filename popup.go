@@ -631,7 +631,7 @@ func inputPopup(prompt, placeholder string, handler func(string)) {
 
 func replPopup() {
 
-	popupId := "repl-input-popup"
+	popupID := "repl-input-popup"
 	prompt := "> "
 
 	textview := tview.NewTextView()
@@ -669,7 +669,7 @@ func replPopup() {
 				if upCount == len(history) {
 					upCount -= 2
 				} else {
-					upCount -= 1
+					upCount--
 				}
 				input.SetText(history[upCount])
 			} else if upCount == 0 {
@@ -680,7 +680,7 @@ func replPopup() {
 			textview.SetText("")
 
 		case tcell.KeyEsc:
-			gomu.pages.RemovePage(popupId)
+			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 			return nil
 
@@ -704,9 +704,8 @@ func replPopup() {
 			if err != nil {
 				fmt.Fprintf(textview, "%v\n\n", err)
 				return nil
-			} else {
-				fmt.Fprintf(textview, "%v\n\n", res)
 			}
+			fmt.Fprintf(textview, "%v\n\n", res)
 
 		}
 
@@ -732,9 +731,9 @@ func replPopup() {
 
 func ytSearchPopup() {
 
-	popupId := "youtube-search-input-popup"
+	popupID := "youtube-search-input-popup"
 
-	input := newInputPopup(popupId, " Youtube Search ", "search: ", "")
+	input := newInputPopup(popupID, " Youtube Search ", "search: ", "")
 
 	instance := gomu.anko.GetString("General.invidious_instance")
 	inv := invidious.Invidious{Domain: instance}
@@ -783,7 +782,7 @@ func ytSearchPopup() {
 		case tcell.KeyEnter:
 			search := input.GetText()
 			defaultTimedPopup(" Youtube Search ", "Searching for "+search)
-			gomu.pages.RemovePage(popupId)
+			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 
 			go func() {
@@ -839,7 +838,7 @@ func ytSearchPopup() {
 			}()
 
 		case tcell.KeyEscape:
-			gomu.pages.RemovePage(popupId)
+			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 			gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 
@@ -893,11 +892,9 @@ func lyricPopup(lang string, audioFile *AudioFile, wg *sync.WaitGroup) error {
 				errorPopup(err)
 				gomu.app.Draw()
 				return
-			} else {
-				infoPopup(lang + " lyric added successfully")
-				gomu.app.Draw()
-				return
 			}
+			infoPopup(lang + " lyric added successfully")
+			gomu.app.Draw()
 
 		}()
 	})

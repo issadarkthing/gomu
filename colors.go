@@ -8,6 +8,7 @@ import (
 	"github.com/rivo/tview"
 )
 
+// Colors are the configurable colors used in gomu
 type Colors struct {
 	accent     tcell.Color
 	background tcell.Color

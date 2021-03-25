@@ -8,6 +8,7 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
+// Command map string to actual command function
 type Command struct {
 	commands map[string]func()
 }

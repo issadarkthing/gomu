@@ -38,22 +38,27 @@ type AudioFile struct {
 	parent      *tview.TreeNode
 }
 
+// Name return the name of AudioFile
 func (a *AudioFile) Name() string {
 	return a.name
 }
 
+// Path return the path of AudioFile
 func (a *AudioFile) Path() string {
 	return a.path
 }
 
+// IsAudioFile check if the file is song or directory
 func (a *AudioFile) IsAudioFile() bool {
 	return a.isAudioFile
 }
 
+// Len return the length of AudioFile
 func (a *AudioFile) Len() time.Duration {
 	return a.length
 }
 
+// GetParent return the parent directory of AudioFile
 func (a *AudioFile) GetParent() *AudioFile {
 	if a.parent == nil {
 		return nil
@@ -524,7 +529,7 @@ Download:
 
 		select {
 		case <-p.done:
-			p.download -= 1
+			p.download--
 			if p.download == 0 {
 				p.SetTitle(p.defaultTitle)
 				break Download

@@ -109,9 +109,8 @@ func tagPopup(node *AudioFile) (err error) {
 				if err != nil {
 					errorPopup(err)
 					return
-				} else {
-					defaultTimedPopup(" Success ", "Tag update successfully")
 				}
+				defaultTimedPopup(" Success ", "Tag update successfully")
 			})
 		}()
 	}).
@@ -135,9 +134,9 @@ func tagPopup(node *AudioFile) (err error) {
 		if err != nil {
 			errorPopup(err)
 			return
-		} else {
-			defaultTimedPopup(" Success ", "Tag update successfully")
 		}
+		defaultTimedPopup(" Success ", "Tag update successfully")
+
 	}).
 		SetBackgroundColorActivated(gomu.colors.popup).
 		SetLabelColorActivated(gomu.colors.accent).
@@ -167,9 +166,9 @@ func tagPopup(node *AudioFile) (err error) {
 			if err != nil {
 				errorPopup(err)
 				return
-			} else {
-				infoPopup(langExt + " lyric deleted successfully.")
 			}
+			infoPopup(langExt + " lyric deleted successfully.")
+
 			// Update map
 			delete(popupLyricMap, langExt)
 

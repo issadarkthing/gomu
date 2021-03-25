@@ -28,6 +28,7 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
+// Lyric contains UnsyncedCaptions and SyncedCaptions
 type Lyric struct {
 	Album               string
 	Artist              string
@@ -41,6 +42,7 @@ type Lyric struct {
 	SyncedCaptions      []id3v2.SyncedText // SYLT captions
 }
 
+// UnsyncedCaption is only showing in tageditor
 type UnsyncedCaption struct {
 	Timestamp uint32
 	Text      string

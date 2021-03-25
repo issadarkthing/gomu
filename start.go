@@ -38,6 +38,7 @@ const (
 	musicPath      = "~/music"
 )
 
+// Args is the augs for gomu executable
 type Args struct {
 	config  *string
 	empty   *bool
