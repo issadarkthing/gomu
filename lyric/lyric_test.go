@@ -23,7 +23,8 @@ func TestCleanHTML(t *testing.T) {
 
 	assert.Equal(t, string(clean), got)
 
-	_, err = NewFromLRC(got)
+	var lyric Lyric
+	err = lyric.NewFromLRC(got)
 	if err != nil {
 		t.Error(err)
 	}

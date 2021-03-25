@@ -127,7 +127,8 @@ func TestEmbedLyric(t *testing.T) {
 			t.Error(err)
 		}
 	}()
-	lyric, err := lyric.NewFromLRC(lyricString)
+	var lyric lyric.Lyric
+	err = lyric.NewFromLRC(lyricString)
 	if err != nil {
 		t.Error(err)
 	}

@@ -850,7 +850,15 @@ func ytSearchPopup() {
 func lyricPopup(lang string, audioFile *AudioFile, wg *sync.WaitGroup) error {
 
 	var titles []string
-	results, err := lyric.GetLyricOptions(lang, audioFile.name)
+	var getLyric lyric.GetLyrics
+	if lang == "zh-CN" {
+		getLyric = lyric.GetLyricCn{}
+	} else if lang == "en" {
+		getLyric = lyric.GetLyricEn{}
+	} else {
+		getLyric = lyric.GetLyricEn{}
+	}
+	results, err := getLyric.GetLyricOptions(audioFile.name)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -873,7 +881,7 @@ func lyricPopup(lang string, audioFile *AudioFile, wg *sync.WaitGroup) error {
 					break
 				}
 			}
-			lyricContent, err := lyric.GetLyric(results[selectedIndex].LangExt, results[selectedIndex])
+			lyricContent, err := getLyric.GetLyric(results[selectedIndex])
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()

@@ -17,10 +17,11 @@ import (
 	"github.com/issadarkthing/gomu/lyric"
 )
 
-// myFlex extend the flex control to modify the Focus item
-type myFlex struct {
+// lyricFlex extend the flex control to modify the Focus item
+type lyricFlex struct {
 	*tview.Flex
 	FocusedItem tview.Primitive
+	inputs      []tview.Primitive
 }
 
 var box *tview.Box = tview.NewBox()
@@ -29,7 +30,7 @@ var box *tview.Box = tview.NewBox()
 func tagPopup(node *AudioFile) (err error) {
 
 	popupID := "tag-editor-input-popup"
-	tag, popupLyricMap, options, err := loadTagMap(node)
+	tag, popupLyricMap, options, err := node.loadTagMap()
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -67,51 +68,53 @@ func tagPopup(node *AudioFile) (err error) {
 	getTagButton.SetSelectedFunc(func() {
 		var titles []string
 		audioFile := node
-		lang := "zh-CN"
-		results, err := lyric.GetLyricOptions(lang, audioFile.name)
-		if err != nil {
-			errorPopup(err)
-			return
-		}
-		for _, v := range results {
-			titles = append(titles, v.TitleForPopup)
-		}
-
 		go func() {
-			searchPopup(" Song Tags ", titles, func(selected string) {
-				if selected == "" {
-					return
-				}
+			var getLyric lyric.GetLyricCn
+			results, err := getLyric.GetLyricOptions(audioFile.name)
+			if err != nil {
+				errorPopup(err)
+				return
+			}
+			for _, v := range results {
+				titles = append(titles, v.TitleForPopup)
+			}
 
-				var selectedIndex int
-				for i, v := range results {
-					if v.TitleForPopup == selected {
-						selectedIndex = i
-						break
+			go func() {
+				searchPopup(" Song Tags ", titles, func(selected string) {
+					if selected == "" {
+						return
 					}
-				}
 
-				newTag := results[selectedIndex]
-				artistInputField.SetText(newTag.Artist)
-				titleInputField.SetText(newTag.Title)
-				albumInputField.SetText(newTag.Album)
+					var selectedIndex int
+					for i, v := range results {
+						if v.TitleForPopup == selected {
+							selectedIndex = i
+							break
+						}
+					}
 
-				tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
-				if err != nil {
-					errorPopup(err)
-					return
-				}
-				defer tag.Close()
-				tag.SetArtist(newTag.Artist)
-				tag.SetTitle(newTag.Title)
-				tag.SetAlbum(newTag.Album)
-				err = tag.Save()
-				if err != nil {
-					errorPopup(err)
-					return
-				}
-				defaultTimedPopup(" Success ", "Tag update successfully")
-			})
+					newTag := results[selectedIndex]
+					artistInputField.SetText(newTag.Artist)
+					titleInputField.SetText(newTag.Title)
+					albumInputField.SetText(newTag.Album)
+
+					tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+					if err != nil {
+						errorPopup(err)
+						return
+					}
+					defer tag.Close()
+					tag.SetArtist(newTag.Artist)
+					tag.SetTitle(newTag.Title)
+					tag.SetAlbum(newTag.Album)
+					err = tag.Save()
+					if err != nil {
+						errorPopup(err)
+						return
+					}
+					defaultTimedPopup(" Success ", "Tag update successfully")
+				})
+			}()
 		}()
 	}).
 		SetBackgroundColorActivated(gomu.colors.popup).
@@ -247,7 +250,7 @@ func tagPopup(node *AudioFile) (err error) {
 		go func() {
 			// This is to ensure that the above go routine finish.
 			wg.Wait()
-			_, popupLyricMap, newOptions, err := loadTagMap(audioFile)
+			_, popupLyricMap, newOptions, err := audioFile.loadTagMap()
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
@@ -328,10 +331,11 @@ func tagPopup(node *AudioFile) (err error) {
 	rightFlex.SetDirection(tview.FlexColumn).
 		AddItem(lyricTextView, 0, 1, true)
 
-	lyricFlex := &myFlex{
+	lyricFlex := &lyricFlex{
 		tview.NewFlex().SetDirection(tview.FlexColumn).
 			AddItem(leftGrid, 0, 2, true).
 			AddItem(rightFlex, 0, 3, true),
+		nil,
 		nil,
 	}
 
@@ -339,7 +343,7 @@ func tagPopup(node *AudioFile) (err error) {
 		SetTitle(node.name).
 		SetBorderPadding(1, 1, 2, 2)
 
-	inputs := []tview.Primitive{
+	lyricFlex.inputs = []tview.Primitive{
 		getTagButton,
 		artistInputField,
 		titleInputField,
@@ -363,13 +367,13 @@ func tagPopup(node *AudioFile) (err error) {
 			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 		case tcell.KeyTab:
-			lyricFlex.cycleFocus(gomu.app, inputs, false)
+			lyricFlex.cycleFocus(gomu.app, false)
 		case tcell.KeyBacktab:
-			lyricFlex.cycleFocus(gomu.app, inputs, true)
+			lyricFlex.cycleFocus(gomu.app, true)
 		case tcell.KeyRight:
-			lyricFlex.cycleFocus(gomu.app, inputs, false)
+			lyricFlex.cycleFocus(gomu.app, false)
 		case tcell.KeyLeft:
-			lyricFlex.cycleFocus(gomu.app, inputs, true)
+			lyricFlex.cycleFocus(gomu.app, true)
 		}
 
 		switch e.Rune() {
@@ -387,8 +391,8 @@ func tagPopup(node *AudioFile) (err error) {
 }
 
 // This is a hack to cycle Focus in a flex
-func (f *myFlex) cycleFocus(app *tview.Application, elements []tview.Primitive, reverse bool) {
-	for i, el := range elements {
+func (f *lyricFlex) cycleFocus(app *tview.Application, reverse bool) {
+	for i, el := range f.inputs {
 		if !el.HasFocus() {
 			continue
 		}
@@ -396,22 +400,23 @@ func (f *myFlex) cycleFocus(app *tview.Application, elements []tview.Primitive, 
 		if reverse {
 			i = i - 1
 			if i < 0 {
-				i = len(elements) - 1
+				i = len(f.inputs) - 1
 			}
 		} else {
 			i = i + 1
-			i = i % len(elements)
+			i = i % len(f.inputs)
 		}
 
-		app.SetFocus(elements[i])
-		f.FocusedItem = elements[i]
-		if elements[9].HasFocus() {
-			elements[9].(*tview.TextView).SetBorderColor(gomu.colors.accent).
+		app.SetFocus(f.inputs[i])
+		f.FocusedItem = f.inputs[i]
+		// below code is setting the border highlight of left and right flex
+		if f.inputs[9].HasFocus() {
+			f.inputs[9].(*tview.TextView).SetBorderColor(gomu.colors.accent).
 				SetTitleColor(gomu.colors.accent)
 			box.SetBorderColor(gomu.colors.background).
 				SetTitleColor(gomu.colors.background)
 		} else {
-			elements[9].(*tview.TextView).SetBorderColor(gomu.colors.background).
+			f.inputs[9].(*tview.TextView).SetBorderColor(gomu.colors.background).
 				SetTitleColor(gomu.colors.background)
 			box.SetBorderColor(gomu.colors.accent).
 				SetTitleColor(gomu.colors.accent)
@@ -423,7 +428,7 @@ func (f *myFlex) cycleFocus(app *tview.Application, elements []tview.Primitive, 
 // Focus is an override of Focus function in tview.flex.
 // This is to ensure that the focus of flex remain unchanged
 // when returning from popups or search lists
-func (f *myFlex) Focus(delegate func(p tview.Primitive)) {
+func (f *lyricFlex) Focus(delegate func(p tview.Primitive)) {
 	if f.FocusedItem != nil {
 		gomu.app.SetFocus(f.FocusedItem)
 	} else {
@@ -432,7 +437,7 @@ func (f *myFlex) Focus(delegate func(p tview.Primitive)) {
 }
 
 // loadTagMap will load from tag and return a map of langExt to lyrics
-func loadTagMap(node *AudioFile) (tag *id3v2.Tag, popupLyricMap map[string]string, options []string, err error) {
+func (node *AudioFile) loadTagMap() (tag *id3v2.Tag, popupLyricMap map[string]string, options []string, err error) {
 
 	popupLyricMap = make(map[string]string)
 

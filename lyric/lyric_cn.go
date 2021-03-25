@@ -42,8 +42,10 @@ type tagLyric struct {
 	Tlyric string `json:"tlyric"`
 }
 
-// getLyricOptionsCn queries available song lyrics. It returns slice of SongTag
-func getLyricOptionsCn(search string) ([]*SongTag, error) {
+type GetLyricCn struct{}
+
+// GetLyricOptions queries available song lyrics. It returns slice of SongTag
+func (cn GetLyricCn) GetLyricOptions(search string) ([]*SongTag, error) {
 
 	serviceProvider := "netease"
 	results, err := getLyricOptionsCnByProvider(search, serviceProvider)
@@ -61,9 +63,9 @@ func getLyricOptionsCn(search string) ([]*SongTag, error) {
 	return results, err
 }
 
-// getLyricCn should receive songTag that was returned from getLyricOptionsCn
+// GetLyric should receive songTag that was returned from getLyricOptions
 // and returns lyric of the queried song.
-func getLyricCn(songTag *SongTag) (lyricString string, err error) {
+func (cn GetLyricCn) GetLyric(songTag *SongTag) (lyricString string, err error) {
 
 	urlSearch := "http://api.sunyj.xyz"
 
