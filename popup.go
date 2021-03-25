@@ -725,7 +725,7 @@ func replPopup() {
 
 	flex.Box = flexBox
 
-	gomu.pages.AddPage(popupId, center(flex, 90, 30), true, true)
+	gomu.pages.AddPage(popupID, center(flex, 90, 30), true, true)
 	gomu.popups.push(flex)
 }
 
