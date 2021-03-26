@@ -9,9 +9,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/bogem/id3v2"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/tramhao/id3v2"
 	"github.com/ztrue/tracerr"
 
 	"github.com/issadarkthing/gomu/lyric"

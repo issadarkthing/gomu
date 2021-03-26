@@ -15,10 +15,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/bogem/id3v2"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	spin "github.com/tj/go-spin"
+	"github.com/tramhao/id3v2"
 	"github.com/ztrue/tracerr"
 
 	"github.com/issadarkthing/gomu/lyric"

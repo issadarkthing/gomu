@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bogem/id3v2"
+	"github.com/tramhao/id3v2"
 	"github.com/ztrue/tracerr"
 )
 

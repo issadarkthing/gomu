@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bogem/id3v2"
 	"github.com/issadarkthing/gomu/lyric"
 	"github.com/stretchr/testify/assert"
+	"github.com/tramhao/id3v2"
 )
 
 func TestFmtDuration(t *testing.T) {
