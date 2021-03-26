@@ -78,6 +78,10 @@ func (cn GetLyricCn) GetLyric(songTag *SongTag) (lyricString string, err error) 
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("http response error: %d", resp.StatusCode)
+	}
+
 	var tagLyric tagLyric
 	err = json.NewDecoder(resp.Body).Decode(&tagLyric)
 	if err != nil {
@@ -108,6 +112,10 @@ func getLyricOptionsCnByProvider(search string, serviceProvider string) (resultT
 		return nil, tracerr.Wrap(err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("http response error: %d", resp.StatusCode)
+	}
 
 	switch serviceProvider {
 	case "kugou":

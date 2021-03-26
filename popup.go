@@ -510,7 +510,10 @@ func searchPopup(title string, stringsToMatch []string, handler func(selected st
 
 	popup.Box = popupBox
 
-	gomu.pages.AddPage("search-input-popup", center(popup, 70, 40), true, true)
+	// this is to fix the left border of search popup
+	popupFrame := tview.NewFrame(popup)
+
+	gomu.pages.AddPage("search-input-popup", center(popupFrame, 70, 40), true, true)
 	gomu.popups.push(popup)
 	// This is to ensure the popup is shown even when paused
 	gomu.app.Draw()
