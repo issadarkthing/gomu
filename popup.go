@@ -505,8 +505,8 @@ func searchPopup(title string, stringsToMatch []string, handler func(selected st
 
 	popupBox := tview.NewBox().SetBorder(true).
 		SetBackgroundColor(gomu.colors.popup).
-		SetBorderPadding(1, 1, 2, 2).
-		SetTitle(" " + title + " ")
+		SetTitle(" "+title+" ").
+		SetBorderPadding(1, 1, 2, 2)
 
 	popup.Box = popupBox
 
@@ -852,15 +852,7 @@ func lyricPopup(lang string, audioFile *AudioFile, wg *sync.WaitGroup) error {
 	var titles []string
 
 	// below we chose languages with GetLyrics interfaces
-	var getLyric lyric.GetLyrics
-	switch lang {
-	case "en":
-		getLyric = lyric.GetLyricEn{}
-	case "zh-CN":
-		getLyric = lyric.GetLyricCn{}
-	default:
-		getLyric = lyric.GetLyricEn{}
-	}
+	getLyric := lyricLang(lang)
 
 	results, err := getLyric.GetLyricOptions(audioFile.name)
 	if err != nil {
@@ -913,4 +905,17 @@ func lyricPopup(lang string, audioFile *AudioFile, wg *sync.WaitGroup) error {
 	})
 
 	return nil
+}
+
+func lyricLang(lang string) lyric.GetLyrics {
+
+	switch lang {
+	case "en":
+		return lyric.GetLyricEn{}
+	case "zh-CN":
+		return lyric.GetLyricCn{}
+	default:
+		return lyric.GetLyricEn{}
+	}
+
 }

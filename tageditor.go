@@ -324,7 +324,7 @@ func tagPopup(node *AudioFile) (err error) {
 		SetBackgroundColor(gomu.colors.popup).
 		SetBorderColor(gomu.colors.accent).
 		SetTitleColor(gomu.colors.accent).
-		SetBorderPadding(1, 1, 3, 3)
+		SetBorderPadding(1, 1, 2, 2)
 
 	leftGrid.Box = box
 
@@ -338,10 +338,6 @@ func tagPopup(node *AudioFile) (err error) {
 		nil,
 		nil,
 	}
-
-	lyricFlex.
-		SetTitle(node.name).
-		SetBorderPadding(1, 1, 2, 2)
 
 	lyricFlex.inputs = []tview.Primitive{
 		getTagButton,
