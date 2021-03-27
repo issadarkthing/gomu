@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// SongTag is the tag information for songs
 type SongTag struct {
 	Artist          string
 	Title           string
@@ -18,32 +19,9 @@ type SongTag struct {
 	LyricID         string
 }
 
-// GetLyric return the actual function based on lang
-func GetLyric(lang string, songTag *SongTag) (string, error) {
-
-	switch lang {
-	case "en":
-		return getLyricEn(songTag)
-	case "zh-CN":
-		return getLyricCn(songTag)
-	default:
-		return getLyricEn(songTag)
-	}
-
-}
-
-// GetLyricOptions return the actual function based on lang
-func GetLyricOptions(lang string, search string) ([]*SongTag, error) {
-
-	switch lang {
-	case "en":
-		return getLyricOptionsEn(search)
-	case "zh-CN":
-		return getLyricOptionsCn(search)
-	default:
-		return getLyricOptionsEn(search)
-	}
-
+type GetLyrics interface {
+	GetLyric(songTag *SongTag) (string, error)
+	GetLyricOptions(search string) ([]*SongTag, error)
 }
 
 // cleanHTML parses html text to valid utf-8 text

@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/asmcos/requests"
 	"github.com/ztrue/tracerr"
 )
 
@@ -35,18 +36,26 @@ type tagKugou struct {
 	URLID   string   `json:"url_id"`
 }
 
-// getLyricOptionsCn queries available song lyrics. It returns slice of SongTag
-func getLyricOptionsCn(search string) ([]*SongTag, error) {
+// tagLyric is the lyric json get from both netease and kugou
+type tagLyric struct {
+	Lyric  string `json:"lyric"`
+	Tlyric string `json:"tlyric"`
+}
+
+type GetLyricCn struct{}
+
+// GetLyricOptions queries available song lyrics. It returns slice of SongTag
+func (cn GetLyricCn) GetLyricOptions(search string) ([]*SongTag, error) {
 
 	serviceProvider := "netease"
 	results, err := getLyricOptionsCnByProvider(search, serviceProvider)
 	if err != nil {
-		return nil, err
+		return nil, tracerr.Wrap(err)
 	}
 	serviceProvider = "kugou"
 	results2, err := getLyricOptionsCnByProvider(search, serviceProvider)
 	if err != nil {
-		return nil, err
+		return nil, tracerr.Wrap(err)
 	}
 
 	results = append(results, results2...)
@@ -54,56 +63,64 @@ func getLyricOptionsCn(search string) ([]*SongTag, error) {
 	return results, err
 }
 
-// getLyricCn should receive songTag that was returned from getLyricOptionsCn
+// GetLyric should receive songTag that was returned from getLyricOptions
 // and returns lyric of the queried song.
-func getLyricCn(songTag *SongTag) (string, error) {
+func (cn GetLyricCn) GetLyric(songTag *SongTag) (lyricString string, err error) {
 
-	var lyric string
-	p := requests.Params{
-		"site":  songTag.ServiceProvider,
-		"lyric": songTag.LyricID,
-	}
-	req := requests.Requests()
-	resp, err := req.Get("http://api.sunyj.xyz", p)
+	urlSearch := "http://api.sunyj.xyz"
+
+	params := url.Values{}
+	params.Add("site", songTag.ServiceProvider)
+	params.Add("lyric", songTag.LyricID)
+	resp, err := http.Get(urlSearch + "?" + params.Encode())
 	if err != nil {
 		return "", tracerr.Wrap(err)
 	}
-	var dataMap map[string]interface{}
-	err = resp.Json(&dataMap)
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("http response error: %d", resp.StatusCode)
+	}
+
+	var tagLyric tagLyric
+	err = json.NewDecoder(resp.Body).Decode(&tagLyric)
 	if err != nil {
 		return "", tracerr.Wrap(err)
 	}
-	lyric = dataMap["lyric"].(string)
-	if lyric == "" {
+	lyricString = tagLyric.Lyric
+	if lyricString == "" {
 		return "", errors.New("no lyric available")
 	}
 
-	if looksLikeLRC(lyric) {
-		lyric = cleanLRC(lyric)
-		return lyric, nil
+	if looksLikeLRC(lyricString) {
+		lyricString = cleanLRC(lyricString)
+		return lyricString, nil
 	}
 	return "", errors.New("lyric not compatible")
 }
 
 // getLyricOptionsCnByProvider do the query by provider
-func getLyricOptionsCnByProvider(search string, serviceProvider string) ([]*SongTag, error) {
+func getLyricOptionsCnByProvider(search string, serviceProvider string) (resultTags []*SongTag, err error) {
 
-	var resultTags []*SongTag
-	p := requests.Params{
-		"site":   serviceProvider,
-		"search": search,
-	}
-	req := requests.Requests()
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := req.Get("http://api.sunyj.xyz", p)
+	urlSearch := "http://api.sunyj.xyz"
+
+	params := url.Values{}
+	params.Add("site", serviceProvider)
+	params.Add("search", search)
+	resp, err := http.Get(urlSearch + "?" + params.Encode())
 	if err != nil {
 		return nil, tracerr.Wrap(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("http response error: %d", resp.StatusCode)
 	}
 
 	switch serviceProvider {
 	case "kugou":
 		var tagKugou []tagKugou
-		err = json.Unmarshal(resp.Content(), &tagKugou)
+		err = json.NewDecoder(resp.Body).Decode(&tagKugou)
 		if err != nil {
 			return nil, tracerr.Wrap(err)
 		}
@@ -128,7 +145,7 @@ func getLyricOptionsCnByProvider(search string, serviceProvider string) ([]*Song
 
 	case "netease":
 		var tagNetease []tagNetease
-		err = json.Unmarshal(resp.Content(), &tagNetease)
+		err = json.NewDecoder(resp.Body).Decode(&tagNetease)
 		if err != nil {
 			return nil, tracerr.Wrap(err)
 		}

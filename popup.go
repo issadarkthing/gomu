@@ -342,7 +342,7 @@ func downloadMusicPopup(selPlaylist *tview.TreeNode) {
 			if re.MatchString(url) {
 				go func() {
 					if err := ytdl(url, selPlaylist); err != nil {
-						logError(err)
+						errorPopup(err)
 					}
 				}()
 			} else {
@@ -505,12 +505,15 @@ func searchPopup(title string, stringsToMatch []string, handler func(selected st
 
 	popupBox := tview.NewBox().SetBorder(true).
 		SetBackgroundColor(gomu.colors.popup).
-		SetBorderPadding(1, 1, 2, 2).
-		SetTitle(" " + title + " ")
+		SetTitle(" "+title+" ").
+		SetBorderPadding(1, 1, 2, 2)
 
 	popup.Box = popupBox
 
-	gomu.pages.AddPage("search-input-popup", center(popup, 70, 40), true, true)
+	// this is to fix the left border of search popup
+	popupFrame := tview.NewFrame(popup)
+
+	gomu.pages.AddPage("search-input-popup", center(popupFrame, 70, 40), true, true)
 	gomu.popups.push(popup)
 	// This is to ensure the popup is shown even when paused
 	gomu.app.Draw()
@@ -631,7 +634,7 @@ func inputPopup(prompt, placeholder string, handler func(string)) {
 
 func replPopup() {
 
-	popupId := "repl-input-popup"
+	popupID := "repl-input-popup"
 	prompt := "> "
 
 	textview := tview.NewTextView()
@@ -669,7 +672,7 @@ func replPopup() {
 				if upCount == len(history) {
 					upCount -= 2
 				} else {
-					upCount -= 1
+					upCount--
 				}
 				input.SetText(history[upCount])
 			} else if upCount == 0 {
@@ -680,7 +683,7 @@ func replPopup() {
 			textview.SetText("")
 
 		case tcell.KeyEsc:
-			gomu.pages.RemovePage(popupId)
+			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 			return nil
 
@@ -704,9 +707,8 @@ func replPopup() {
 			if err != nil {
 				fmt.Fprintf(textview, "%v\n\n", err)
 				return nil
-			} else {
-				fmt.Fprintf(textview, "%v\n\n", res)
 			}
+			fmt.Fprintf(textview, "%v\n\n", res)
 
 		}
 
@@ -726,15 +728,15 @@ func replPopup() {
 
 	flex.Box = flexBox
 
-	gomu.pages.AddPage(popupId, center(flex, 90, 30), true, true)
+	gomu.pages.AddPage(popupID, center(flex, 90, 30), true, true)
 	gomu.popups.push(flex)
 }
 
 func ytSearchPopup() {
 
-	popupId := "youtube-search-input-popup"
+	popupID := "youtube-search-input-popup"
 
-	input := newInputPopup(popupId, " Youtube Search ", "search: ", "")
+	input := newInputPopup(popupID, " Youtube Search ", "search: ", "")
 
 	instance := gomu.anko.GetString("General.invidious_instance")
 	inv := invidious.Invidious{Domain: instance}
@@ -783,7 +785,7 @@ func ytSearchPopup() {
 		case tcell.KeyEnter:
 			search := input.GetText()
 			defaultTimedPopup(" Youtube Search ", "Searching for "+search)
-			gomu.pages.RemovePage(popupId)
+			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 
 			go func() {
@@ -828,7 +830,7 @@ func ytSearchPopup() {
 					go func() {
 						url := urls[title]
 						if err := ytdl(url, dir); err != nil {
-							logError(err)
+							errorPopup(err)
 						}
 						gomu.playlist.refresh()
 					}()
@@ -839,7 +841,7 @@ func ytSearchPopup() {
 			}()
 
 		case tcell.KeyEscape:
-			gomu.pages.RemovePage(popupId)
+			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 			gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 
@@ -848,10 +850,14 @@ func ytSearchPopup() {
 	})
 }
 
-func lyricPopup(lang string, audioFile *AudioFile) error {
+func lyricPopup(lang string, audioFile *AudioFile, wg *sync.WaitGroup) error {
 
 	var titles []string
-	results, err := lyric.GetLyricOptions(lang, audioFile.name)
+
+	// below we chose languages with GetLyrics interfaces
+	getLyric := lyricLang(lang)
+
+	results, err := getLyric.GetLyricOptions(audioFile.name)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -866,6 +872,7 @@ func lyricPopup(lang string, audioFile *AudioFile) error {
 		}
 
 		go func() {
+			defer wg.Done()
 			var selectedIndex int
 			for i, v := range results {
 				if v.TitleForPopup == selected {
@@ -873,29 +880,45 @@ func lyricPopup(lang string, audioFile *AudioFile) error {
 					break
 				}
 			}
-			lyricContent, err := lyric.GetLyric(results[selectedIndex].LangExt, results[selectedIndex])
+			lyricContent, err := getLyric.GetLyric(results[selectedIndex])
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
+				return
 			}
 
-			lyric, err := lyric.NewFromLRC(lyricContent)
+			var lyric lyric.Lyric
+			err = lyric.NewFromLRC(lyricContent)
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
+				return
 			}
 			lyric.LangExt = lang
 			err = embedLyric(audioFile.path, &lyric, false)
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
-			} else {
-				infoPopup(lang + " lyric added successfully")
-				gomu.app.Draw()
+				return
 			}
+			infoPopup(lang + " lyric added successfully")
+			gomu.app.Draw()
 
 		}()
 	})
 
 	return nil
+}
+
+func lyricLang(lang string) lyric.GetLyrics {
+
+	switch lang {
+	case "en":
+		return lyric.GetLyricEn{}
+	case "zh-CN":
+		return lyric.GetLyricCn{}
+	default:
+		return lyric.GetLyricEn{}
+	}
+
 }

@@ -9,13 +9,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bogem/id3v2"
 	"github.com/rivo/tview"
+	"github.com/tramhao/id3v2"
 	"github.com/ztrue/tracerr"
 
 	"github.com/issadarkthing/gomu/lyric"
 )
 
+// PlayingBar shows song name, progress and lyric
 type PlayingBar struct {
 	*tview.Frame
 	full      int
@@ -145,6 +146,7 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 	err := p.loadLyrics(currentSong.path)
 	if err != nil {
 		errorPopup(err)
+		return
 	}
 	langLyricFromConfig := gomu.anko.GetString("General.lang_lyric")
 	if langLyricFromConfig == "" {
@@ -197,6 +199,7 @@ func (p *PlayingBar) switchLyrics() {
 	err := p.loadLyrics(gomu.player.GetCurrentSong().Path())
 	if err != nil {
 		errorPopup(err)
+		return
 	}
 	// no subtitle just ignore
 	if len(p.subtitles) == 0 {
@@ -283,7 +286,8 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 				return errors.New("USLT error")
 			}
 			if sylf.ContentDescriptor == uslf.ContentDescriptor {
-				lyric, err := lyric.NewFromLRC(uslf.Lyrics)
+				var lyric lyric.Lyric
+				err := lyric.NewFromLRC(uslf.Lyrics)
 				if err != nil {
 					return tracerr.Wrap(err)
 				}

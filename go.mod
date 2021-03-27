@@ -2,16 +2,11 @@ module github.com/issadarkthing/gomu
 
 go 1.14
 
-// replace github.com/bogem/id3v2 v1.2.0 => /home/tramhao/.local/src/id3v2
-
-replace github.com/bogem/id3v2 v1.2.0 => github.com/tramhao/id3v2 v1.2.1-0.20210314184634-d13ef0e6c7e8
-
 require (
 	github.com/PuerkitoBio/goquery v1.6.1 // indirect
 	github.com/antchfx/htmlquery v1.2.3 // indirect
 	github.com/antchfx/xmlquery v1.3.4 // indirect
-	github.com/asmcos/requests v0.0.0-20210118082303-cb8f46dd3767
-	github.com/bogem/id3v2 v1.2.0
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/faiface/beep v1.0.2
 	github.com/gdamore/tcell/v2 v2.2.0
 	github.com/gobwas/glob v0.2.3 // indirect
@@ -29,6 +24,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/temoto/robotstxt v1.1.1 // indirect
 	github.com/tj/go-spin v1.1.0
+	github.com/tramhao/id3v2 v1.2.1
 	github.com/ztrue/tracerr v0.3.0
 	golang.org/x/exp v0.0.0-20201229011636-eab1b5eb1a03 // indirect
 	golang.org/x/image v0.0.0-20201208152932-35266b937fa6 // indirect

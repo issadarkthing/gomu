@@ -1,11 +1,14 @@
 package main
 
 import (
+	"sync"
+
 	"github.com/issadarkthing/gomu/player"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
 )
 
+// Command map string to actual command function
 type Command struct {
 	commands map[string]func()
 }
@@ -400,15 +403,15 @@ func (c Command) defineCommands() {
 		audioFile := gomu.playlist.getCurrentFile()
 		lang := "en"
 
+		var wg sync.WaitGroup
+		wg.Add(1)
 		if audioFile.isAudioFile {
 			go func() {
-				gomu.app.QueueUpdateDraw(func() {
-					err := lyricPopup(lang, audioFile)
-					if err != nil {
-						errorPopup(err)
-						gomu.app.Draw()
-					}
-				})
+				err := lyricPopup(lang, audioFile, &wg)
+				if err != nil {
+					errorPopup(err)
+					gomu.app.Draw()
+				}
 			}()
 		}
 	})
@@ -416,15 +419,16 @@ func (c Command) defineCommands() {
 	c.define("fetch_lyric_cn2", func() {
 		audioFile := gomu.playlist.getCurrentFile()
 		lang := "zh-CN"
+
+		var wg sync.WaitGroup
+		wg.Add(1)
 		if audioFile.isAudioFile {
 			go func() {
-				gomu.app.QueueUpdateDraw(func() {
-					err := lyricPopup(lang, audioFile)
-					if err != nil {
-						errorPopup(err)
-						gomu.app.Draw()
-					}
-				})
+				err := lyricPopup(lang, audioFile, &wg)
+				if err != nil {
+					errorPopup(err)
+					gomu.app.Draw()
+				}
 			}()
 		}
 	})

@@ -24,10 +24,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bogem/id3v2"
+	"github.com/tramhao/id3v2"
 	"github.com/ztrue/tracerr"
 )
 
+// Lyric contains UnsyncedCaptions and SyncedCaptions
 type Lyric struct {
 	Album               string
 	Artist              string
@@ -41,6 +42,7 @@ type Lyric struct {
 	SyncedCaptions      []id3v2.SyncedText // SYLT captions
 }
 
+// UnsyncedCaption is only showing in tageditor
 type UnsyncedCaption struct {
 	Timestamp uint32
 	Text      string
@@ -65,7 +67,7 @@ func looksLikeLRC(s string) bool {
 }
 
 // NewFromLRC parses a .lrc text into Subtitle, assumes s is a clean utf8 string
-func NewFromLRC(s string) (res Lyric, err error) {
+func (lyric *Lyric) NewFromLRC(s string) (err error) {
 	s = cleanLRC(s)
 	lines := strings.Split(s, "\n")
 
@@ -82,9 +84,9 @@ func NewFromLRC(s string) (res Lyric, err error) {
 			var intOffset int
 			intOffset, err = strconv.Atoi(tmpString)
 			if err != nil {
-				return res, tracerr.Wrap(err)
+				return tracerr.Wrap(err)
 			}
-			res.Offset = int32(intOffset)
+			lyric.Offset = int32(intOffset)
 		}
 
 		timestampPattern := regexp.MustCompile(`(?U)^\[[0-9].*\]`)
@@ -111,34 +113,34 @@ func NewFromLRC(s string) (res Lyric, err error) {
 		singleSpacePattern := regexp.MustCompile(`\s+`)
 		s3 = singleSpacePattern.ReplaceAllString(s3, " ")
 		o.Text = s3
-		res.UnsyncedCaptions = append(res.UnsyncedCaptions, o)
+		lyric.UnsyncedCaptions = append(lyric.UnsyncedCaptions, o)
 	}
 
 	// we sort the cpations by Timestamp. This is to fix some lyrics downloaded are not sorted
-	sort.SliceStable(res.UnsyncedCaptions, func(i, j int) bool {
-		return res.UnsyncedCaptions[i].Timestamp < res.UnsyncedCaptions[j].Timestamp
+	sort.SliceStable(lyric.UnsyncedCaptions, func(i, j int) bool {
+		return lyric.UnsyncedCaptions[i].Timestamp < lyric.UnsyncedCaptions[j].Timestamp
 	})
 
-	res = mergeLRC(res)
+	lyric.mergeLRC()
 
 	// add synced lyric by calculating offset of unsynced lyric
-	for _, v := range res.UnsyncedCaptions {
+	for _, v := range lyric.UnsyncedCaptions {
 		var s id3v2.SyncedText
 		s.Text = v.Text
-		if res.Offset >= 0 {
-			s.Timestamp = v.Timestamp + uint32(res.Offset)
+		if lyric.Offset >= 0 {
+			s.Timestamp = v.Timestamp + uint32(lyric.Offset)
 		} else {
-			if v.Timestamp > uint32(-res.Offset) {
-				s.Timestamp = v.Timestamp - uint32(-res.Offset)
+			if v.Timestamp > uint32(-lyric.Offset) {
+				s.Timestamp = v.Timestamp - uint32(-lyric.Offset)
 			} else {
 				s.Timestamp = 0
 			}
 		}
-		res.SyncedCaptions = append(res.SyncedCaptions, s)
+		lyric.SyncedCaptions = append(lyric.SyncedCaptions, s)
 	}
 
 	// merge again because timestamp 0 could overlap if offset is negative
-	res = mergeSyncLRC(res)
+	lyric.mergeSyncLRC()
 	return
 }
 
@@ -193,7 +195,7 @@ func cleanLRC(s string) (cleanLyric string) {
 }
 
 // mergeLRC merge lyric if the time between two captions is less than 2 seconds
-func mergeLRC(lyric Lyric) (res Lyric) {
+func (lyric *Lyric) mergeLRC() {
 
 	lenLyric := len(lyric.UnsyncedCaptions)
 	for i := 0; i < lenLyric-1; i++ {
@@ -204,12 +206,11 @@ func mergeLRC(lyric Lyric) (res Lyric) {
 			lenLyric--
 		}
 	}
-	return lyric
 }
 
 // mergeSyncLRC merge lyric if the time between two captions is less than 2 seconds
 // this is specially useful when offset is negative and several timestamp 0 in synced lyric
-func mergeSyncLRC(lyric Lyric) (res Lyric) {
+func (lyric *Lyric) mergeSyncLRC() {
 
 	lenLyric := len(lyric.SyncedCaptions)
 	for i := 0; i < lenLyric-1; i++ {
@@ -220,7 +221,6 @@ func mergeSyncLRC(lyric Lyric) (res Lyric) {
 			lenLyric--
 		}
 	}
-	return lyric
 }
 
 func removeUnsynced(slice []UnsyncedCaption, s int) []UnsyncedCaption {
@@ -232,14 +232,14 @@ func removeSynced(slice []id3v2.SyncedText, s int) []id3v2.SyncedText {
 }
 
 // AsLRC renders the sub in .lrc format
-func (lyric Lyric) AsLRC() (res string) {
+func (lyric *Lyric) AsLRC() (res string) {
 	if lyric.Offset != 0 {
 		stringOffset := strconv.Itoa(int(lyric.Offset))
 		res += "[offset:" + stringOffset + "]" + eol
 	}
 
-	for _, sub := range lyric.UnsyncedCaptions {
-		res += sub.asLRC()
+	for _, cap := range lyric.UnsyncedCaptions {
+		res += cap.asLRC()
 	}
 	return
 }

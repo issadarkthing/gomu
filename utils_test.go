@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bogem/id3v2"
 	"github.com/issadarkthing/gomu/lyric"
 	"github.com/stretchr/testify/assert"
+	"github.com/tramhao/id3v2"
 )
 
 func TestFmtDuration(t *testing.T) {
@@ -127,7 +127,8 @@ func TestEmbedLyric(t *testing.T) {
 			t.Error(err)
 		}
 	}()
-	lyric, err := lyric.NewFromLRC(lyricString)
+	var lyric lyric.Lyric
+	err = lyric.NewFromLRC(lyricString)
 	if err != nil {
 		t.Error(err)
 	}

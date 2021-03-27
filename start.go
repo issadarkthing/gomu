@@ -38,6 +38,7 @@ const (
 	musicPath      = "~/music"
 )
 
+// Args is the augs for gomu executable
 type Args struct {
 	config  *string
 	empty   *bool
@@ -478,15 +479,14 @@ func start(application *tview.Application, args Args) {
 			return e
 		}
 
+		if gomu.pages.HasPage("tag-editor-input-popup") {
+			return e
+		}
+
 		popupName, _ := gomu.pages.GetFrontPage()
 
 		// disables keybindings when writing in input fields
 		if strings.Contains(popupName, "-input-") {
-			return e
-		}
-
-		// disables keybindings when popup messages
-		if strings.Contains(popupName, "timeout-popup") {
 			return e
 		}
 

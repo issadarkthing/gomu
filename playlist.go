@@ -15,10 +15,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/bogem/id3v2"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	spin "github.com/tj/go-spin"
+	"github.com/tramhao/id3v2"
 	"github.com/ztrue/tracerr"
 
 	"github.com/issadarkthing/gomu/lyric"
@@ -38,22 +38,27 @@ type AudioFile struct {
 	parent      *tview.TreeNode
 }
 
+// Name return the name of AudioFile
 func (a *AudioFile) Name() string {
 	return a.name
 }
 
+// Path return the path of AudioFile
 func (a *AudioFile) Path() string {
 	return a.path
 }
 
+// IsAudioFile check if the file is song or directory
 func (a *AudioFile) IsAudioFile() bool {
 	return a.isAudioFile
 }
 
+// Len return the length of AudioFile
 func (a *AudioFile) Len() time.Duration {
 	return a.length
 }
 
+// GetParent return the parent directory of AudioFile
 func (a *AudioFile) GetParent() *AudioFile {
 	if a.parent == nil {
 		return nil
@@ -67,7 +72,6 @@ func (a *AudioFile) String() string {
 	}
 	return fmt.Sprintf("%#v", a)
 }
-
 
 // Playlist struct represents playlist panel
 // that shows the tree of the music directory
@@ -185,7 +189,6 @@ func newPlaylist(args Args) *Playlist {
 	playlist.SetSelectedFunc(func(node *tview.TreeNode) {
 		node.SetExpanded(!node.IsExpanded())
 	})
-
 
 	cmds := map[rune]string{
 		'a': "create_playlist",
@@ -526,7 +529,7 @@ Download:
 
 		select {
 		case <-p.done:
-			p.download -= 1
+			p.download--
 			if p.download == 0 {
 				p.SetTitle(p.defaultTitle)
 				break Download
@@ -602,7 +605,6 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	gomu.playlist.done <- struct{}{}
 
 	if err != nil {
-		errorPopup(err)
 		return tracerr.Wrap(err)
 	}
 
@@ -652,7 +654,8 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 			}
 			lyricContent := string(byteContent)
 
-			lyric, err := lyric.NewFromLRC(lyricContent)
+			var lyric lyric.Lyric
+			err = lyric.NewFromLRC(lyricContent)
 			if err != nil {
 				return tracerr.Wrap(err)
 			}
