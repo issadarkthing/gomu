@@ -437,12 +437,12 @@ func (f *lyricFlex) Focus(delegate func(p tview.Primitive)) {
 }
 
 // loadTagMap will load from tag and return a map of langExt to lyrics
-func (node *AudioFile) loadTagMap() (tag *id3v2.Tag, popupLyricMap map[string]string, options []string, err error) {
+func (a *AudioFile) loadTagMap() (tag *id3v2.Tag, popupLyricMap map[string]string, options []string, err error) {
 
 	popupLyricMap = make(map[string]string)
 
-	if node.isAudioFile {
-		tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+	if a.isAudioFile {
+		tag, err = id3v2.Open(a.path, id3v2.Options{Parse: true})
 		if err != nil {
 			return nil, nil, nil, tracerr.Wrap(err)
 		}
