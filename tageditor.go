@@ -366,9 +366,9 @@ func tagPopup(node *AudioFile) (err error) {
 		case tcell.KeyEsc:
 			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
-		case tcell.KeyTab:
+		case tcell.KeyTab, tcell.KeyCtrlN, tcell.KeyCtrlJ:
 			lyricFlex.cycleFocus(gomu.app, false)
-		case tcell.KeyBacktab:
+		case tcell.KeyBacktab, tcell.KeyCtrlP, tcell.KeyCtrlK:
 			lyricFlex.cycleFocus(gomu.app, true)
 		case tcell.KeyRight:
 			lyricFlex.cycleFocus(gomu.app, false)

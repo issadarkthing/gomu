@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -21,16 +20,15 @@ import (
 // PlayingBar shows song name, progress and lyric
 type PlayingBar struct {
 	*tview.Frame
-	full      int32
+	full      int64
 	update    chan struct{}
-	progress  int32
+	progress  int64
 	skip      bool
 	text      *tview.TextView
 	hasTag    bool
 	tag       *id3v2.Tag
 	subtitle  *lyric.Lyric
 	subtitles []*lyric.Lyric
-	mu        sync.Mutex
 }
 
 func (p *PlayingBar) help() []string {
@@ -145,7 +143,7 @@ func (p *PlayingBar) setSongTitle(title string) {
 
 // Resets progress bar, ready for execution
 func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
-	p.full = int32(full)
+	p.setFull(full)
 	p.setProgress(0)
 	p.setSongTitle(currentSong.name)
 	p.hasTag = false
@@ -220,8 +218,8 @@ func (p *PlayingBar) switchLyrics() {
 
 	// only 1 subtitle, prompt to the user and select this one
 	if len(p.subtitles) == 1 {
-		defaultTimedPopup(" Warning ", p.subtitle.LangExt+" lyric is the only lyric available")
 		p.subtitle = p.subtitles[0]
+		defaultTimedPopup(" Warning ", p.subtitle.LangExt+" lyric is the only lyric available")
 		return
 	}
 
@@ -312,12 +310,17 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 }
 
 func (p *PlayingBar) getProgress() int {
-	return int(atomic.LoadInt32(&p.progress))
+	return int(atomic.LoadInt64(&p.progress))
 }
 
 func (p *PlayingBar) setProgress(progress int) {
-	atomic.StoreInt32(&p.progress, int32(progress))
+	atomic.StoreInt64(&p.progress, int64(progress))
 }
+
 func (p *PlayingBar) getFull() int {
-	return int(atomic.LoadInt32(&p.full))
+	return int(atomic.LoadInt64(&p.full))
+}
+
+func (p *PlayingBar) setFull(full int) {
+	atomic.StoreInt64(&p.full, int64(full))
 }
