@@ -737,6 +737,13 @@ func populate(root *tview.TreeNode, rootPath string, sortMtime bool) error {
 				parent:      root,
 			}
 
+			audioLength, err := getTagLength(audioFile.path)
+			if err != nil {
+				logError(err)
+			}
+
+			audioFile.length = audioLength
+
 			displayText := setDisplayText(audioFile)
 
 			child.SetReference(audioFile)
@@ -841,24 +848,4 @@ func setDisplayText(audioFile *AudioFile) string {
 
 	emojiDir := gomu.anko.GetString("Emoji.playlist")
 	return fmt.Sprintf(" %s %s", emojiDir, audioFile.name)
-}
-
-// populateAudioLength is the most time consuming part of startup,
-// so here we initialize it separately
-func populateAudioLength(root *tview.TreeNode) error {
-	root.Walk(func(node *tview.TreeNode, _ *tview.TreeNode) bool {
-		audioFile := node.GetReference().(*AudioFile)
-		if audioFile.isAudioFile {
-			audioLength, err := getTagLength(audioFile.path)
-			if err != nil {
-				logError(err)
-				return false
-			}
-			audioFile.length = audioLength
-		}
-		return true
-	})
-
-	gomu.queue.updateTitle()
-	return nil
 }

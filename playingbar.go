@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/rivo/tview"
@@ -19,15 +21,16 @@ import (
 // PlayingBar shows song name, progress and lyric
 type PlayingBar struct {
 	*tview.Frame
-	full      int
+	full      int32
 	update    chan struct{}
-	progress  int
+	progress  int32
 	skip      bool
 	text      *tview.TextView
 	hasTag    bool
 	tag       *id3v2.Tag
 	subtitle  *lyric.Lyric
 	subtitles []*lyric.Lyric
+	mu        sync.Mutex
 }
 
 func (p *PlayingBar) help() []string {
@@ -60,9 +63,12 @@ func (p *PlayingBar) run() error {
 	for {
 
 		// stop progressing if song ends or skipped
-		if p.progress > p.full || p.skip {
+		progress := p.getProgress()
+		full := p.getFull()
+
+		if progress > full || p.skip {
 			p.skip = false
-			p.progress = 0
+			p.setProgress(0)
 			break
 		}
 
@@ -71,21 +77,25 @@ func (p *PlayingBar) run() error {
 			continue
 		}
 
-		p.progress = int(gomu.player.GetPosition().Seconds())
+		// p.progress = int(gomu.player.GetPosition().Seconds())
+		p.setProgress(int(gomu.player.GetPosition().Seconds()))
 
-		start, err := time.ParseDuration(strconv.Itoa(p.progress) + "s")
+		start, err := time.ParseDuration(strconv.Itoa(progress) + "s")
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
 
-		end, err := time.ParseDuration(strconv.Itoa(p.full) + "s")
+		end, err := time.ParseDuration(strconv.Itoa(full) + "s")
 
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
+		var width int
+		gomu.app.QueueUpdate(func() {
+			_, _, width, _ = p.GetInnerRect()
+		})
 
-		_, _, width, _ := p.GetInnerRect()
-		progressBar := progresStr(p.progress, p.full, width/2, "█", "━")
+		progressBar := progresStr(progress, full, width/2, "█", "━")
 		// our progress bar
 		var lyricText string
 		if p.subtitle != nil {
@@ -96,11 +106,11 @@ func (p *PlayingBar) run() error {
 					endTime = int32(p.subtitle.SyncedCaptions[i+1].Timestamp)
 				} else {
 					// Here we display the last lyric until the end of song
-					endTime = int32(p.full * 1000)
+					endTime = int32(full * 1000)
 				}
 
 				// here the currentTime is delayed 1 second because we want to show lyrics earlier
-				currentTime := int32(p.progress*1000) + 1000
+				currentTime := int32(progress*1000) + 1000
 				if currentTime >= startTime && currentTime <= endTime {
 					lyricText = p.subtitle.SyncedCaptions[i].Text
 					break
@@ -135,8 +145,8 @@ func (p *PlayingBar) setSongTitle(title string) {
 
 // Resets progress bar, ready for execution
 func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
-	p.full = full
-	p.progress = 0
+	p.full = int32(full)
+	p.setProgress(0)
 	p.setSongTitle(currentSong.name)
 	p.hasTag = false
 	p.tag = nil
@@ -299,4 +309,15 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 	}
 
 	return nil
+}
+
+func (p *PlayingBar) getProgress() int {
+	return int(atomic.LoadInt32(&p.progress))
+}
+
+func (p *PlayingBar) setProgress(progress int) {
+	atomic.StoreInt32(&p.progress, int32(progress))
+}
+func (p *PlayingBar) getFull() int {
+	return int(atomic.LoadInt32(&p.full))
 }

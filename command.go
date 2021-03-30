@@ -307,64 +307,70 @@ func (c Command) defineCommands() {
 
 	c.define("forward", func() {
 		if gomu.player.IsRunning() && !gomu.player.IsPaused() {
-			position := gomu.playingBar.progress + 10
-			if position < gomu.playingBar.full {
+			position := gomu.playingBar.getProgress() + 10
+			if position < gomu.playingBar.getFull() {
 				err := gomu.player.Seek(position)
 				if err != nil {
-					logError(err)
+					errorPopup(err)
+					gomu.app.Draw()
 				}
-				gomu.playingBar.progress = position
+				gomu.playingBar.setProgress(position)
 			}
 		}
 	})
 
 	c.define("rewind", func() {
 		if gomu.player.IsRunning() && !gomu.player.IsPaused() {
-			position := gomu.playingBar.progress - 10
+			position := gomu.playingBar.getProgress() - 10
 			if position-1 > 0 {
 				err := gomu.player.Seek(position)
 				if err != nil {
-					logError(err)
+					errorPopup(err)
+					gomu.app.Draw()
 				}
-				gomu.playingBar.progress = position
+				gomu.playingBar.setProgress(position)
 			} else {
 				err := gomu.player.Seek(0)
 				if err != nil {
-					logError(err)
+					errorPopup(err)
+					gomu.app.Draw()
 				}
-				gomu.playingBar.progress = 0
+				gomu.playingBar.setProgress(0)
 			}
 		}
 	})
 
 	c.define("forward_fast", func() {
 		if gomu.player.IsRunning() && !gomu.player.IsPaused() {
-			position := gomu.playingBar.progress + 60
-			if position < gomu.playingBar.full {
+			position := gomu.playingBar.getProgress() + 60
+			if position < gomu.playingBar.getFull() {
 				err := gomu.player.Seek(position)
 				if err != nil {
-					logError(err)
+					errorPopup(err)
+					gomu.app.Draw()
 				}
-				gomu.playingBar.progress = position
+				gomu.playingBar.setProgress(position)
 			}
 		}
 	})
 
 	c.define("rewind_fast", func() {
 		if gomu.player.IsRunning() && !gomu.player.IsPaused() {
-			position := gomu.playingBar.progress - 60
+			position := gomu.playingBar.getProgress() - 60
 			if position-1 > 0 {
 				err := gomu.player.Seek(position)
 				if err != nil {
-					logError(err)
+					errorPopup(err)
+					gomu.app.Draw()
 				}
-				gomu.playingBar.progress = position
+				gomu.playingBar.setProgress(position)
 			} else {
 				err := gomu.player.Seek(0)
 				if err != nil {
-					logError(err)
+					errorPopup(err)
+					gomu.app.Draw()
 				}
-				gomu.playingBar.progress = 0
+				gomu.playingBar.setProgress(0)
 			}
 		}
 	})
@@ -372,14 +378,16 @@ func (c Command) defineCommands() {
 	c.define("yank", func() {
 		err := gomu.playlist.yank()
 		if err != nil {
-			logError(err)
+			errorPopup(err)
+			gomu.app.Draw()
 		}
 	})
 
 	c.define("paste", func() {
 		err := gomu.playlist.paste()
 		if err != nil {
-			logError(err)
+			errorPopup(err)
+			gomu.app.Draw()
 		}
 	})
 

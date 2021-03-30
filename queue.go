@@ -155,18 +155,6 @@ func (q *Queue) dequeue() (*AudioFile, error) {
 // Add item to the list and returns the length of the queue
 func (q *Queue) enqueue(audioFile *AudioFile) (int, error) {
 
-	isTestEnv := os.Getenv("TEST") == "false"
-
-	if !gomu.player.IsRunning() && !gomu.player.IsPaused() && isTestEnv {
-
-		err := gomu.player.Run(audioFile)
-		if err != nil {
-			die(err)
-		}
-
-		return q.GetItemCount(), nil
-	}
-
 	if !audioFile.isAudioFile {
 		return q.GetItemCount(), nil
 	}
@@ -428,5 +416,27 @@ func (q *Queue) updateQueueNames() error {
 	q.saveQueue(false)
 	q.clearQueue()
 	q.loadQueue()
+	return nil
+}
+
+// playQueue play the first item in the queue
+func (q *Queue) playQueue() error {
+
+	isTestEnv := os.Getenv("TEST") == "false"
+
+	if !gomu.player.IsRunning() && !gomu.player.IsPaused() && isTestEnv {
+
+		audioFile, err := q.dequeue()
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+		err = gomu.player.Run(audioFile)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+
+		return nil
+	}
+
 	return nil
 }

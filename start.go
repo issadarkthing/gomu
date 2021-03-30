@@ -71,7 +71,7 @@ func defineInternals() {
 	playlist, _ := gomu.anko.NewModule("Playlist")
 	playlist.Define("get_focused", gomu.playlist.getCurrentFile)
 	playlist.Define("focus", func(filepath string) {
-		
+
 		root := gomu.playlist.GetRoot()
 		root.Walk(func(node, _ *tview.TreeNode) bool {
 
@@ -372,7 +372,9 @@ func start(application *tview.Application, args Args) {
 		}
 
 		audioFile := audio.(*AudioFile)
+
 		gomu.playingBar.newProgress(audioFile, int(duration.Seconds()))
+
 		name := audio.Name()
 		var description string
 
@@ -392,6 +394,7 @@ func start(application *tview.Application, args Args) {
 				logError(err)
 			}
 		}()
+
 	})
 
 	gomu.player.SetSongFinish(func(currAudio player.Audio) {
@@ -432,6 +435,12 @@ func start(application *tview.Application, args Args) {
 	if !*args.empty && loadQueue {
 		// load saved queue from previous session
 		if err := gomu.queue.loadQueue(); err != nil {
+			logError(err)
+		}
+	}
+
+	if len(gomu.queue.items) > 0 {
+		if err := gomu.queue.playQueue(); err != nil {
 			logError(err)
 		}
 	}
@@ -526,7 +535,6 @@ func start(application *tview.Application, args Args) {
 		}
 	})
 
-	go populateAudioLength(gomu.playlist.GetRoot())
 	gomu.app.SetRoot(gomu.pages, true).SetFocus(gomu.playlist)
 
 	// main loop

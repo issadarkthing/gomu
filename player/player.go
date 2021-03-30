@@ -1,7 +1,9 @@
+// Package player is the place actually play the music
 package player
 
 import (
 	"os"
+	"sync"
 	"time"
 
 	"github.com/faiface/beep"
@@ -31,6 +33,7 @@ type Player struct {
 	songFinish func(Audio)
 	songStart  func(Audio)
 	songSkip   func(Audio)
+	mu         sync.Mutex
 }
 
 // New returns new Player instance.
@@ -100,15 +103,16 @@ func (p *Player) Run(currSong Audio) error {
 	}
 
 	p.streamSeekCloser = stream
-	p.format = &format
 
 	// song duration
-	p.length = p.format.SampleRate.D(p.streamSeekCloser.Len())
+	p.length = format.SampleRate.D(p.streamSeekCloser.Len())
 
 	sr := beep.SampleRate(48000)
 	if !p.hasInit {
 
+		// p.mu.Lock()
 		err := speaker.Init(sr, sr.N(time.Second/10))
+		// p.mu.Unlock()
 
 		if err != nil {
 			return tracerr.Wrap(err)
@@ -120,7 +124,7 @@ func (p *Player) Run(currSong Audio) error {
 	p.currentSong = currSong
 
 	// resample to adapt to sample rate of new songs
-	resampled := beep.Resample(4, p.format.SampleRate, sr, p.streamSeekCloser)
+	resampled := beep.Resample(4, format.SampleRate, sr, p.streamSeekCloser)
 
 	sstreamer := beep.Seq(resampled, beep.Callback(func() {
 		p.isRunning = false
@@ -134,7 +138,10 @@ func (p *Player) Run(currSong Audio) error {
 		Paused:   false,
 	}
 
+	p.mu.Lock()
+	p.format = &format
 	p.ctrl = ctrl
+	p.mu.Unlock()
 	resampler := beep.ResampleRatio(4, 1, ctrl)
 
 	volume := &effects.Volume{
@@ -170,7 +177,7 @@ func (p *Player) Play() {
 	speaker.Unlock()
 }
 
-// Volume up and volume down using -0.5 or +0.5.
+// SetVolume set volume up and volume down using -0.5 or +0.5.
 func (p *Player) SetVolume(v float64) float64 {
 
 	// check if no songs playing currently
@@ -186,7 +193,7 @@ func (p *Player) SetVolume(v float64) float64 {
 	return p.volume
 }
 
-// Toggles the pause state.
+// TogglePause toggles the pause state.
 func (p *Player) TogglePause() {
 
 	if p.ctrl == nil {
@@ -200,7 +207,7 @@ func (p *Player) TogglePause() {
 	}
 }
 
-// Skips current song.
+// Skip current song.
 func (p *Player) Skip() {
 
 	p.execSongSkip(p.currentSong)
@@ -210,17 +217,23 @@ func (p *Player) Skip() {
 	}
 
 	// drain the stream
+	speaker.Lock()
 	p.ctrl.Streamer = nil
-
 	p.streamSeekCloser.Close()
 	p.isRunning = false
 	p.format = nil
+	speaker.Unlock()
+
 	p.execSongFinish(p.currentSong)
 }
 
 // GetPosition returns the current position of audio file.
 func (p *Player) GetPosition() time.Duration {
 
+	p.mu.Lock()
+	speaker.Lock()
+	defer speaker.Unlock()
+	defer p.mu.Unlock()
 	if p.format == nil || p.streamSeekCloser == nil {
 		return 1
 	}
@@ -228,16 +241,22 @@ func (p *Player) GetPosition() time.Duration {
 	return p.format.SampleRate.D(p.streamSeekCloser.Position())
 }
 
-// seek is the function to move forward and rewind
+// Seek is the function to move forward and rewind
 func (p *Player) Seek(pos int) error {
+	p.mu.Lock()
 	speaker.Lock()
 	defer speaker.Unlock()
+	defer p.mu.Unlock()
 	err := p.streamSeekCloser.Seek(pos * int(p.format.SampleRate))
 	return err
 }
 
 // IsPaused is used to distinguish the player between pause and stop
 func (p *Player) IsPaused() bool {
+	p.mu.Lock()
+	speaker.Lock()
+	defer speaker.Unlock()
+	defer p.mu.Unlock()
 	if p.ctrl == nil {
 		return false
 	}
@@ -266,7 +285,7 @@ func (p *Player) IsRunning() bool {
 	return p.isRunning
 }
 
-// Gets the length of the song in the queue
+// GetLength return the length of the song in the queue
 func GetLength(audioPath string) (time.Duration, error) {
 	f, err := os.Open(audioPath)
 

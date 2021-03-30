@@ -259,22 +259,24 @@ func tagPopup(node *AudioFile) (err error) {
 
 			options = newOptions
 			// Update dropdown options
-			lyricDropDown.SetOptions(newOptions, nil).
-				SetCurrentOption(0).
-				SetSelectedFunc(func(text string, _ int) {
-					lyricTextView.SetText(popupLyricMap[text]).
-						SetTitle(" " + text + " lyric preview ")
-				})
+			gomu.app.QueueUpdateDraw(func() {
+				lyricDropDown.SetOptions(newOptions, nil).
+					SetCurrentOption(0).
+					SetSelectedFunc(func(text string, _ int) {
+						lyricTextView.SetText(popupLyricMap[text]).
+							SetTitle(" " + text + " lyric preview ")
+					})
 
-			// Update lyric preview
-			if len(newOptions) > 0 {
-				_, langExt := lyricDropDown.GetCurrentOption()
-				lyricTextView.SetText(popupLyricMap[langExt]).
-					SetTitle(" " + langExt + " lyric preview ")
-			} else {
-				lyricTextView.SetText("No lyric embeded.").
-					SetTitle(" lyric preview ")
-			}
+				// Update lyric preview
+				if len(newOptions) > 0 {
+					_, langExt := lyricDropDown.GetCurrentOption()
+					lyricTextView.SetText(popupLyricMap[langExt]).
+						SetTitle(" " + langExt + " lyric preview ")
+				} else {
+					lyricTextView.SetText("No lyric embeded.").
+						SetTitle(" lyric preview ")
+				}
+			})
 		}()
 	}).
 		SetBackgroundColorActivated(gomu.colors.popup).
@@ -304,7 +306,9 @@ func tagPopup(node *AudioFile) (err error) {
 		SetWrap(true).
 		SetBorder(true)
 	lyricTextView.SetChangedFunc(func() {
-		lyricTextView.ScrollToBeginning()
+		gomu.app.QueueUpdate(func() {
+			lyricTextView.ScrollToBeginning()
+		})
 	})
 
 	leftGrid.SetRows(3, 1, 3, 3, 3, 3, 0, 3, 3, 1, 3, 3).
