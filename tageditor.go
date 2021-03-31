@@ -22,9 +22,8 @@ type lyricFlex struct {
 	*tview.Flex
 	FocusedItem tview.Primitive
 	inputs      []tview.Primitive
+	box         *tview.Box
 }
-
-var box *tview.Box = tview.NewBox()
 
 // tagPopup is used to edit tag, delete and fetch lyrics
 func tagPopup(node *AudioFile) (err error) {
@@ -45,9 +44,9 @@ func tagPopup(node *AudioFile) (err error) {
 		deleteLyricButton *tview.Button     = tview.NewButton("Delete Lyric")
 		getLyricDropDown  *tview.DropDown   = tview.NewDropDown()
 		getLyricButton    *tview.Button     = tview.NewButton("Fetch Lyric")
-		lyricTextView     *tview.TextView
-		leftGrid          *tview.Grid = tview.NewGrid()
-		rightFlex         *tview.Flex = tview.NewFlex()
+		lyricTextView     *tview.TextView   = tview.NewTextView()
+		leftGrid          *tview.Grid       = tview.NewGrid()
+		rightFlex         *tview.Flex       = tview.NewFlex()
 	)
 
 	artistInputField.SetLabel("Artist: ").
@@ -292,7 +291,7 @@ func tagPopup(node *AudioFile) (err error) {
 		lyricText = "No lyric embeded."
 		langExt = ""
 	}
-	lyricTextView = tview.NewTextView()
+
 	lyricTextView.
 		SetDynamicColors(true).
 		SetRegions(true).
@@ -323,15 +322,6 @@ func tagPopup(node *AudioFile) (err error) {
 		AddItem(lyricDropDown, 10, 0, 1, 3, 1, 10, true).
 		AddItem(deleteLyricButton, 11, 0, 1, 3, 1, 10, true)
 
-	box.SetBorder(true).
-		SetTitle(node.name).
-		SetBackgroundColor(gomu.colors.popup).
-		SetBorderColor(gomu.colors.accent).
-		SetTitleColor(gomu.colors.accent).
-		SetBorderPadding(1, 1, 2, 2)
-
-	leftGrid.Box = box
-
 	rightFlex.SetDirection(tview.FlexColumn).
 		AddItem(lyricTextView, 0, 1, true)
 
@@ -341,7 +331,16 @@ func tagPopup(node *AudioFile) (err error) {
 			AddItem(rightFlex, 0, 3, true),
 		nil,
 		nil,
+		tview.NewBox().
+			SetBorder(true).
+			SetTitle(node.name).
+			SetBackgroundColor(gomu.colors.popup).
+			SetBorderColor(gomu.colors.accent).
+			SetTitleColor(gomu.colors.accent).
+			SetBorderPadding(1, 1, 2, 2),
 	}
+
+	leftGrid.Box = lyricFlex.box
 
 	lyricFlex.inputs = []tview.Primitive{
 		getTagButton,
@@ -413,12 +412,12 @@ func (f *lyricFlex) cycleFocus(app *tview.Application, reverse bool) {
 		if f.inputs[9].HasFocus() {
 			f.inputs[9].(*tview.TextView).SetBorderColor(gomu.colors.accent).
 				SetTitleColor(gomu.colors.accent)
-			box.SetBorderColor(gomu.colors.background).
+			f.box.SetBorderColor(gomu.colors.background).
 				SetTitleColor(gomu.colors.background)
 		} else {
 			f.inputs[9].(*tview.TextView).SetBorderColor(gomu.colors.background).
 				SetTitleColor(gomu.colors.background)
-			box.SetBorderColor(gomu.colors.accent).
+			f.box.SetBorderColor(gomu.colors.accent).
 				SetTitleColor(gomu.colors.accent)
 		}
 		return
