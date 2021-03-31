@@ -241,9 +241,11 @@ module General {
 	invidious_instance  = "https://vid.puffyan.us"
 	# Prefered language for lyrics to be displayed, if not available, english version
 	# will be displayed.
-	# Available tags: en,el,ko,es,th,vi,zh-Hans,zh-Hant, and can be separated with comma.
+	# Available tags: en,el,ko,es,th,vi,zh-Hans,zh-Hant,zh-CN and can be separated with comma.
 	# find more tags: youtube-dl --skip-download --list-subs "url"
 	lang_lyric          = "en"
+	# When save tag, could rename the file by tag info: artist-songname-album
+	rename_bytag        = false
 }
 
 module Emoji {

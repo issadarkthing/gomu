@@ -64,6 +64,14 @@ func tagPopup(node *AudioFile) (err error) {
 		SetText(tag.Album()).
 		SetFieldBackgroundColor(gomu.colors.popup)
 
+	leftBox := tview.NewBox().
+		SetBorder(true).
+		SetTitle(node.name).
+		SetBackgroundColor(gomu.colors.popup).
+		SetBorderColor(gomu.colors.accent).
+		SetTitleColor(gomu.colors.accent).
+		SetBorderPadding(1, 1, 2, 2)
+
 	getTagButton.SetSelectedFunc(func() {
 		var titles []string
 		audioFile := node
@@ -111,6 +119,16 @@ func tagPopup(node *AudioFile) (err error) {
 						errorPopup(err)
 						return
 					}
+					if gomu.anko.GetBool("General.rename_bytag") {
+						newName := fmt.Sprintf("%s-%s", newTag.Artist, newTag.Title)
+						err = gomu.playlist.rename(newName)
+						if err != nil {
+							errorPopup(err)
+							return
+						}
+						gomu.playlist.refresh()
+						leftBox.SetTitle(newName)
+					}
 					defaultTimedPopup(" Success ", "Tag update successfully")
 				})
 			}()
@@ -129,14 +147,28 @@ func tagPopup(node *AudioFile) (err error) {
 			return
 		}
 		defer tag.Close()
-		tag.SetArtist(artistInputField.GetText())
-		tag.SetTitle(titleInputField.GetText())
-		tag.SetAlbum(albumInputField.GetText())
+		newArtist := artistInputField.GetText()
+		newTitle := titleInputField.GetText()
+		newAlbum := albumInputField.GetText()
+		tag.SetArtist(newArtist)
+		tag.SetTitle(newTitle)
+		tag.SetAlbum(newAlbum)
 		err = tag.Save()
 		if err != nil {
 			errorPopup(err)
 			return
 		}
+		if gomu.anko.GetBool("General.rename_bytag") {
+			newName := fmt.Sprintf("%s-%s", newArtist, newTitle)
+			err = gomu.playlist.rename(newName)
+			if err != nil {
+				errorPopup(err)
+				return
+			}
+			gomu.playlist.refresh()
+			leftBox.SetTitle(newName)
+		}
+
 		defaultTimedPopup(" Success ", "Tag update successfully")
 
 	}).
@@ -331,13 +363,7 @@ func tagPopup(node *AudioFile) (err error) {
 			AddItem(rightFlex, 0, 3, true),
 		nil,
 		nil,
-		tview.NewBox().
-			SetBorder(true).
-			SetTitle(node.name).
-			SetBackgroundColor(gomu.colors.popup).
-			SetBorderColor(gomu.colors.accent).
-			SetTitleColor(gomu.colors.accent).
-			SetBorderPadding(1, 1, 2, 2),
+		leftBox,
 	}
 
 	leftGrid.Box = lyricFlex.box
@@ -369,9 +395,9 @@ func tagPopup(node *AudioFile) (err error) {
 			lyricFlex.cycleFocus(gomu.app, false)
 		case tcell.KeyBacktab, tcell.KeyCtrlP, tcell.KeyCtrlK:
 			lyricFlex.cycleFocus(gomu.app, true)
-		case tcell.KeyRight:
+		case tcell.KeyDown:
 			lyricFlex.cycleFocus(gomu.app, false)
-		case tcell.KeyLeft:
+		case tcell.KeyUp:
 			lyricFlex.cycleFocus(gomu.app, true)
 		}
 
