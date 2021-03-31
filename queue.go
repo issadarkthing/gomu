@@ -422,20 +422,13 @@ func (q *Queue) updateQueueNames() error {
 // playQueue play the first item in the queue
 func (q *Queue) playQueue() error {
 
-	isTestEnv := os.Getenv("TEST") == "false"
-
-	if !gomu.player.IsRunning() && !gomu.player.IsPaused() && isTestEnv {
-
-		audioFile, err := q.dequeue()
-		if err != nil {
-			return tracerr.Wrap(err)
-		}
-		err = gomu.player.Run(audioFile)
-		if err != nil {
-			return tracerr.Wrap(err)
-		}
-
-		return nil
+	audioFile, err := q.dequeue()
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	err = gomu.player.Run(audioFile)
+	if err != nil {
+		return tracerr.Wrap(err)
 	}
 
 	return nil
