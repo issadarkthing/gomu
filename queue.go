@@ -417,16 +417,14 @@ func (q *Queue) rename(oldAudio *AudioFile, newAudio *AudioFile) error {
 		if v.name != oldAudio.name {
 			continue
 		}
-
-		q.items[i] = newAudio
-		songLength, err := getTagLength(newAudio.path)
+		err := q.insertItem(i, newAudio)
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
-		queueItemView := fmt.Sprintf(
-			"[ %s ] %s", fmtDuration(songLength), getName(newAudio.name),
-		)
-		q.SetItemText(i, queueItemView, "")
+		_, err = q.deleteItem(i + 1)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
 
 	}
 	return nil
@@ -442,6 +440,42 @@ func (q *Queue) playQueue() error {
 	err = gomu.player.Run(audioFile)
 	if err != nil {
 		return tracerr.Wrap(err)
+	}
+
+	return nil
+}
+
+func (q *Queue) insertItem(index int, audioFile *AudioFile) error {
+
+	if index > len(q.items)-1 {
+		return tracerr.New("Index out of range")
+	}
+
+	if index != -1 {
+		songLength, err := getTagLength(audioFile.path)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+		queueItemView := fmt.Sprintf(
+			"[ %s ] %s", fmtDuration(songLength), getName(audioFile.name),
+		)
+
+		q.InsertItem(index, queueItemView, audioFile.path, 0, nil)
+
+		var nItems []*AudioFile
+
+		for i, v := range q.items {
+
+			if i == index {
+				nItems = append(nItems, audioFile)
+			}
+
+			nItems = append(nItems, v)
+		}
+
+		q.items = nItems
+		q.updateTitle()
+
 	}
 
 	return nil
