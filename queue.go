@@ -412,10 +412,23 @@ func sha1Hex(input string) string {
 }
 
 // Modify the title of songs in queue
-func (q *Queue) updateQueueNames() error {
-	q.saveQueue(false)
-	q.clearQueue()
-	q.loadQueue()
+func (q *Queue) rename(oldAudio *AudioFile, newAudio *AudioFile) error {
+	for i, v := range q.items {
+		if v.name != oldAudio.name {
+			continue
+		}
+
+		q.items[i] = newAudio
+		songLength, err := getTagLength(newAudio.path)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+		queueItemView := fmt.Sprintf(
+			"[ %s ] %s", fmtDuration(songLength), getName(newAudio.name),
+		)
+		q.SetItemText(i, queueItemView, "")
+
+	}
 	return nil
 }
 

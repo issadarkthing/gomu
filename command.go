@@ -316,7 +316,6 @@ func (c Command) defineCommands() {
 				err := gomu.player.Seek(position)
 				if err != nil {
 					errorPopup(err)
-					gomu.app.Draw()
 				}
 				gomu.playingBar.setProgress(position)
 			}
@@ -330,14 +329,12 @@ func (c Command) defineCommands() {
 				err := gomu.player.Seek(position)
 				if err != nil {
 					errorPopup(err)
-					gomu.app.Draw()
 				}
 				gomu.playingBar.setProgress(position)
 			} else {
 				err := gomu.player.Seek(0)
 				if err != nil {
 					errorPopup(err)
-					gomu.app.Draw()
 				}
 				gomu.playingBar.setProgress(0)
 			}
@@ -351,7 +348,6 @@ func (c Command) defineCommands() {
 				err := gomu.player.Seek(position)
 				if err != nil {
 					errorPopup(err)
-					gomu.app.Draw()
 				}
 				gomu.playingBar.setProgress(position)
 			}
@@ -365,14 +361,12 @@ func (c Command) defineCommands() {
 				err := gomu.player.Seek(position)
 				if err != nil {
 					errorPopup(err)
-					gomu.app.Draw()
 				}
 				gomu.playingBar.setProgress(position)
 			} else {
 				err := gomu.player.Seek(0)
 				if err != nil {
 					errorPopup(err)
-					gomu.app.Draw()
 				}
 				gomu.playingBar.setProgress(0)
 			}
@@ -383,7 +377,6 @@ func (c Command) defineCommands() {
 		err := gomu.playlist.yank()
 		if err != nil {
 			errorPopup(err)
-			gomu.app.Draw()
 		}
 	})
 
@@ -391,7 +384,6 @@ func (c Command) defineCommands() {
 		err := gomu.playlist.paste()
 		if err != nil {
 			errorPopup(err)
-			gomu.app.Draw()
 		}
 	})
 
@@ -422,7 +414,6 @@ func (c Command) defineCommands() {
 				err := lyricPopup(lang, audioFile, &wg)
 				if err != nil {
 					errorPopup(err)
-					gomu.app.Draw()
 				}
 			}()
 		}
@@ -439,7 +430,6 @@ func (c Command) defineCommands() {
 				err := lyricPopup(lang, audioFile, &wg)
 				if err != nil {
 					errorPopup(err)
-					gomu.app.Draw()
 				}
 			}()
 		}
@@ -449,7 +439,6 @@ func (c Command) defineCommands() {
 		err := gomu.playingBar.delayLyric(500)
 		if err != nil {
 			errorPopup(err)
-			gomu.app.Draw()
 		}
 	})
 
@@ -457,7 +446,6 @@ func (c Command) defineCommands() {
 		err := gomu.playingBar.delayLyric(-500)
 		if err != nil {
 			errorPopup(err)
-			gomu.app.Draw()
 		}
 	})
 

@@ -555,14 +555,12 @@ func renamePopup(node *AudioFile) {
 			}
 			err := gomu.playlist.rename(newName)
 			if err != nil {
-				defaultTimedPopup(" Error ", err.Error())
-				logError(err)
+				errorPopup(err)
 			}
 			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 			gomu.playlist.refresh()
 
-			gomu.queue.updateQueueNames()
 			gomu.setFocusPanel(gomu.playlist)
 			gomu.prevPanel = gomu.playlist
 
@@ -573,6 +571,18 @@ func renamePopup(node *AudioFile) {
 				}
 				return true
 			})
+			// update queue
+			if node.isAudioFile {
+				newNode := gomu.playlist.getCurrentFile()
+				err = gomu.queue.rename(node, newNode)
+				if err != nil {
+					errorPopup(err)
+				}
+			} else {
+				gomu.queue.saveQueue(false)
+				gomu.queue.clearQueue()
+				gomu.queue.loadQueue()
+			}
 
 		case tcell.KeyEsc:
 			gomu.pages.RemovePage(popupID)

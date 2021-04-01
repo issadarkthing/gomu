@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -82,12 +83,8 @@ type Playlist struct {
 	// number of downloads
 	download int
 	done     chan struct{}
-}
-
-var (
 	yankFile *AudioFile
-	isYanked bool
-)
+}
 
 func (p *Playlist) help() []string {
 
@@ -488,6 +485,7 @@ func (p *Playlist) rename(newName string) error {
 
 	currentNode := p.GetCurrentNode()
 	audio := currentNode.GetReference().(*AudioFile)
+
 	pathToFile, _ := filepath.Split(audio.path)
 	var newPath string
 	if audio.isAudioFile {
@@ -499,11 +497,6 @@ func (p *Playlist) rename(newName string) error {
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
-
-	audio.path = newPath
-	gomu.queue.saveQueue(false)
-	gomu.queue.clearQueue()
-	gomu.queue.loadQueue()
 
 	return nil
 }
@@ -778,59 +771,50 @@ func populate(root *tview.TreeNode, rootPath string, sortMtime bool) error {
 }
 
 func (p *Playlist) yank() error {
-	yankFile = p.getCurrentFile()
-	if yankFile == nil {
-		isYanked = false
-		defaultTimedPopup(" Error! ", "No file has been yanked.")
-		return nil
+	p.yankFile = p.getCurrentFile()
+	if p.yankFile == nil {
+		return errors.New("no file has been yanked")
 	}
-	if yankFile.node == p.GetRoot() {
-		isYanked = false
-		defaultTimedPopup(" Error! ", "Please don't yank the root directory.")
-		return nil
+	if p.yankFile.node == p.GetRoot() {
+		return errors.New("please don't yank the root directory")
 	}
-	isYanked = true
-	defaultTimedPopup(" Success ", yankFile.name+"\n has been yanked successfully.")
+	defaultTimedPopup(" Success ", p.yankFile.name+"\n has been yanked successfully.")
 
 	return nil
 }
 
 func (p *Playlist) paste() error {
-	if isYanked {
-		isYanked = false
-		oldPathDir, oldPathFileName := filepath.Split(yankFile.path)
-		pasteFile := p.getCurrentFile()
-		if pasteFile.isAudioFile {
-			newPathDir, _ := filepath.Split(pasteFile.path)
-			if oldPathDir == newPathDir {
-				return nil
-			}
-			newPathFull := filepath.Join(newPathDir, oldPathFileName)
-			err := os.Rename(yankFile.path, newPathFull)
-			if err != nil {
-				defaultTimedPopup(" Error ", yankFile.name+"\n has not been pasted.")
-				return tracerr.Wrap(err)
-			}
-			defaultTimedPopup(" Success ", yankFile.name+"\n has been pasted to\n"+pasteFile.name)
-
-		} else {
-			newPathDir := pasteFile.path
-			if oldPathDir == newPathDir {
-				return nil
-			}
-			newPathFull := filepath.Join(newPathDir, oldPathFileName)
-			err := os.Rename(yankFile.path, newPathFull)
-			if err != nil {
-				defaultTimedPopup(" Error ", yankFile.name+"\n has not been pasted.")
-				return tracerr.Wrap(err)
-			}
-			defaultTimedPopup(" Success ", yankFile.name+"\n has been pasted to\n"+pasteFile.name)
-
-		}
-
-		p.refresh()
-		gomu.queue.updateQueueNames()
+	if p.yankFile == nil {
+		return errors.New("no file has been yanked")
 	}
+
+	oldPathDir, oldPathFileName := filepath.Split(p.yankFile.path)
+	pasteFile := p.getCurrentFile()
+	var newPathDir string
+	if pasteFile.isAudioFile {
+		newPathDir, _ = filepath.Split(pasteFile.path)
+	} else {
+		newPathDir = pasteFile.path
+	}
+
+	if oldPathDir == newPathDir {
+		return nil
+	}
+
+	newPathFull := filepath.Join(newPathDir, oldPathFileName)
+	err := os.Rename(p.yankFile.path, newPathFull)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	defaultTimedPopup(" Success ", p.yankFile.name+"\n has been pasted to\n"+newPathDir)
+	p.yankFile = nil
+
+	// keep queue references updated
+	p.refresh()
+	gomu.queue.saveQueue(false)
+	gomu.queue.clearQueue()
+	gomu.queue.loadQueue()
 
 	return nil
 }
