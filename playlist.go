@@ -808,13 +808,29 @@ func (p *Playlist) paste() error {
 	}
 
 	defaultTimedPopup(" Success ", p.yankFile.name+"\n has been pasted to\n"+newPathDir)
-	p.yankFile = nil
 
 	// keep queue references updated
 	p.refresh()
 	gomu.queue.saveQueue(false)
 	gomu.queue.clearQueue()
 	gomu.queue.loadQueue()
+
+	currentSong := gomu.player.GetCurrentSong()
+	if p.yankFile.name == currentSong.Name() {
+		newNode := p.yankFile
+		newNode.path = newPathFull
+		gomu.queue.enqueue(newNode)
+		gomu.queue.pushFront(newNode)
+		gomu.player.Skip()
+		if gomu.anko.GetBool("General.queue_loop") {
+			_, err = gomu.queue.deleteItem(len(gomu.queue.items) - 1)
+			if err != nil {
+				return tracerr.Wrap(err)
+			}
+		}
+	}
+
+	p.yankFile = nil
 
 	return nil
 }
@@ -850,6 +866,20 @@ func (p *Playlist) refreshByNode(node *AudioFile, newName string) error {
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
+
+		currentSong := gomu.player.GetCurrentSong()
+		if node.name == currentSong.Name() {
+			gomu.queue.enqueue(newNode)
+			gomu.queue.pushFront(newNode)
+			gomu.player.Skip()
+			if gomu.anko.GetBool("General.queue_loop") {
+				_, err = gomu.queue.deleteItem(len(gomu.queue.items) - 1)
+				if err != nil {
+					return tracerr.Wrap(err)
+				}
+			}
+		}
+
 	} else {
 		gomu.queue.saveQueue(false)
 		gomu.queue.clearQueue()

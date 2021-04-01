@@ -95,6 +95,12 @@ func (c Command) defineCommands() {
 		currNode := gomu.playlist.GetCurrentNode()
 		if audioFile.isAudioFile {
 			gomu.queue.enqueue(audioFile)
+			if len(gomu.queue.items) == 1 && !gomu.player.IsRunning() {
+				err := gomu.queue.playQueue()
+				if err != nil {
+					errorPopup(err)
+				}
+			}
 		} else {
 			currNode.SetExpanded(true)
 		}
