@@ -135,6 +135,7 @@ func tagPopup(node *AudioFile) (err error) {
 							errorPopup(err)
 							return
 						}
+						node = gomu.playlist.getCurrentFile()
 					}
 					defaultTimedPopup(" Success ", "Tag update successfully")
 				})
@@ -182,7 +183,7 @@ func tagPopup(node *AudioFile) (err error) {
 				errorPopup(err)
 				return
 			}
-
+			node = gomu.playlist.getCurrentFile()
 		}
 
 		defaultTimedPopup(" Success ", "Tag update successfully")
