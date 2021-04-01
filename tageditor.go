@@ -131,6 +131,7 @@ func tagPopup(node *AudioFile) (err error) {
 					}
 					defaultTimedPopup(" Success ", "Tag update successfully")
 				})
+				gomu.app.Draw()
 			}()
 		}()
 	}).

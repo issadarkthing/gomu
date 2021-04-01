@@ -904,6 +904,8 @@ func lyricPopup(lang string, audioFile *AudioFile, wg *sync.WaitGroup) error {
 		}()
 	})
 
+	gomu.app.Draw()
+
 	return nil
 }
 
