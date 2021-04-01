@@ -564,24 +564,9 @@ func renamePopup(node *AudioFile) {
 			gomu.setFocusPanel(gomu.playlist)
 			gomu.prevPanel = gomu.playlist
 
-			root := gomu.playlist.GetRoot()
-			root.Walk(func(node, _ *tview.TreeNode) bool {
-				if strings.Contains(node.GetText(), newName) {
-					gomu.playlist.setHighlight(node)
-				}
-				return true
-			})
-			// update queue
-			if node.isAudioFile {
-				newNode := gomu.playlist.getCurrentFile()
-				err = gomu.queue.rename(node, newNode)
-				if err != nil {
-					errorPopup(err)
-				}
-			} else {
-				gomu.queue.saveQueue(false)
-				gomu.queue.clearQueue()
-				gomu.queue.loadQueue()
+			err = gomu.playlist.refreshByNode(node, newName)
+			if err != nil {
+				errorPopup(err)
 			}
 
 		case tcell.KeyEsc:

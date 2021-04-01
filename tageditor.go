@@ -128,6 +128,13 @@ func tagPopup(node *AudioFile) (err error) {
 						}
 						gomu.playlist.refresh()
 						leftBox.SetTitle(newName)
+
+						// update queue
+						err = gomu.playlist.refreshByNode(node, newName)
+						if err != nil {
+							errorPopup(err)
+							return
+						}
 					}
 					defaultTimedPopup(" Success ", "Tag update successfully")
 				})
@@ -168,6 +175,14 @@ func tagPopup(node *AudioFile) (err error) {
 			}
 			gomu.playlist.refresh()
 			leftBox.SetTitle(newName)
+
+			// update queue
+			err = gomu.playlist.refreshByNode(node, newName)
+			if err != nil {
+				errorPopup(err)
+				return
+			}
+
 		}
 
 		defaultTimedPopup(" Success ", "Tag update successfully")

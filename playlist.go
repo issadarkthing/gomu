@@ -833,3 +833,27 @@ func setDisplayText(audioFile *AudioFile) string {
 	emojiDir := gomu.anko.GetString("Emoji.playlist")
 	return fmt.Sprintf(" %s %s", emojiDir, audioFile.name)
 }
+
+func (p *Playlist) refreshByNode(node *AudioFile, newName string) error {
+
+	root := p.GetRoot()
+	root.Walk(func(node, _ *tview.TreeNode) bool {
+		if strings.Contains(node.GetText(), newName) {
+			p.setHighlight(node)
+		}
+		return true
+	})
+	// update queue
+	if node.isAudioFile {
+		newNode := p.getCurrentFile()
+		err := gomu.queue.rename(node, newNode)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+	} else {
+		gomu.queue.saveQueue(false)
+		gomu.queue.clearQueue()
+		gomu.queue.loadQueue()
+	}
+	return nil
+}
