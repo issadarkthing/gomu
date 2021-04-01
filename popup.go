@@ -436,7 +436,6 @@ func searchPopup(title string, stringsToMatch []string, handler func(selected st
 		pattern := input.GetText()
 		matches := fuzzy.Find(pattern, stringsToMatch)
 		const highlight = "[red]%c[-]"
-		// const highlight = "[red]%s[-]"
 
 		for _, match := range matches {
 			var text strings.Builder
@@ -515,8 +514,6 @@ func searchPopup(title string, stringsToMatch []string, handler func(selected st
 
 	gomu.pages.AddPage("search-input-popup", center(popupFrame, 70, 40), true, true)
 	gomu.popups.push(popup)
-	// This is to ensure the popup is shown even when paused
-	gomu.app.Draw()
 }
 
 // Creates new popup widget with default settings
