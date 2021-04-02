@@ -867,10 +867,11 @@ func (p *Playlist) refreshByNode(node *AudioFile, newName string) error {
 			return tracerr.Wrap(err)
 		}
 
-		currentSong := gomu.player.GetCurrentSong()
-		if currentSong == nil {
+		if !gomu.player.IsRunning() {
 			return nil
 		}
+
+		currentSong := gomu.player.GetCurrentSong()
 		if node.name == currentSong.Name() {
 			gomu.queue.enqueue(newNode)
 			gomu.queue.pushFront(newNode)
