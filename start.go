@@ -413,6 +413,8 @@ func start(application *tview.Application, args Args) {
 			if err != nil {
 				logError(err)
 			}
+		} else {
+			gomu.playingBar.setDefault()
 		}
 	})
 
