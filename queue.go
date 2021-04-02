@@ -198,7 +198,8 @@ func (q *Queue) saveQueue(isQuit bool) error {
 	songPaths := q.getItems()
 	var content strings.Builder
 
-	if gomu.player.HasInit() && isQuit && gomu.player.GetCurrentSong() != nil {
+	if gomu.player.HasInit() && gomu.player.GetCurrentSong() != nil {
+		// if gomu.player.HasInit() && isQuit && gomu.player.GetCurrentSong() != nil {
 		currentSongPath := gomu.player.GetCurrentSong().Path()
 		currentSongInQueue := false
 		for _, songPath := range songPaths {
@@ -206,7 +207,8 @@ func (q *Queue) saveQueue(isQuit bool) error {
 				currentSongInQueue = true
 			}
 		}
-		if !currentSongInQueue && len(q.items) != 0 {
+		if !currentSongInQueue {
+			// if !currentSongInQueue && len(q.items) != 0 {
 			hashed := sha1Hex(getName(currentSongPath))
 			content.WriteString(hashed + "\n")
 		}

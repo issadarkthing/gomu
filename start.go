@@ -429,9 +429,7 @@ func start(application *tview.Application, args Args) {
 
 	gomu.playingBar.setDefault()
 
-	isQueueLoop := gomu.anko.GetBool("General.queue_loop")
-
-	gomu.queue.isLoop = isQueueLoop
+	gomu.queue.isLoop = gomu.anko.GetBool("General.queue_loop")
 
 	loadQueue := gomu.anko.GetBool("General.load_prev_queue")
 
