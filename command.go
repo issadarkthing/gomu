@@ -127,6 +127,12 @@ func (c Command) defineCommands() {
 
 		if !bulkAdd {
 			gomu.playlist.addAllToQueue(currNode)
+			if len(gomu.queue.items) > 0 && !gomu.player.IsRunning() {
+				err := gomu.queue.playQueue()
+				if err != nil {
+					errorPopup(err)
+				}
+			}
 			return
 		}
 
@@ -136,6 +142,12 @@ func (c Command) defineCommands() {
 
 				if label == "yes" {
 					gomu.playlist.addAllToQueue(currNode)
+					if len(gomu.queue.items) > 0 && !gomu.player.IsRunning() {
+						err := gomu.queue.playQueue()
+						if err != nil {
+							errorPopup(err)
+						}
+					}
 				}
 
 			})
