@@ -401,6 +401,8 @@ func start(application *tview.Application, args Args) {
 
 	gomu.player.SetSongFinish(func(currAudio player.Audio) {
 
+		gomu.playingBar.subtitles = nil
+		gomu.playingBar.subtitle = nil
 		if gomu.queue.isLoop {
 			_, err = gomu.queue.enqueue(currAudio.(*AudioFile))
 			if err != nil {

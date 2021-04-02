@@ -67,7 +67,6 @@ func (p *PlayingBar) run() error {
 		if progress > full || p.skip {
 			p.skip = false
 			p.setProgress(0)
-			p.subtitle = nil
 			break
 		}
 
