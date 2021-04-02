@@ -400,19 +400,16 @@ func start(application *tview.Application, args Args) {
 	})
 
 	gomu.player.SetSongFinish(func(currAudio player.Audio) {
-		audio, err := gomu.queue.dequeue()
-		if err != nil {
-			gomu.playingBar.setDefault()
-			return
-		}
-
-		err = gomu.player.Run(audio)
-		if err != nil {
-			die(err)
-		}
 
 		if gomu.queue.isLoop {
 			_, err = gomu.queue.enqueue(currAudio.(*AudioFile))
+			if err != nil {
+				logError(err)
+			}
+		}
+
+		if len(gomu.queue.items) > 0 {
+			err := gomu.queue.playQueue()
 			if err != nil {
 				logError(err)
 			}
