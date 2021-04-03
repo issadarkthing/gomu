@@ -788,6 +788,7 @@ func (p *Playlist) paste() error {
 		return errors.New("no file has been yanked")
 	}
 
+	oldAudio := p.yankFile
 	oldPathDir, oldPathFileName := filepath.Split(p.yankFile.path)
 	pasteFile := p.getCurrentFile()
 	var newPathDir string
@@ -816,20 +817,12 @@ func (p *Playlist) paste() error {
 		return tracerr.Wrap(err)
 	}
 
-	// currentSong := gomu.player.GetCurrentSong()
-	// if p.yankFile.name == currentSong.Name() {
-	// 	newNode := p.yankFile
-	// 	newNode.path = newPathFull
-	// 	gomu.queue.enqueue(newNode)
-	// 	gomu.queue.pushFront(newNode)
-	// 	gomu.player.Skip()
-	// 	if gomu.queue.isLoop {
-	// 		_, err = gomu.queue.deleteItem(len(gomu.queue.items) - 1)
-	// 		if err != nil {
-	// 			return tracerr.Wrap(err)
-	// 		}
-	// 	}
-	// }
+	newAudio := oldAudio
+	newAudio.path = newPathFull
+	err = gomu.queue.updateCurrentSong(oldAudio, newAudio)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
 
 	p.yankFile = nil
 
@@ -867,28 +860,19 @@ func (p *Playlist) refreshByNode(node *AudioFile, newName string) error {
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
-
-		if !gomu.player.IsRunning() {
-			return nil
+		err = gomu.queue.updateCurrentSong(node, newNode)
+		if err != nil {
+			return tracerr.Wrap(err)
 		}
-
-		currentSong := gomu.player.GetCurrentSong()
-		if node.name == currentSong.Name() {
-			gomu.queue.enqueue(newNode)
-			gomu.queue.pushFront(newNode)
-			gomu.player.Skip()
-			if gomu.queue.isLoop {
-				_, err = gomu.queue.deleteItem(len(gomu.queue.items) - 1)
-				if err != nil {
-					return tracerr.Wrap(err)
-				}
-			}
-		}
-
 	} else {
 		gomu.queue.saveQueue(false)
 		gomu.queue.clearQueue()
 		gomu.queue.loadQueue()
+		tmpLoop := gomu.queue.isLoop
+		gomu.queue.isLoop = false
+		gomu.player.Skip()
+		gomu.queue.isLoop = tmpLoop
 	}
+
 	return nil
 }

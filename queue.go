@@ -509,3 +509,29 @@ func (q *Queue) updateQueuePath() error {
 
 	return nil
 }
+
+func (q *Queue) updateCurrentSong(oldAudio *AudioFile, newAudio *AudioFile) (err error) {
+
+	var tmpLoop bool
+	if !gomu.player.IsRunning() && !gomu.player.IsPaused() {
+		return nil
+	}
+
+	currentSong := gomu.player.GetCurrentSong()
+
+	if oldAudio.name == currentSong.Name() {
+		gomu.queue.pushFront(newAudio)
+		tmpLoop = q.isLoop
+		q.isLoop = false
+		gomu.player.Skip()
+		q.isLoop = tmpLoop
+		// if gomu.queue.isLoop {
+		// 	_, err = gomu.queue.deleteItem(len(gomu.queue.items) - 1)
+		// 	if err != nil {
+		// 		return tracerr.Wrap(err)
+		// 	}
+		// }
+	}
+
+	return nil
+}
