@@ -811,21 +811,16 @@ func (p *Playlist) paste() error {
 
 	// keep queue references updated
 	p.refresh()
-	gomu.queue.saveQueue(false)
-	gomu.queue.clearQueue()
-	gomu.queue.loadQueue()
-	gomu.player.Skip()
-	// if gomu.queue.isLoop {
-	// 	_, err = gomu.queue.deleteItem(len(gomu.queue.items) - 1)
-	// 	if err != nil {
-	// 		return tracerr.Wrap(err)
-	// 	}
-	// }
+	err = gomu.queue.updateQueuePath()
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
 
 	// currentSong := gomu.player.GetCurrentSong()
 	// if p.yankFile.name == currentSong.Name() {
 	// 	newNode := p.yankFile
 	// 	newNode.path = newPathFull
+	// 	gomu.queue.enqueue(newNode)
 	// 	gomu.queue.pushFront(newNode)
 	// 	gomu.player.Skip()
 	// 	if gomu.queue.isLoop {

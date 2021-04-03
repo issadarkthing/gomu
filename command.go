@@ -223,6 +223,7 @@ func (c Command) defineCommands() {
 			}
 
 			gomu.queue.pushFront(a)
+
 			if gomu.player.IsRunning() {
 				gomu.player.Skip()
 			} else {

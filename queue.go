@@ -482,3 +482,30 @@ func (q *Queue) insertItem(index int, audioFile *AudioFile) error {
 
 	return nil
 }
+
+//update the path information in queue
+func (q *Queue) updateQueuePath() error {
+
+	var songs []string
+	if len(q.items) < 1 {
+		return nil
+	}
+	for _, v := range q.items {
+		song := sha1Hex(getName(v.name))
+		songs = append(songs, song)
+	}
+
+	q.clearQueue()
+	for _, v := range songs {
+
+		audioFile, err := gomu.playlist.findAudioFile(v)
+
+		if err != nil {
+			logError(err)
+			continue
+		}
+		q.enqueue(audioFile)
+	}
+
+	return nil
+}
