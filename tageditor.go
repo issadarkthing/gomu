@@ -130,7 +130,7 @@ func tagPopup(node *AudioFile) (err error) {
 						leftBox.SetTitle(newName)
 
 						// update queue
-						err = gomu.playlist.refreshByNode(node, newName)
+						err = gomu.playlist.refreshAfterRename(node, newName)
 						if err != nil {
 							errorPopup(err)
 							return
@@ -178,7 +178,7 @@ func tagPopup(node *AudioFile) (err error) {
 			leftBox.SetTitle(newName)
 
 			// update queue
-			err = gomu.playlist.refreshByNode(node, newName)
+			err = gomu.playlist.refreshAfterRename(node, newName)
 			if err != nil {
 				errorPopup(err)
 				return

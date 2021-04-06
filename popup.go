@@ -146,7 +146,7 @@ func confirmDeleteAllPopup(selPlaylist *tview.TreeNode) (err error) {
 					errorPopup(err)
 				}
 				gomu.queue.updateQueuePath()
-				gomu.queue.updateCurrentSong(selPlaylist.GetReference().(*AudioFile), nil, true)
+				err = gomu.queue.updateCurrentSong(selPlaylist.GetReference().(*AudioFile), nil, true)
 			}
 
 		case tcell.KeyEscape:
@@ -566,7 +566,7 @@ func renamePopup(node *AudioFile) {
 			gomu.setFocusPanel(gomu.playlist)
 			gomu.prevPanel = gomu.playlist
 
-			err = gomu.playlist.refreshByNode(node, newName)
+			err = gomu.playlist.refreshAfterRename(node, newName)
 			if err != nil {
 				errorPopup(err)
 			}

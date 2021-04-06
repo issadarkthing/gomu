@@ -809,7 +809,10 @@ func (p *Playlist) paste() error {
 
 	newAudio := oldAudio
 	newAudio.path = newPathFull
-	gomu.queue.updateCurrentSong(oldAudio, newAudio, false)
+	err = gomu.queue.updateCurrentSong(oldAudio, newAudio, false)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
 
 	p.yankFile = nil
 
@@ -832,7 +835,7 @@ func setDisplayText(audioFile *AudioFile) string {
 }
 
 // refreshByNode is called after rename of file or folder, to refresh queue info
-func (p *Playlist) refreshByNode(node *AudioFile, newName string) error {
+func (p *Playlist) refreshAfterRename(node *AudioFile, newName string) error {
 
 	root := p.GetRoot()
 	root.Walk(func(node, _ *tview.TreeNode) bool {
@@ -851,7 +854,10 @@ func (p *Playlist) refreshByNode(node *AudioFile, newName string) error {
 	} else {
 		gomu.queue.updateQueuePath()
 	}
-	gomu.queue.updateCurrentSong(node, newNode, false)
+	err := gomu.queue.updateCurrentSong(node, newNode, false)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
 
 	return nil
 }

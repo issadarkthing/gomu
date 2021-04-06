@@ -509,32 +509,54 @@ func (q *Queue) updateQueuePath() {
 	q.updateTitle()
 }
 
-func (q *Queue) updateCurrentSong(oldAudio *AudioFile, newAudio *AudioFile, isDelete bool) {
+// update current playing song info to reflect the changes during rename and paste
+func (q *Queue) updateCurrentSong(oldAudio *AudioFile, newAudio *AudioFile, isDelete bool) error {
 
 	if !gomu.player.IsRunning() && !gomu.player.IsPaused() {
-		return
+		return nil
 	}
 
 	currentSong := gomu.player.GetCurrentSong()
 	position := gomu.playingBar.getProgress()
 	paused := gomu.player.IsPaused()
 
-	if !oldAudio.isAudioFile && isDelete {
-		//Here we check the situation when currentsong is under oldAudio folder
-		if strings.Contains(currentSong.Path(), oldAudio.path) {
-			tmpLoop := q.isLoop
-			q.isLoop = false
-			gomu.player.Skip()
-			if paused {
-				gomu.player.TogglePause()
+	if !oldAudio.isAudioFile {
+		// Here we check the situation when currentsong is under oldAudio folder
+		if strings.Contains(currentSong.Path(), oldAudio.path) || strings.Contains(currentSong.Path(), oldAudio.name) {
+			if isDelete {
+				tmpLoop := q.isLoop
+				q.isLoop = false
+				gomu.player.Skip()
+				if paused {
+					gomu.player.TogglePause()
+				}
+				q.isLoop = tmpLoop
+				return nil
+			} else {
+				// Here is the handling of folder rename and paste
+				currentSong, err := gomu.playlist.findAudioFile(sha1Hex(getName(currentSong.Name())))
+				if err != nil {
+					return tracerr.Wrap(err)
+				}
+				gomu.queue.pushFront(currentSong)
+				tmpLoop := q.isLoop
+				q.isLoop = false
+				gomu.player.Skip()
+				gomu.player.Seek(position)
+				if paused {
+					gomu.player.TogglePause()
+				}
+				q.isLoop = tmpLoop
+				q.updateTitle()
+
+				return nil
 			}
-			q.isLoop = tmpLoop
-			return
+
 		}
 	}
 
 	if oldAudio.name != currentSong.Name() {
-		return
+		return nil
 	}
 
 	// if newAudio is empty, we simply skip current song
@@ -546,7 +568,7 @@ func (q *Queue) updateCurrentSong(oldAudio *AudioFile, newAudio *AudioFile, isDe
 			gomu.player.TogglePause()
 		}
 		q.isLoop = tmpLoop
-		return
+		return nil
 	}
 
 	// if newAudio is not empty, we insert it in the first of queue, then play it
@@ -561,4 +583,5 @@ func (q *Queue) updateCurrentSong(oldAudio *AudioFile, newAudio *AudioFile, isDe
 	q.isLoop = tmpLoop
 	q.updateTitle()
 
+	return nil
 }
