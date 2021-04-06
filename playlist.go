@@ -838,6 +838,7 @@ func setDisplayText(audioFile *AudioFile) string {
 	return fmt.Sprintf(" %s %s", emojiDir, audioFile.name)
 }
 
+// refreshByNode is called after rename of file or folder, to refresh queue info
 func (p *Playlist) refreshByNode(node *AudioFile, newName string) error {
 
 	root := p.GetRoot()
@@ -848,22 +849,18 @@ func (p *Playlist) refreshByNode(node *AudioFile, newName string) error {
 		return true
 	})
 	// update queue
+	newNode := p.getCurrentFile()
 	if node.isAudioFile {
-		newNode := p.getCurrentFile()
 		err := gomu.queue.rename(node, newNode)
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
-		gomu.queue.updateCurrentSong(node, newNode)
 	} else {
 		gomu.queue.saveQueue(false)
 		gomu.queue.clearQueue()
 		gomu.queue.loadQueue()
-		tmpLoop := gomu.queue.isLoop
-		gomu.queue.isLoop = false
-		gomu.player.Skip()
-		gomu.queue.isLoop = tmpLoop
 	}
+	gomu.queue.updateCurrentSong(node, newNode)
 
 	return nil
 }
