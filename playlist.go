@@ -270,7 +270,7 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 
 				// Here we remove the song from queue
 				gomu.queue.updateQueuePath()
-				gomu.queue.updateCurrentSong(audioFile, nil)
+				gomu.queue.updateCurrentSong(audioFile, nil, true)
 			}
 
 		})
@@ -809,7 +809,7 @@ func (p *Playlist) paste() error {
 
 	newAudio := oldAudio
 	newAudio.path = newPathFull
-	gomu.queue.updateCurrentSong(oldAudio, newAudio)
+	gomu.queue.updateCurrentSong(oldAudio, newAudio, false)
 
 	p.yankFile = nil
 
@@ -844,14 +844,14 @@ func (p *Playlist) refreshByNode(node *AudioFile, newName string) error {
 	// update queue
 	newNode := p.getCurrentFile()
 	if node.isAudioFile {
-		err := gomu.queue.rename(node, newNode)
+		err := gomu.queue.renameItem(node, newNode)
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
 	} else {
 		gomu.queue.updateQueuePath()
 	}
-	gomu.queue.updateCurrentSong(node, newNode)
+	gomu.queue.updateCurrentSong(node, newNode, false)
 
 	return nil
 }

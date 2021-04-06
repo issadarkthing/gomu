@@ -146,7 +146,7 @@ func confirmDeleteAllPopup(selPlaylist *tview.TreeNode) (err error) {
 					errorPopup(err)
 				}
 				gomu.queue.updateQueuePath()
-				gomu.queue.updateCurrentSong(selPlaylist.GetReference().(*AudioFile), nil)
+				gomu.queue.updateCurrentSong(selPlaylist.GetReference().(*AudioFile), nil, true)
 			}
 
 		case tcell.KeyEscape:
