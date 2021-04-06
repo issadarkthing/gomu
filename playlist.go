@@ -812,17 +812,11 @@ func (p *Playlist) paste() error {
 
 	// keep queue references updated
 	p.refresh()
-	err = gomu.queue.updateQueuePath()
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
+	gomu.queue.updateQueuePath()
 
 	newAudio := oldAudio
 	newAudio.path = newPathFull
-	err = gomu.queue.updateCurrentSong(oldAudio, newAudio)
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
+	gomu.queue.updateCurrentSong(oldAudio, newAudio)
 
 	p.yankFile = nil
 
@@ -860,10 +854,7 @@ func (p *Playlist) refreshByNode(node *AudioFile, newName string) error {
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
-		err = gomu.queue.updateCurrentSong(node, newNode)
-		if err != nil {
-			return tracerr.Wrap(err)
-		}
+		gomu.queue.updateCurrentSong(node, newNode)
 	} else {
 		gomu.queue.saveQueue(false)
 		gomu.queue.clearQueue()

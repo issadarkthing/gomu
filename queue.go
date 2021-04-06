@@ -484,11 +484,11 @@ func (q *Queue) insertItem(index int, audioFile *AudioFile) error {
 }
 
 //update the path information in queue
-func (q *Queue) updateQueuePath() error {
+func (q *Queue) updateQueuePath() {
 
 	var songs []string
 	if len(q.items) < 1 {
-		return nil
+		return
 	}
 	for _, v := range q.items {
 		song := sha1Hex(getName(v.name))
@@ -507,24 +507,28 @@ func (q *Queue) updateQueuePath() error {
 		q.enqueue(audioFile)
 	}
 
-	return nil
 }
 
-func (q *Queue) updateCurrentSong(oldAudio *AudioFile, newAudio *AudioFile) (err error) {
+func (q *Queue) updateCurrentSong(oldAudio *AudioFile, newAudio *AudioFile) {
 
 	if !gomu.player.IsRunning() && !gomu.player.IsPaused() {
-		return nil
+		return
 	}
 
 	currentSong := gomu.player.GetCurrentSong()
+	position := gomu.playingBar.getProgress()
+	paused := gomu.player.IsPaused()
 
 	if oldAudio.name == currentSong.Name() {
 		gomu.queue.pushFront(newAudio)
 		tmpLoop := q.isLoop
 		q.isLoop = false
 		gomu.player.Skip()
+		gomu.player.Seek(position)
+		if paused {
+			gomu.player.TogglePause()
+		}
 		q.isLoop = tmpLoop
 	}
 
-	return nil
 }
