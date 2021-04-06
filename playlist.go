@@ -253,7 +253,7 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 				return
 			}
 
-			audioName := getName(audioFile.path)
+			// audioName := getName(audioFile.path)
 			err := os.Remove(audioFile.path)
 
 			if err != nil {
@@ -269,15 +269,8 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 				p.refresh()
 
 				// Here we remove the song from queue
-				songPaths := gomu.queue.getItems()
-				if audioName == getName(gomu.player.GetCurrentSong().Name()) {
-					gomu.player.Skip()
-				}
-				for i, songPath := range songPaths {
-					if strings.Contains(songPath, audioName) {
-						gomu.queue.deleteItem(i)
-					}
-				}
+				gomu.queue.updateQueuePath()
+				gomu.queue.updateCurrentSong(audioFile, nil)
 			}
 
 		})
@@ -856,9 +849,7 @@ func (p *Playlist) refreshByNode(node *AudioFile, newName string) error {
 			return tracerr.Wrap(err)
 		}
 	} else {
-		gomu.queue.saveQueue(false)
-		gomu.queue.clearQueue()
-		gomu.queue.loadQueue()
+		gomu.queue.updateQueuePath()
 	}
 	gomu.queue.updateCurrentSong(node, newNode)
 
