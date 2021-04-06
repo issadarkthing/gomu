@@ -522,7 +522,8 @@ func (q *Queue) updateCurrentSong(oldAudio *AudioFile, newAudio *AudioFile, isDe
 
 	if !oldAudio.isAudioFile {
 		// Here we check the situation when currentsong is under oldAudio folder
-		if strings.Contains(currentSong.Path(), oldAudio.path) || strings.Contains(currentSong.Path(), oldAudio.name) {
+		// if strings.Contains(currentSong.Path(), oldAudio.path) || strings.Contains(currentSong.Path(), oldAudio.name) {
+		if strings.Contains(currentSong.Path(), oldAudio.path) {
 			if isDelete {
 				tmpLoop := q.isLoop
 				q.isLoop = false
@@ -531,6 +532,8 @@ func (q *Queue) updateCurrentSong(oldAudio *AudioFile, newAudio *AudioFile, isDe
 					gomu.player.TogglePause()
 				}
 				q.isLoop = tmpLoop
+				q.updateTitle()
+
 				return nil
 			} else {
 				// Here is the handling of folder rename and paste
