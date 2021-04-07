@@ -70,6 +70,10 @@ func (q *Queue) deleteItem(index int) (*AudioFile, error) {
 		}
 
 		q.items = nItems
+		// here we move to next item if not at the end
+		if index < len(q.items) {
+			q.next()
+		}
 		q.updateTitle()
 
 	}

@@ -94,7 +94,7 @@ func (c Command) defineCommands() {
 		audioFile := gomu.playlist.getCurrentFile()
 		currNode := gomu.playlist.GetCurrentNode()
 		if audioFile.isAudioFile {
-			gomu.queue.enqueue(audioFile)
+			gomu.queue.pushFront(audioFile)
 			if len(gomu.queue.items) == 1 && !gomu.player.IsRunning() {
 				err := gomu.queue.playQueue()
 				if err != nil {
