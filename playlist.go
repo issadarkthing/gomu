@@ -253,33 +253,34 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 				return
 			}
 
-			// audioName := getName(audioFile.path)
+			// hehe we need to move focus to next node before delete it
+			p.InputHandler()(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone), nil)
+
 			err := os.Remove(audioFile.path)
-
 			if err != nil {
-
-				defaultTimedPopup(" Error ", "Unable to delete "+audioFile.name)
-
-				err = tracerr.Wrap(err)
-
+				errorPopup(err)
 			} else {
-
 				defaultTimedPopup(" Success ",
 					audioFile.name+"\nhas been deleted successfully")
-				p.refresh()
-
-				// Here we remove the song from queue
-				gomu.queue.updateQueuePath()
-				gomu.queue.updateCurrentSongDelete(audioFile)
+				go gomu.app.QueueUpdateDraw(func() {
+					p.refresh()
+					// Here we remove the song from queue
+					gomu.queue.updateQueuePath()
+					gomu.queue.updateCurrentSongDelete(audioFile)
+				})
 			}
 
 		})
 
-	return nil
+	return err
 }
 
 // Deletes playlist/dir from filesystem
 func (p *Playlist) deletePlaylist(audioFile *AudioFile) (err error) {
+
+	// here we close the node and then move to next folder before delete
+	p.InputHandler()(tcell.NewEventKey(tcell.KeyRune, 'h', tcell.ModNone), nil)
+	p.InputHandler()(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone), nil)
 
 	err = os.RemoveAll(audioFile.path)
 	if err != nil {
@@ -288,7 +289,13 @@ func (p *Playlist) deletePlaylist(audioFile *AudioFile) (err error) {
 		defaultTimedPopup(
 			" Success ",
 			audioFile.name+"\nhas been deleted successfully")
-		p.refresh()
+		go gomu.app.QueueUpdateDraw(func() {
+			p.refresh()
+			// Here we remove the song from queue
+			gomu.queue.updateQueuePath()
+			gomu.queue.updateCurrentSongDelete(audioFile)
+
+		})
 	}
 
 	return err
