@@ -270,7 +270,7 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 
 				// Here we remove the song from queue
 				gomu.queue.updateQueuePath()
-				gomu.queue.updateCurrentSong(audioFile, nil, true)
+				gomu.queue.updateCurrentSongDelete(audioFile)
 			}
 
 		})
@@ -804,14 +804,21 @@ func (p *Playlist) paste() error {
 	defaultTimedPopup(" Success ", p.yankFile.name+"\n has been pasted to\n"+newPathDir)
 
 	// keep queue references updated
-	p.refresh()
-	gomu.queue.updateQueuePath()
-
 	newAudio := oldAudio
 	newAudio.path = newPathFull
-	err = gomu.queue.updateCurrentSong(oldAudio, newAudio, false)
-	if err != nil {
-		return tracerr.Wrap(err)
+
+	p.refresh()
+	gomu.queue.updateQueuePath()
+	if p.yankFile.isAudioFile {
+		err = gomu.queue.updateCurrentSongName(oldAudio, newAudio)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+	} else {
+		err = gomu.queue.updateCurrentSongPath(oldAudio, newAudio)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
 	}
 
 	p.yankFile = nil
@@ -851,12 +858,16 @@ func (p *Playlist) refreshAfterRename(node *AudioFile, newName string) error {
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
+		err = gomu.queue.updateCurrentSongName(node, newNode)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
 	} else {
 		gomu.queue.updateQueuePath()
-	}
-	err := gomu.queue.updateCurrentSong(node, newNode, false)
-	if err != nil {
-		return tracerr.Wrap(err)
+		err := gomu.queue.updateCurrentSongPath(node, newNode)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
 	}
 
 	return nil

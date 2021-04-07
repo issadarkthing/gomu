@@ -500,7 +500,6 @@ func (q *Queue) updateQueuePath() {
 		audioFile, err := gomu.playlist.findAudioFile(v)
 
 		if err != nil {
-			logError(err)
 			continue
 		}
 		q.enqueue(audioFile)
@@ -509,8 +508,8 @@ func (q *Queue) updateQueuePath() {
 	q.updateTitle()
 }
 
-// update current playing song info to reflect the changes during rename and paste
-func (q *Queue) updateCurrentSong(oldAudio *AudioFile, newAudio *AudioFile, isDelete bool) error {
+// update current playing song name to reflect the changes during rename and paste
+func (q *Queue) updateCurrentSongName(oldAudio *AudioFile, newAudio *AudioFile) error {
 
 	if !gomu.player.IsRunning() && !gomu.player.IsPaused() {
 		return nil
@@ -520,61 +519,11 @@ func (q *Queue) updateCurrentSong(oldAudio *AudioFile, newAudio *AudioFile, isDe
 	position := gomu.playingBar.getProgress()
 	paused := gomu.player.IsPaused()
 
-	if !oldAudio.isAudioFile {
-		// Here we check the situation when currentsong is under oldAudio folder
-		// if strings.Contains(currentSong.Path(), oldAudio.path) || strings.Contains(currentSong.Path(), oldAudio.name) {
-		if strings.Contains(currentSong.Path(), oldAudio.path) {
-			if isDelete {
-				tmpLoop := q.isLoop
-				q.isLoop = false
-				gomu.player.Skip()
-				if paused {
-					gomu.player.TogglePause()
-				}
-				q.isLoop = tmpLoop
-				q.updateTitle()
-
-				return nil
-			} else {
-				// Here is the handling of folder rename and paste
-				currentSong, err := gomu.playlist.findAudioFile(sha1Hex(getName(currentSong.Name())))
-				if err != nil {
-					return tracerr.Wrap(err)
-				}
-				gomu.queue.pushFront(currentSong)
-				tmpLoop := q.isLoop
-				q.isLoop = false
-				gomu.player.Skip()
-				gomu.player.Seek(position)
-				if paused {
-					gomu.player.TogglePause()
-				}
-				q.isLoop = tmpLoop
-				q.updateTitle()
-
-				return nil
-			}
-
-		}
-	}
-
 	if oldAudio.name != currentSong.Name() {
 		return nil
 	}
 
-	// if newAudio is empty, we simply skip current song
-	if newAudio == nil {
-		tmpLoop := q.isLoop
-		q.isLoop = false
-		gomu.player.Skip()
-		if paused {
-			gomu.player.TogglePause()
-		}
-		q.isLoop = tmpLoop
-		return nil
-	}
-
-	// if newAudio is not empty, we insert it in the first of queue, then play it
+	// we insert it in the first of queue, then play it
 	gomu.queue.pushFront(newAudio)
 	tmpLoop := q.isLoop
 	q.isLoop = false
@@ -587,4 +536,75 @@ func (q *Queue) updateCurrentSong(oldAudio *AudioFile, newAudio *AudioFile, isDe
 	q.updateTitle()
 
 	return nil
+}
+
+// update current playing song path to reflect the changes during rename and paste
+func (q *Queue) updateCurrentSongPath(oldAudio *AudioFile, newAudio *AudioFile) error {
+
+	if !gomu.player.IsRunning() && !gomu.player.IsPaused() {
+		return nil
+	}
+
+	currentSong := gomu.player.GetCurrentSong()
+	position := gomu.playingBar.getProgress()
+	paused := gomu.player.IsPaused()
+
+	// Here we check the situation when currentsong is under oldAudio folder
+	if !strings.Contains(currentSong.Path(), oldAudio.path) {
+		return nil
+	}
+
+	// Here is the handling of folder rename and paste
+	currentSongAudioFile, err := gomu.playlist.findAudioFile(sha1Hex(getName(currentSong.Name())))
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	gomu.queue.pushFront(currentSongAudioFile)
+	tmpLoop := q.isLoop
+	q.isLoop = false
+	gomu.player.Skip()
+	gomu.player.Seek(position)
+	if paused {
+		gomu.player.TogglePause()
+	}
+	q.isLoop = tmpLoop
+
+	q.updateTitle()
+	return nil
+
+}
+
+// update current playing song simply delete it
+func (q *Queue) updateCurrentSongDelete(oldAudio *AudioFile) {
+	if !gomu.player.IsRunning() && !gomu.player.IsPaused() {
+		return
+	}
+
+	currentSong := gomu.player.GetCurrentSong()
+	paused := gomu.player.IsPaused()
+
+	var delete bool
+	if oldAudio.isAudioFile {
+		if oldAudio.name == currentSong.Name() {
+			delete = true
+		}
+	} else {
+		if strings.Contains(currentSong.Path(), oldAudio.path) {
+			delete = true
+		}
+	}
+
+	if !delete {
+		return
+	}
+
+	tmpLoop := q.isLoop
+	q.isLoop = false
+	gomu.player.Skip()
+	if paused {
+		gomu.player.TogglePause()
+	}
+	q.isLoop = tmpLoop
+	q.updateTitle()
+
 }
