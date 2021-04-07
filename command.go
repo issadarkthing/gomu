@@ -62,10 +62,8 @@ func (c Command) defineCommands() {
 			return
 		}
 
-		err := gomu.playlist.deleteSong(audioFile)
-		if err != nil {
-			logError(err)
-		}
+		gomu.playlist.deleteSong(audioFile)
+
 	})
 
 	c.define("youtube_search", func() {

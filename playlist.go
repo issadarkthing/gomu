@@ -244,7 +244,7 @@ func (p Playlist) getCurrentFile() *AudioFile {
 }
 
 // Deletes song from filesystem
-func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
+func (p *Playlist) deleteSong(audioFile *AudioFile) {
 
 	confirmationPopup(
 		"Are you sure to delete this audio file?", func(_ int, buttonName string) {
@@ -259,20 +259,20 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 			err := os.Remove(audioFile.path)
 			if err != nil {
 				errorPopup(err)
-			} else {
-				defaultTimedPopup(" Success ",
-					audioFile.name+"\nhas been deleted successfully")
-				go gomu.app.QueueUpdateDraw(func() {
-					p.refresh()
-					// Here we remove the song from queue
-					gomu.queue.updateQueuePath()
-					gomu.queue.updateCurrentSongDelete(audioFile)
-				})
+				return
 			}
+
+			defaultTimedPopup(" Success ",
+				audioFile.name+"\nhas been deleted successfully")
+			go gomu.app.QueueUpdateDraw(func() {
+				p.refresh()
+				// Here we remove the song from queue
+				gomu.queue.updateQueuePath()
+				gomu.queue.updateCurrentSongDelete(audioFile)
+			})
 
 		})
 
-	return err
 }
 
 // Deletes playlist/dir from filesystem
@@ -284,21 +284,21 @@ func (p *Playlist) deletePlaylist(audioFile *AudioFile) (err error) {
 
 	err = os.RemoveAll(audioFile.path)
 	if err != nil {
-		err = tracerr.Wrap(err)
-	} else {
-		defaultTimedPopup(
-			" Success ",
-			audioFile.name+"\nhas been deleted successfully")
-		go gomu.app.QueueUpdateDraw(func() {
-			p.refresh()
-			// Here we remove the song from queue
-			gomu.queue.updateQueuePath()
-			gomu.queue.updateCurrentSongDelete(audioFile)
-
-		})
+		return tracerr.Wrap(err)
 	}
 
-	return err
+	defaultTimedPopup(
+		" Success ",
+		audioFile.name+"\nhas been deleted successfully")
+	go gomu.app.QueueUpdateDraw(func() {
+		p.refresh()
+		// Here we remove the song from queue
+		gomu.queue.updateQueuePath()
+		gomu.queue.updateCurrentSongDelete(audioFile)
+
+	})
+
+	return nil
 }
 
 // Bulk add a playlist to queue
