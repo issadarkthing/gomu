@@ -3,17 +3,16 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
-	"image"
-	"io/ioutil"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
 
+	"github.com/disintegration/imaging"
 	"github.com/rivo/tview"
 	"github.com/tramhao/id3v2"
 	"github.com/ztrue/tracerr"
@@ -34,7 +33,7 @@ type PlayingBar struct {
 	tag        *id3v2.Tag
 	subtitle   *lyric.Lyric
 	subtitles  []*lyric.Lyric
-	albumPhoto []byte
+	albumPhoto *ugo.Image
 }
 
 func (p *PlayingBar) help() []string {
@@ -145,19 +144,6 @@ func (p *PlayingBar) setSongTitle(title string) {
 	p.Clear()
 	titleColor := gomu.colors.title
 	p.AddText(title, true, tview.AlignCenter, titleColor)
-	reader, err := os.Open("/home/tramhao/.local/src/gomu/1.jpg")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer reader.Close()
-	img1, _, _ := image.Decode(reader)
-	_, err = ugo.NewImage(img1, 0, 0)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// defer i.Clear()
-	// defer i.Destroy()
 
 }
 
@@ -165,11 +151,16 @@ func (p *PlayingBar) setSongTitle(title string) {
 func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 	p.setFull(full)
 	p.setProgress(0)
-	p.setSongTitle(currentSong.name)
 	p.hasTag = false
 	p.tag = nil
 	p.subtitles = nil
 	p.subtitle = nil
+	if p.albumPhoto != nil {
+		p.albumPhoto.Clear()
+		p.albumPhoto.Destroy()
+		ugo.Close()
+	}
+	p.albumPhoto = nil
 
 	err := p.loadLyrics(currentSong.path)
 	if err != nil {
@@ -204,6 +195,8 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 			p.subtitle = p.subtitles[0]
 		}
 	}
+	p.setSongTitle(currentSong.name)
+
 }
 
 // Sets default title and progress bar
@@ -334,14 +327,21 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		}
 
 		// Do something with picture frame.
-		fmt.Println(pic.Description)
-		p.albumPhoto = pic.Picture
+		img1, err := imaging.Decode(bytes.NewReader(pic.Picture))
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+		dstImage128 := imaging.Fit(img1, 128, 128, imaging.Lanczos)
+
+		go gomu.app.QueueUpdateDraw(func() {
+			x, y, _, _ := p.GetInnerRect()
+			_, err := ugo.NewImage(dstImage128, x*16, y*31)
+			if err != nil {
+				log.Fatal(err)
+			}
+		})
 	}
 
-	err = ioutil.WriteFile("/home/tramhao/.local/src/gomu/1.jpg", p.albumPhoto, 0644)
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
 	return nil
 }
 
