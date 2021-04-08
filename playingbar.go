@@ -5,6 +5,10 @@ package main
 import (
 	"errors"
 	"fmt"
+	"image"
+	"io/ioutil"
+	"log"
+	"os"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -13,6 +17,7 @@ import (
 	"github.com/rivo/tview"
 	"github.com/tramhao/id3v2"
 	"github.com/ztrue/tracerr"
+	ugo "gitlab.com/diamondburned/ueberzug-go"
 
 	"github.com/issadarkthing/gomu/lyric"
 )
@@ -20,15 +25,16 @@ import (
 // PlayingBar shows song name, progress and lyric
 type PlayingBar struct {
 	*tview.Frame
-	full      int64
-	update    chan struct{}
-	progress  int64
-	skip      bool
-	text      *tview.TextView
-	hasTag    bool
-	tag       *id3v2.Tag
-	subtitle  *lyric.Lyric
-	subtitles []*lyric.Lyric
+	full       int64
+	update     chan struct{}
+	progress   int64
+	skip       bool
+	text       *tview.TextView
+	hasTag     bool
+	tag        *id3v2.Tag
+	subtitle   *lyric.Lyric
+	subtitles  []*lyric.Lyric
+	albumPhoto []byte
 }
 
 func (p *PlayingBar) help() []string {
@@ -139,6 +145,20 @@ func (p *PlayingBar) setSongTitle(title string) {
 	p.Clear()
 	titleColor := gomu.colors.title
 	p.AddText(title, true, tview.AlignCenter, titleColor)
+	reader, err := os.Open("/home/tramhao/.local/src/gomu/1.jpg")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer reader.Close()
+	img1, _, _ := image.Decode(reader)
+	_, err = ugo.NewImage(img1, 0, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// defer i.Clear()
+	// defer i.Destroy()
+
 }
 
 // Resets progress bar, ready for execution
@@ -306,6 +326,22 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		}
 	}
 
+	pictures := tag.GetFrames(tag.CommonID("Attached picture"))
+	for _, f := range pictures {
+		pic, ok := f.(id3v2.PictureFrame)
+		if !ok {
+			return errors.New("picture frame error")
+		}
+
+		// Do something with picture frame.
+		fmt.Println(pic.Description)
+		p.albumPhoto = pic.Picture
+	}
+
+	err = ioutil.WriteFile("/home/tramhao/.local/src/gomu/1.jpg", p.albumPhoto, 0644)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
 	return nil
 }
 
