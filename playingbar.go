@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -337,7 +336,7 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 			x, y, _, _ := p.GetInnerRect()
 			_, err := ugo.NewImage(dstImage128, x*16, y*31)
 			if err != nil {
-				log.Fatal(err)
+				logError(err)
 			}
 		})
 	}
