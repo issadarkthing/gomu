@@ -210,6 +210,9 @@ func (p *PlayingBar) setDefault() {
 		"%s ┣%s┫ %s", "00:00", strings.Repeat("━", width/2), "00:00",
 	)
 	p.text.SetText(text)
+	if p.albumPhoto != nil {
+		p.albumPhoto.Clear()
+	}
 }
 
 // Skips the current playing song
