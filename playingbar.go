@@ -3,10 +3,10 @@
 package main
 
 import (
+	"C"
 	"bytes"
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -17,9 +17,12 @@ import (
 	"github.com/tramhao/id3v2"
 	"github.com/ztrue/tracerr"
 	ugo "gitlab.com/diamondburned/ueberzug-go"
-	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/issadarkthing/gomu/lyric"
+)
+import (
+	"syscall"
+	"unsafe"
 )
 
 // PlayingBar shows song name, progress and lyric
@@ -335,14 +338,12 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 
 		go gomu.app.QueueUpdateDraw(func() {
 			x, y, _, _ := p.GetInnerRect()
-			width, height, err := terminal.GetSize(int(os.Stdin.Fd()))
+			width, height, windowWidth, windowHeight := getConsoleSize()
 			if err != nil {
 				errorPopup(err)
 			}
 
-			windowWidth := 1920
-			windowHeight := 1200
-			p.albumPhoto, err = ugo.NewImage(dstImage128, x*windowWidth/width, y*windowHeight/height)
+			p.albumPhoto, err = ugo.NewImage(dstImage128, (x+3)*windowWidth/width, (y+2)*windowHeight/height)
 			if err != nil {
 				errorPopup(err)
 			}
@@ -367,4 +368,16 @@ func (p *PlayingBar) getFull() int {
 
 func (p *PlayingBar) setFull(full int) {
 	atomic.StoreInt64(&p.full, int64(full))
+}
+
+func getConsoleSize() (int, int, int, int) {
+	var sz struct {
+		rows    uint16
+		cols    uint16
+		xpixels uint16
+		ypixels uint16
+	}
+	_, _, _ = syscall.Syscall(syscall.SYS_IOCTL,
+		uintptr(syscall.Stdout), uintptr(syscall.TIOCGWINSZ), uintptr(unsafe.Pointer(&sz)))
+	return int(sz.cols), int(sz.rows), int(sz.xpixels), int(sz.ypixels)
 }
