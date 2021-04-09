@@ -3,7 +3,6 @@
 package main
 
 import (
-	"C"
 	"bytes"
 	"errors"
 	"fmt"
@@ -18,11 +17,10 @@ import (
 	"github.com/ztrue/tracerr"
 	ugo "gitlab.com/diamondburned/ueberzug-go"
 
-	"github.com/issadarkthing/gomu/lyric"
-)
-import (
 	"syscall"
 	"unsafe"
+
+	"github.com/issadarkthing/gomu/lyric"
 )
 
 // PlayingBar shows song name, progress and lyric
