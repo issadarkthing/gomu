@@ -9,16 +9,15 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"time"
+	"unsafe"
 
 	"github.com/disintegration/imaging"
 	"github.com/rivo/tview"
 	"github.com/tramhao/id3v2"
 	"github.com/ztrue/tracerr"
 	ugo "gitlab.com/diamondburned/ueberzug-go"
-
-	"syscall"
-	"unsafe"
 
 	"github.com/issadarkthing/gomu/lyric"
 )
