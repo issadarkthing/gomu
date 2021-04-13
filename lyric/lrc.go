@@ -267,27 +267,25 @@ func timeLRC(t uint32) string {
 	return res
 }
 
-// GetText will fetch lyric by time in seconds and mode, mode=0 means fetch current line,
-// mode =1 means fetch next line, mode=-1 means fetch previous line
+// GetText will fetch lyric by time in seconds
 func (lyric *Lyric) GetText(time int) (string, error) {
+
 	if lyric.SyncedCaptions == nil {
 		return "", errors.New("no synced lyric found")
 	}
 
-	for i, v := range lyric.SyncedCaptions {
-		// here we want to show lyric 1 second earlier
-		if int(v.Timestamp) <= time*1000+1000 {
-			if i < len(lyric.SyncedCaptions)-1 {
-				next := lyric.SyncedCaptions[i+1]
-				if int(next.Timestamp) > time*1000+1000 {
-					return v.Text, nil
-				} else {
-					continue
-				}
-			}
-			return v.Text, nil
+	// here we want to show lyric 1 second earlier
+	time = time*1000 + 1000
+
+	text := lyric.SyncedCaptions[0].Text
+
+	for _, v := range lyric.SyncedCaptions {
+		if time >= int(v.Timestamp) {
+			text = v.Text
+		} else {
+			break
 		}
 	}
 
-	return "", nil
+	return text, nil
 }
