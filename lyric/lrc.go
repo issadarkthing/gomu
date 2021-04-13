@@ -270,7 +270,7 @@ func timeLRC(t uint32) string {
 // GetText will fetch lyric by time in seconds
 func (lyric *Lyric) GetText(time int) (string, error) {
 
-	if lyric.SyncedCaptions == nil {
+	if len(lyric.SyncedCaptions) == 0 {
 		return "", errors.New("no synced lyric found")
 	}
 

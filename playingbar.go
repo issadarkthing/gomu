@@ -281,6 +281,12 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 	p.hasTag = true
 	p.tag = tag
 
+	if p.albumPhoto != nil {
+		p.albumPhoto.Clear()
+		p.albumPhoto.Destroy()
+		p.albumPhoto = nil
+	}
+
 	syltFrames := tag.GetFrames(tag.CommonID("Synchronised lyrics/text"))
 	usltFrames := tag.GetFrames(tag.CommonID("Unsynchronised lyrics/text transcription"))
 
@@ -324,9 +330,6 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		go gomu.app.QueueUpdateDraw(func() {
 			x, y, _, _ := p.GetInnerRect()
 			width, height, windowWidth, windowHeight := getConsoleSize()
-			if err != nil {
-				errorPopup(err)
-			}
 
 			p.albumPhoto, err = ugo.NewImage(dstImage128, (x+3)*windowWidth/width, (y+2)*windowHeight/height)
 			if err != nil {
