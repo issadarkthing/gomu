@@ -103,24 +103,9 @@ func (p *PlayingBar) run() error {
 		// our progress bar
 		var lyricText string
 		if p.subtitle != nil {
-			for i := range p.subtitle.SyncedCaptions {
-				startTime := int32(p.subtitle.SyncedCaptions[i].Timestamp)
-				var endTime int32
-				if i < len(p.subtitle.SyncedCaptions)-1 {
-					endTime = int32(p.subtitle.SyncedCaptions[i+1].Timestamp)
-				} else {
-					// Here we display the last lyric until the end of song
-					endTime = int32(full * 1000)
-				}
-
-				// here the currentTime is delayed 1 second because we want to show lyrics earlier
-				currentTime := int32(progress*1000) + 1000
-				if currentTime >= startTime && currentTime <= endTime {
-					lyricText = p.subtitle.SyncedCaptions[i].Text
-					break
-				} else {
-					lyricText = ""
-				}
+			lyricText, err = p.subtitle.GetText(progress)
+			if err != nil {
+				return tracerr.Wrap(err)
 			}
 		}
 
@@ -260,7 +245,7 @@ func (p *PlayingBar) switchLyrics() {
 func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 
 	if p.subtitle != nil {
-		p.subtitle.Offset += int32(lyricDelay)
+		p.subtitle.Offset -= int32(lyricDelay)
 		err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle, false)
 		if err != nil {
 			return tracerr.Wrap(err)

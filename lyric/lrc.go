@@ -16,6 +16,7 @@
 package lyric
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"runtime"
@@ -127,11 +128,11 @@ func (lyric *Lyric) NewFromLRC(s string) (err error) {
 	for _, v := range lyric.UnsyncedCaptions {
 		var s id3v2.SyncedText
 		s.Text = v.Text
-		if lyric.Offset >= 0 {
-			s.Timestamp = v.Timestamp + uint32(lyric.Offset)
+		if lyric.Offset <= 0 {
+			s.Timestamp = v.Timestamp + uint32(-lyric.Offset)
 		} else {
-			if v.Timestamp > uint32(-lyric.Offset) {
-				s.Timestamp = v.Timestamp - uint32(-lyric.Offset)
+			if v.Timestamp > uint32(lyric.Offset) {
+				s.Timestamp = v.Timestamp - uint32(lyric.Offset)
 			} else {
 				s.Timestamp = 0
 			}
@@ -264,4 +265,29 @@ func timeLRC(t uint32) string {
 
 	res := fmt.Sprintf("%02d:%02d.%03d", m, s, ms)
 	return res
+}
+
+// GetText will fetch lyric by time in seconds and mode, mode=0 means fetch current line,
+// mode =1 means fetch next line, mode=-1 means fetch previous line
+func (lyric *Lyric) GetText(time int) (string, error) {
+	if lyric.SyncedCaptions == nil {
+		return "", errors.New("no synced lyric found")
+	}
+
+	for i, v := range lyric.SyncedCaptions {
+		// here we want to show lyric 1 second earlier
+		if int(v.Timestamp) <= time*1000+1000 {
+			if i < len(lyric.SyncedCaptions)-1 {
+				next := lyric.SyncedCaptions[i+1]
+				if int(next.Timestamp) > time*1000+1000 {
+					return v.Text, nil
+				} else {
+					continue
+				}
+			}
+			return v.Text, nil
+		}
+	}
+
+	return "", nil
 }
