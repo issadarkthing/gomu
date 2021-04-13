@@ -398,6 +398,10 @@ func tagPopup(node *AudioFile) (err error) {
 		lyricTextView,
 	}
 
+	if gomu.playingBar.albumPhoto != nil {
+		gomu.playingBar.albumPhoto.Clear()
+	}
+
 	gomu.pages.AddPage(popupID, center(lyricFlex, 90, 36), true, true)
 	gomu.popups.push(lyricFlex)
 

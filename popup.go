@@ -67,6 +67,9 @@ func (s *Stack) pop() tview.Primitive {
 	} else {
 		// focus the panel if no popup left
 		gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+		if gomu.playingBar.albumPhoto != nil {
+			gomu.playingBar.albumPhoto.Show()
+		}
 	}
 
 	return last
@@ -323,6 +326,10 @@ func helpPopup(panel Panel) {
 		return nil
 	})
 
+	if gomu.playingBar.albumPhoto != nil {
+		gomu.playingBar.albumPhoto.Clear()
+	}
+
 	gomu.pages.AddPage("help-page", center(list, 50, 32), true, true)
 	gomu.popups.push(list)
 }
@@ -514,6 +521,10 @@ func searchPopup(title string, stringsToMatch []string, handler func(selected st
 
 	// this is to fix the left border of search popup
 	popupFrame := tview.NewFrame(popup)
+
+	if gomu.playingBar.albumPhoto != nil {
+		gomu.playingBar.albumPhoto.Clear()
+	}
 
 	gomu.pages.AddPage("search-input-popup", center(popupFrame, 70, 40), true, true)
 	gomu.popups.push(popup)
@@ -722,6 +733,10 @@ func replPopup() {
 		SetTitle(" REPL ")
 
 	flex.Box = flexBox
+
+	if gomu.playingBar.albumPhoto != nil {
+		gomu.playingBar.albumPhoto.Clear()
+	}
 
 	gomu.pages.AddPage(popupID, center(flex, 90, 30), true, true)
 	gomu.popups.push(flex)
