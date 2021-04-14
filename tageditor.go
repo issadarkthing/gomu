@@ -76,8 +76,8 @@ func tagPopup(node *AudioFile) (err error) {
 		var titles []string
 		audioFile := node
 		go func() {
-			var getLyric lyric.GetLyricCn
-			results, err := getLyric.GetLyricOptions(audioFile.name)
+			var lyricFetcher lyric.LyricFetcherCn
+			results, err := lyricFetcher.LyricOptions(audioFile.name)
 			if err != nil {
 				errorPopup(err)
 				return
