@@ -133,4 +133,7 @@ I just wanted to implement my own music player with a programming language i'm c
 - pause 
 - forward and rewind
 
+### Album Photo
+For songs downloaded by Gomu, the thumbnail will be embeded as Album cover. If you're not satisfied with the cover, you can edit it with kid3 and attach an image as album cover. Jpeg is tested, but other formats should work as well.
+
 Seeking and more advanced stuff has not yet been implemented; feel free to contribute :)

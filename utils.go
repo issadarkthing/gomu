@@ -6,8 +6,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-
-	// "io"
 	"log"
 	"net/http"
 	"os"

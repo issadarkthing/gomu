@@ -71,7 +71,7 @@ func defineInternals() {
 	playlist, _ := gomu.anko.NewModule("Playlist")
 	playlist.Define("get_focused", gomu.playlist.getCurrentFile)
 	playlist.Define("focus", func(filepath string) {
-		
+
 		root := gomu.playlist.GetRoot()
 		root.Walk(func(node, _ *tview.TreeNode) bool {
 
@@ -241,9 +241,11 @@ module General {
 	invidious_instance  = "https://vid.puffyan.us"
 	# Prefered language for lyrics to be displayed, if not available, english version
 	# will be displayed.
-	# Available tags: en,el,ko,es,th,vi,zh-Hans,zh-Hant, and can be separated with comma.
+	# Available tags: en,el,ko,es,th,vi,zh-Hans,zh-Hant,zh-CN and can be separated with comma.
 	# find more tags: youtube-dl --skip-download --list-subs "url"
 	lang_lyric          = "en"
+	# When save tag, could rename the file by tag info: artist-songname-album
+	rename_bytag        = false
 }
 
 module Emoji {
@@ -372,7 +374,9 @@ func start(application *tview.Application, args Args) {
 		}
 
 		audioFile := audio.(*AudioFile)
+
 		gomu.playingBar.newProgress(audioFile, int(duration.Seconds()))
+
 		name := audio.Name()
 		var description string
 
@@ -392,25 +396,27 @@ func start(application *tview.Application, args Args) {
 				logError(err)
 			}
 		}()
+
 	})
 
 	gomu.player.SetSongFinish(func(currAudio player.Audio) {
-		audio, err := gomu.queue.dequeue()
-		if err != nil {
-			gomu.playingBar.setDefault()
-			return
-		}
 
-		err = gomu.player.Run(audio)
-		if err != nil {
-			die(err)
-		}
-
+		gomu.playingBar.subtitles = nil
+		gomu.playingBar.subtitle = nil
 		if gomu.queue.isLoop {
 			_, err = gomu.queue.enqueue(currAudio.(*AudioFile))
 			if err != nil {
 				logError(err)
 			}
+		}
+
+		if len(gomu.queue.items) > 0 {
+			err := gomu.queue.playQueue()
+			if err != nil {
+				logError(err)
+			}
+		} else {
+			gomu.playingBar.setDefault()
 		}
 	})
 
@@ -423,15 +429,19 @@ func start(application *tview.Application, args Args) {
 
 	gomu.playingBar.setDefault()
 
-	isQueueLoop := gomu.anko.GetBool("General.queue_loop")
-
-	gomu.queue.isLoop = isQueueLoop
+	gomu.queue.isLoop = gomu.anko.GetBool("General.queue_loop")
 
 	loadQueue := gomu.anko.GetBool("General.load_prev_queue")
 
 	if !*args.empty && loadQueue {
 		// load saved queue from previous session
 		if err := gomu.queue.loadQueue(); err != nil {
+			logError(err)
+		}
+	}
+
+	if len(gomu.queue.items) > 0 {
+		if err := gomu.queue.playQueue(); err != nil {
 			logError(err)
 		}
 	}
@@ -526,7 +536,6 @@ func start(application *tview.Application, args Args) {
 		}
 	})
 
-	go populateAudioLength(gomu.playlist.GetRoot())
 	gomu.app.SetRoot(gomu.pages, true).SetFocus(gomu.playlist)
 
 	// main loop

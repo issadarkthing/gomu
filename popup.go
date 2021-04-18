@@ -67,6 +67,9 @@ func (s *Stack) pop() tview.Primitive {
 	} else {
 		// focus the panel if no popup left
 		gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
+		if gomu.playingBar.albumPhoto != nil {
+			gomu.playingBar.albumPhoto.Show()
+		}
 	}
 
 	return last
@@ -141,10 +144,13 @@ func confirmDeleteAllPopup(selPlaylist *tview.TreeNode) (err error) {
 			gomu.popups.pop()
 
 			if confirmationText == "DELETE" {
-				err = gomu.playlist.deletePlaylist(selPlaylist.GetReference().(*AudioFile))
+				audioFile := selPlaylist.GetReference().(*AudioFile)
+				err = gomu.playlist.deletePlaylist(audioFile)
 				if err != nil {
 					errorPopup(err)
 				}
+				gomu.queue.updateQueuePath()
+				gomu.queue.updateCurrentSongDelete(audioFile)
 			}
 
 		case tcell.KeyEscape:
@@ -320,6 +326,10 @@ func helpPopup(panel Panel) {
 		return nil
 	})
 
+	if gomu.playingBar.albumPhoto != nil {
+		gomu.playingBar.albumPhoto.Clear()
+	}
+
 	gomu.pages.AddPage("help-page", center(list, 50, 32), true, true)
 	gomu.popups.push(list)
 }
@@ -436,7 +446,6 @@ func searchPopup(title string, stringsToMatch []string, handler func(selected st
 		pattern := input.GetText()
 		matches := fuzzy.Find(pattern, stringsToMatch)
 		const highlight = "[red]%c[-]"
-		// const highlight = "[red]%s[-]"
 
 		for _, match := range matches {
 			var text strings.Builder
@@ -513,10 +522,12 @@ func searchPopup(title string, stringsToMatch []string, handler func(selected st
 	// this is to fix the left border of search popup
 	popupFrame := tview.NewFrame(popup)
 
+	if gomu.playingBar.albumPhoto != nil {
+		gomu.playingBar.albumPhoto.Clear()
+	}
+
 	gomu.pages.AddPage("search-input-popup", center(popupFrame, 70, 40), true, true)
 	gomu.popups.push(popup)
-	// This is to ensure the popup is shown even when paused
-	gomu.app.Draw()
 }
 
 // Creates new popup widget with default settings
@@ -558,24 +569,19 @@ func renamePopup(node *AudioFile) {
 			}
 			err := gomu.playlist.rename(newName)
 			if err != nil {
-				defaultTimedPopup(" Error ", err.Error())
-				logError(err)
+				errorPopup(err)
 			}
 			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
 			gomu.playlist.refresh()
 
-			gomu.queue.updateQueueNames()
 			gomu.setFocusPanel(gomu.playlist)
 			gomu.prevPanel = gomu.playlist
 
-			root := gomu.playlist.GetRoot()
-			root.Walk(func(node, _ *tview.TreeNode) bool {
-				if strings.Contains(node.GetText(), newName) {
-					gomu.playlist.setHighlight(node)
-				}
-				return true
-			})
+			err = gomu.playlist.refreshAfterRename(node, newName)
+			if err != nil {
+				errorPopup(err)
+			}
 
 		case tcell.KeyEsc:
 			gomu.pages.RemovePage(popupID)
@@ -728,6 +734,10 @@ func replPopup() {
 
 	flex.Box = flexBox
 
+	if gomu.playingBar.albumPhoto != nil {
+		gomu.playingBar.albumPhoto.Clear()
+	}
+
 	gomu.pages.AddPage(popupID, center(flex, 90, 30), true, true)
 	gomu.popups.push(flex)
 }
@@ -854,10 +864,10 @@ func lyricPopup(lang string, audioFile *AudioFile, wg *sync.WaitGroup) error {
 
 	var titles []string
 
-	// below we chose languages with GetLyrics interfaces
-	getLyric := lyricLang(lang)
+	// below we chose LyricFetcher interfaces by language
+	lyricFetcher := lyricLang(lang)
 
-	results, err := getLyric.GetLyricOptions(audioFile.name)
+	results, err := lyricFetcher.LyricOptions(audioFile.name)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -880,7 +890,7 @@ func lyricPopup(lang string, audioFile *AudioFile, wg *sync.WaitGroup) error {
 					break
 				}
 			}
-			lyricContent, err := getLyric.GetLyric(results[selectedIndex])
+			lyricContent, err := lyricFetcher.LyricFetch(results[selectedIndex])
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
@@ -907,18 +917,20 @@ func lyricPopup(lang string, audioFile *AudioFile, wg *sync.WaitGroup) error {
 		}()
 	})
 
+	gomu.app.Draw()
+
 	return nil
 }
 
-func lyricLang(lang string) lyric.GetLyrics {
+func lyricLang(lang string) lyric.LyricFetcher {
 
 	switch lang {
 	case "en":
-		return lyric.GetLyricEn{}
+		return lyric.LyricFetcherEn{}
 	case "zh-CN":
-		return lyric.GetLyricCn{}
+		return lyric.LyricFetcherCn{}
 	default:
-		return lyric.GetLyricEn{}
+		return lyric.LyricFetcherEn{}
 	}
 
 }

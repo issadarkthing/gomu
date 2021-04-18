@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -82,12 +83,8 @@ type Playlist struct {
 	// number of downloads
 	download int
 	done     chan struct{}
-}
-
-var (
 	yankFile *AudioFile
-	isYanked bool
-)
+}
 
 func (p *Playlist) help() []string {
 
@@ -247,7 +244,7 @@ func (p Playlist) getCurrentFile() *AudioFile {
 }
 
 // Deletes song from filesystem
-func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
+func (p *Playlist) deleteSong(audioFile *AudioFile) {
 
 	confirmationPopup(
 		"Are you sure to delete this audio file?", func(_ int, buttonName string) {
@@ -256,52 +253,52 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) (err error) {
 				return
 			}
 
-			audioName := getName(audioFile.path)
+			// hehe we need to move focus to next node before delete it
+			p.InputHandler()(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone), nil)
+
 			err := os.Remove(audioFile.path)
-
 			if err != nil {
-
-				defaultTimedPopup(" Error ", "Unable to delete "+audioFile.name)
-
-				err = tracerr.Wrap(err)
-
-			} else {
-
-				defaultTimedPopup(" Success ",
-					audioFile.name+"\nhas been deleted successfully")
-				p.refresh()
-
-				// Here we remove the song from queue
-				songPaths := gomu.queue.getItems()
-				if audioName == getName(gomu.player.GetCurrentSong().Name()) {
-					gomu.player.Skip()
-				}
-				for i, songPath := range songPaths {
-					if strings.Contains(songPath, audioName) {
-						gomu.queue.deleteItem(i)
-					}
-				}
+				errorPopup(err)
+				return
 			}
+
+			defaultTimedPopup(" Success ",
+				audioFile.name+"\nhas been deleted successfully")
+			go gomu.app.QueueUpdateDraw(func() {
+				p.refresh()
+				// Here we remove the song from queue
+				gomu.queue.updateQueuePath()
+				gomu.queue.updateCurrentSongDelete(audioFile)
+			})
 
 		})
 
-	return nil
 }
 
 // Deletes playlist/dir from filesystem
 func (p *Playlist) deletePlaylist(audioFile *AudioFile) (err error) {
 
+	// here we close the node and then move to next folder before delete
+	p.InputHandler()(tcell.NewEventKey(tcell.KeyRune, 'h', tcell.ModNone), nil)
+	p.InputHandler()(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone), nil)
+
 	err = os.RemoveAll(audioFile.path)
 	if err != nil {
-		err = tracerr.Wrap(err)
-	} else {
-		defaultTimedPopup(
-			" Success ",
-			audioFile.name+"\nhas been deleted successfully")
-		p.refresh()
+		return tracerr.Wrap(err)
 	}
 
-	return err
+	defaultTimedPopup(
+		" Success ",
+		audioFile.name+"\nhas been deleted successfully")
+	go gomu.app.QueueUpdateDraw(func() {
+		p.refresh()
+		// Here we remove the song from queue
+		gomu.queue.updateQueuePath()
+		gomu.queue.updateCurrentSongDelete(audioFile)
+
+	})
+
+	return nil
 }
 
 // Bulk add a playlist to queue
@@ -488,6 +485,7 @@ func (p *Playlist) rename(newName string) error {
 
 	currentNode := p.GetCurrentNode()
 	audio := currentNode.GetReference().(*AudioFile)
+
 	pathToFile, _ := filepath.Split(audio.path)
 	var newPath string
 	if audio.isAudioFile {
@@ -499,11 +497,6 @@ func (p *Playlist) rename(newName string) error {
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
-
-	audio.path = newPath
-	gomu.queue.saveQueue(false)
-	gomu.queue.clearQueue()
-	gomu.queue.loadQueue()
 
 	return nil
 }
@@ -737,6 +730,13 @@ func populate(root *tview.TreeNode, rootPath string, sortMtime bool) error {
 				parent:      root,
 			}
 
+			audioLength, err := getTagLength(audioFile.path)
+			if err != nil {
+				logError(err)
+			}
+
+			audioFile.length = audioLength
+
 			displayText := setDisplayText(audioFile)
 
 			child.SetReference(audioFile)
@@ -771,59 +771,64 @@ func populate(root *tview.TreeNode, rootPath string, sortMtime bool) error {
 }
 
 func (p *Playlist) yank() error {
-	yankFile = p.getCurrentFile()
-	if yankFile == nil {
-		isYanked = false
-		defaultTimedPopup(" Error! ", "No file has been yanked.")
-		return nil
+	p.yankFile = p.getCurrentFile()
+	if p.yankFile == nil {
+		return errors.New("no file has been yanked")
 	}
-	if yankFile.node == p.GetRoot() {
-		isYanked = false
-		defaultTimedPopup(" Error! ", "Please don't yank the root directory.")
-		return nil
+	if p.yankFile.node == p.GetRoot() {
+		return errors.New("please don't yank the root directory")
 	}
-	isYanked = true
-	defaultTimedPopup(" Success ", yankFile.name+"\n has been yanked successfully.")
+	defaultTimedPopup(" Success ", p.yankFile.name+"\n has been yanked successfully.")
 
 	return nil
 }
 
 func (p *Playlist) paste() error {
-	if isYanked {
-		isYanked = false
-		oldPathDir, oldPathFileName := filepath.Split(yankFile.path)
-		pasteFile := p.getCurrentFile()
-		if pasteFile.isAudioFile {
-			newPathDir, _ := filepath.Split(pasteFile.path)
-			if oldPathDir == newPathDir {
-				return nil
-			}
-			newPathFull := filepath.Join(newPathDir, oldPathFileName)
-			err := os.Rename(yankFile.path, newPathFull)
-			if err != nil {
-				defaultTimedPopup(" Error ", yankFile.name+"\n has not been pasted.")
-				return tracerr.Wrap(err)
-			}
-			defaultTimedPopup(" Success ", yankFile.name+"\n has been pasted to\n"+pasteFile.name)
-
-		} else {
-			newPathDir := pasteFile.path
-			if oldPathDir == newPathDir {
-				return nil
-			}
-			newPathFull := filepath.Join(newPathDir, oldPathFileName)
-			err := os.Rename(yankFile.path, newPathFull)
-			if err != nil {
-				defaultTimedPopup(" Error ", yankFile.name+"\n has not been pasted.")
-				return tracerr.Wrap(err)
-			}
-			defaultTimedPopup(" Success ", yankFile.name+"\n has been pasted to\n"+pasteFile.name)
-
-		}
-
-		p.refresh()
-		gomu.queue.updateQueueNames()
+	if p.yankFile == nil {
+		return errors.New("no file has been yanked")
 	}
+
+	oldAudio := p.yankFile
+	oldPathDir, oldPathFileName := filepath.Split(p.yankFile.path)
+	pasteFile := p.getCurrentFile()
+	var newPathDir string
+	if pasteFile.isAudioFile {
+		newPathDir, _ = filepath.Split(pasteFile.path)
+	} else {
+		newPathDir = pasteFile.path
+	}
+
+	if oldPathDir == newPathDir {
+		return nil
+	}
+
+	newPathFull := filepath.Join(newPathDir, oldPathFileName)
+	err := os.Rename(p.yankFile.path, newPathFull)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	defaultTimedPopup(" Success ", p.yankFile.name+"\n has been pasted to\n"+newPathDir)
+
+	// keep queue references updated
+	newAudio := oldAudio
+	newAudio.path = newPathFull
+
+	p.refresh()
+	gomu.queue.updateQueuePath()
+	if p.yankFile.isAudioFile {
+		err = gomu.queue.updateCurrentSongName(oldAudio, newAudio)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+	} else {
+		err = gomu.queue.updateCurrentSongPath(oldAudio, newAudio)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+	}
+
+	p.yankFile = nil
 
 	return nil
 }
@@ -843,22 +848,34 @@ func setDisplayText(audioFile *AudioFile) string {
 	return fmt.Sprintf(" %s %s", emojiDir, audioFile.name)
 }
 
-// populateAudioLength is the most time consuming part of startup,
-// so here we initialize it separately
-func populateAudioLength(root *tview.TreeNode) error {
-	root.Walk(func(node *tview.TreeNode, _ *tview.TreeNode) bool {
-		audioFile := node.GetReference().(*AudioFile)
-		if audioFile.isAudioFile {
-			audioLength, err := getTagLength(audioFile.path)
-			if err != nil {
-				logError(err)
-				return false
-			}
-			audioFile.length = audioLength
+// refreshByNode is called after rename of file or folder, to refresh queue info
+func (p *Playlist) refreshAfterRename(node *AudioFile, newName string) error {
+
+	root := p.GetRoot()
+	root.Walk(func(node, _ *tview.TreeNode) bool {
+		if strings.Contains(node.GetText(), newName) {
+			p.setHighlight(node)
 		}
 		return true
 	})
+	// update queue
+	newNode := p.getCurrentFile()
+	if node.isAudioFile {
+		err := gomu.queue.renameItem(node, newNode)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+		err = gomu.queue.updateCurrentSongName(node, newNode)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+	} else {
+		gomu.queue.updateQueuePath()
+		err := gomu.queue.updateCurrentSongPath(node, newNode)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+	}
 
-	gomu.queue.updateTitle()
 	return nil
 }

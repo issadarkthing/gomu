@@ -1,10 +1,11 @@
+// Package hook is handling event hookds
 package hook
 
 type EventHook struct {
 	events map[string][]func()
 }
 
-// NewNewEventHook returns new instance of EventHook
+// NewEventHook returns new instance of EventHook
 func NewEventHook() *EventHook {
 	return &EventHook{make(map[string][]func())}
 }

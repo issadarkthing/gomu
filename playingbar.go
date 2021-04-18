@@ -3,15 +3,21 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+	"sync/atomic"
+	"syscall"
 	"time"
+	"unsafe"
 
+	"github.com/disintegration/imaging"
 	"github.com/rivo/tview"
 	"github.com/tramhao/id3v2"
 	"github.com/ztrue/tracerr"
+	ugo "gitlab.com/diamondburned/ueberzug-go"
 
 	"github.com/issadarkthing/gomu/lyric"
 )
@@ -19,15 +25,16 @@ import (
 // PlayingBar shows song name, progress and lyric
 type PlayingBar struct {
 	*tview.Frame
-	full      int
-	update    chan struct{}
-	progress  int
-	skip      bool
-	text      *tview.TextView
-	hasTag    bool
-	tag       *id3v2.Tag
-	subtitle  *lyric.Lyric
-	subtitles []*lyric.Lyric
+	full       int64
+	update     chan struct{}
+	progress   int64
+	skip       bool
+	text       *tview.TextView
+	hasTag     bool
+	tag        *id3v2.Tag
+	subtitle   *lyric.Lyric
+	subtitles  []*lyric.Lyric
+	albumPhoto *ugo.Image
 }
 
 func (p *PlayingBar) help() []string {
@@ -60,9 +67,12 @@ func (p *PlayingBar) run() error {
 	for {
 
 		// stop progressing if song ends or skipped
-		if p.progress > p.full || p.skip {
+		progress := p.getProgress()
+		full := p.getFull()
+
+		if progress > full || p.skip {
 			p.skip = false
-			p.progress = 0
+			p.setProgress(0)
 			break
 		}
 
@@ -71,42 +81,31 @@ func (p *PlayingBar) run() error {
 			continue
 		}
 
-		p.progress = int(gomu.player.GetPosition().Seconds())
+		// p.progress = int(gomu.player.GetPosition().Seconds())
+		p.setProgress(int(gomu.player.GetPosition().Seconds()))
 
-		start, err := time.ParseDuration(strconv.Itoa(p.progress) + "s")
+		start, err := time.ParseDuration(strconv.Itoa(progress) + "s")
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
 
-		end, err := time.ParseDuration(strconv.Itoa(p.full) + "s")
+		end, err := time.ParseDuration(strconv.Itoa(full) + "s")
 
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
+		var width int
+		gomu.app.QueueUpdate(func() {
+			_, _, width, _ = p.GetInnerRect()
+		})
 
-		_, _, width, _ := p.GetInnerRect()
-		progressBar := progresStr(p.progress, p.full, width/2, "█", "━")
+		progressBar := progresStr(progress, full, width/2, "█", "━")
 		// our progress bar
 		var lyricText string
 		if p.subtitle != nil {
-			for i := range p.subtitle.SyncedCaptions {
-				startTime := int32(p.subtitle.SyncedCaptions[i].Timestamp)
-				var endTime int32
-				if i < len(p.subtitle.SyncedCaptions)-1 {
-					endTime = int32(p.subtitle.SyncedCaptions[i+1].Timestamp)
-				} else {
-					// Here we display the last lyric until the end of song
-					endTime = int32(p.full * 1000)
-				}
-
-				// here the currentTime is delayed 1 second because we want to show lyrics earlier
-				currentTime := int32(p.progress*1000) + 1000
-				if currentTime >= startTime && currentTime <= endTime {
-					lyricText = p.subtitle.SyncedCaptions[i].Text
-					break
-				} else {
-					lyricText = ""
-				}
+			lyricText, err = p.subtitle.GetText(progress)
+			if err != nil {
+				return tracerr.Wrap(err)
 			}
 		}
 
@@ -131,17 +130,22 @@ func (p *PlayingBar) setSongTitle(title string) {
 	p.Clear()
 	titleColor := gomu.colors.title
 	p.AddText(title, true, tview.AlignCenter, titleColor)
+
 }
 
 // Resets progress bar, ready for execution
 func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
-	p.full = full
-	p.progress = 0
-	p.setSongTitle(currentSong.name)
+	p.setFull(full)
+	p.setProgress(0)
 	p.hasTag = false
 	p.tag = nil
 	p.subtitles = nil
 	p.subtitle = nil
+	if p.albumPhoto != nil {
+		p.albumPhoto.Clear()
+		p.albumPhoto.Destroy()
+		p.albumPhoto = nil
+	}
 
 	err := p.loadLyrics(currentSong.path)
 	if err != nil {
@@ -176,6 +180,8 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 			p.subtitle = p.subtitles[0]
 		}
 	}
+	p.setSongTitle(currentSong.name)
+
 }
 
 // Sets default title and progress bar
@@ -186,6 +192,9 @@ func (p *PlayingBar) setDefault() {
 		"%s ┣%s┫ %s", "00:00", strings.Repeat("━", width/2), "00:00",
 	)
 	p.text.SetText(text)
+	if p.albumPhoto != nil {
+		p.albumPhoto.Clear()
+	}
 }
 
 // Skips the current playing song
@@ -210,8 +219,8 @@ func (p *PlayingBar) switchLyrics() {
 
 	// only 1 subtitle, prompt to the user and select this one
 	if len(p.subtitles) == 1 {
-		defaultTimedPopup(" Warning ", p.subtitle.LangExt+" lyric is the only lyric available")
 		p.subtitle = p.subtitles[0]
+		defaultTimedPopup(" Warning ", p.subtitle.LangExt+" lyric is the only lyric available")
 		return
 	}
 
@@ -236,7 +245,7 @@ func (p *PlayingBar) switchLyrics() {
 func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 
 	if p.subtitle != nil {
-		p.subtitle.Offset += int32(lyricDelay)
+		p.subtitle.Offset -= int32(lyricDelay)
 		err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle, false)
 		if err != nil {
 			return tracerr.Wrap(err)
@@ -272,6 +281,12 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 	p.hasTag = true
 	p.tag = tag
 
+	if p.albumPhoto != nil {
+		p.albumPhoto.Clear()
+		p.albumPhoto.Destroy()
+		p.albumPhoto = nil
+	}
+
 	syltFrames := tag.GetFrames(tag.CommonID("Synchronised lyrics/text"))
 	usltFrames := tag.GetFrames(tag.CommonID("Unsynchronised lyrics/text transcription"))
 
@@ -298,5 +313,59 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		}
 	}
 
+	pictures := tag.GetFrames(tag.CommonID("Attached picture"))
+	for _, f := range pictures {
+		pic, ok := f.(id3v2.PictureFrame)
+		if !ok {
+			return errors.New("picture frame error")
+		}
+
+		// Do something with picture frame.
+		img1, err := imaging.Decode(bytes.NewReader(pic.Picture))
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+		dstImage128 := imaging.Fit(img1, 128, 128, imaging.Lanczos)
+
+		go gomu.app.QueueUpdateDraw(func() {
+			x, y, _, _ := p.GetInnerRect()
+			width, height, windowWidth, windowHeight := getConsoleSize()
+
+			p.albumPhoto, err = ugo.NewImage(dstImage128, (x+3)*windowWidth/width, (y+2)*windowHeight/height)
+			if err != nil {
+				errorPopup(err)
+			}
+			p.albumPhoto.Show()
+		})
+	}
+
 	return nil
+}
+
+func (p *PlayingBar) getProgress() int {
+	return int(atomic.LoadInt64(&p.progress))
+}
+
+func (p *PlayingBar) setProgress(progress int) {
+	atomic.StoreInt64(&p.progress, int64(progress))
+}
+
+func (p *PlayingBar) getFull() int {
+	return int(atomic.LoadInt64(&p.full))
+}
+
+func (p *PlayingBar) setFull(full int) {
+	atomic.StoreInt64(&p.full, int64(full))
+}
+
+func getConsoleSize() (int, int, int, int) {
+	var sz struct {
+		rows    uint16
+		cols    uint16
+		xpixels uint16
+		ypixels uint16
+	}
+	_, _, _ = syscall.Syscall(syscall.SYS_IOCTL,
+		uintptr(syscall.Stdout), uintptr(syscall.TIOCGWINSZ), uintptr(unsafe.Pointer(&sz)))
+	return int(sz.cols), int(sz.rows), int(sz.xpixels), int(sz.ypixels)
 }

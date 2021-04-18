@@ -22,9 +22,8 @@ type lyricFlex struct {
 	*tview.Flex
 	FocusedItem tview.Primitive
 	inputs      []tview.Primitive
+	box         *tview.Box
 }
-
-var box *tview.Box = tview.NewBox()
 
 // tagPopup is used to edit tag, delete and fetch lyrics
 func tagPopup(node *AudioFile) (err error) {
@@ -45,9 +44,9 @@ func tagPopup(node *AudioFile) (err error) {
 		deleteLyricButton *tview.Button     = tview.NewButton("Delete Lyric")
 		getLyricDropDown  *tview.DropDown   = tview.NewDropDown()
 		getLyricButton    *tview.Button     = tview.NewButton("Fetch Lyric")
-		lyricTextView     *tview.TextView
-		leftGrid          *tview.Grid = tview.NewGrid()
-		rightFlex         *tview.Flex = tview.NewFlex()
+		lyricTextView     *tview.TextView   = tview.NewTextView()
+		leftGrid          *tview.Grid       = tview.NewGrid()
+		rightFlex         *tview.Flex       = tview.NewFlex()
 	)
 
 	artistInputField.SetLabel("Artist: ").
@@ -65,12 +64,20 @@ func tagPopup(node *AudioFile) (err error) {
 		SetText(tag.Album()).
 		SetFieldBackgroundColor(gomu.colors.popup)
 
+	leftBox := tview.NewBox().
+		SetBorder(true).
+		SetTitle(node.name).
+		SetBackgroundColor(gomu.colors.popup).
+		SetBorderColor(gomu.colors.accent).
+		SetTitleColor(gomu.colors.accent).
+		SetBorderPadding(1, 1, 2, 2)
+
 	getTagButton.SetSelectedFunc(func() {
 		var titles []string
 		audioFile := node
 		go func() {
-			var getLyric lyric.GetLyricCn
-			results, err := getLyric.GetLyricOptions(audioFile.name)
+			var lyricFetcher lyric.LyricFetcherCn
+			results, err := lyricFetcher.LyricOptions(audioFile.name)
 			if err != nil {
 				errorPopup(err)
 				return
@@ -112,8 +119,27 @@ func tagPopup(node *AudioFile) (err error) {
 						errorPopup(err)
 						return
 					}
+					if gomu.anko.GetBool("General.rename_bytag") {
+						newName := fmt.Sprintf("%s-%s", newTag.Artist, newTag.Title)
+						err = gomu.playlist.rename(newName)
+						if err != nil {
+							errorPopup(err)
+							return
+						}
+						gomu.playlist.refresh()
+						leftBox.SetTitle(newName)
+
+						// update queue
+						err = gomu.playlist.refreshAfterRename(node, newName)
+						if err != nil {
+							errorPopup(err)
+							return
+						}
+						node = gomu.playlist.getCurrentFile()
+					}
 					defaultTimedPopup(" Success ", "Tag update successfully")
 				})
+				gomu.app.Draw()
 			}()
 		}()
 	}).
@@ -130,14 +156,36 @@ func tagPopup(node *AudioFile) (err error) {
 			return
 		}
 		defer tag.Close()
-		tag.SetArtist(artistInputField.GetText())
-		tag.SetTitle(titleInputField.GetText())
-		tag.SetAlbum(albumInputField.GetText())
+		newArtist := artistInputField.GetText()
+		newTitle := titleInputField.GetText()
+		newAlbum := albumInputField.GetText()
+		tag.SetArtist(newArtist)
+		tag.SetTitle(newTitle)
+		tag.SetAlbum(newAlbum)
 		err = tag.Save()
 		if err != nil {
 			errorPopup(err)
 			return
 		}
+		if gomu.anko.GetBool("General.rename_bytag") {
+			newName := fmt.Sprintf("%s-%s", newArtist, newTitle)
+			err = gomu.playlist.rename(newName)
+			if err != nil {
+				errorPopup(err)
+				return
+			}
+			gomu.playlist.refresh()
+			leftBox.SetTitle(newName)
+
+			// update queue
+			err = gomu.playlist.refreshAfterRename(node, newName)
+			if err != nil {
+				errorPopup(err)
+				return
+			}
+			node = gomu.playlist.getCurrentFile()
+		}
+
 		defaultTimedPopup(" Success ", "Tag update successfully")
 
 	}).
@@ -259,22 +307,24 @@ func tagPopup(node *AudioFile) (err error) {
 
 			options = newOptions
 			// Update dropdown options
-			lyricDropDown.SetOptions(newOptions, nil).
-				SetCurrentOption(0).
-				SetSelectedFunc(func(text string, _ int) {
-					lyricTextView.SetText(popupLyricMap[text]).
-						SetTitle(" " + text + " lyric preview ")
-				})
+			gomu.app.QueueUpdateDraw(func() {
+				lyricDropDown.SetOptions(newOptions, nil).
+					SetCurrentOption(0).
+					SetSelectedFunc(func(text string, _ int) {
+						lyricTextView.SetText(popupLyricMap[text]).
+							SetTitle(" " + text + " lyric preview ")
+					})
 
-			// Update lyric preview
-			if len(newOptions) > 0 {
-				_, langExt := lyricDropDown.GetCurrentOption()
-				lyricTextView.SetText(popupLyricMap[langExt]).
-					SetTitle(" " + langExt + " lyric preview ")
-			} else {
-				lyricTextView.SetText("No lyric embeded.").
-					SetTitle(" lyric preview ")
-			}
+				// Update lyric preview
+				if len(newOptions) > 0 {
+					_, langExt := lyricDropDown.GetCurrentOption()
+					lyricTextView.SetText(popupLyricMap[langExt]).
+						SetTitle(" " + langExt + " lyric preview ")
+				} else {
+					lyricTextView.SetText("No lyric embeded.").
+						SetTitle(" lyric preview ")
+				}
+			})
 		}()
 	}).
 		SetBackgroundColorActivated(gomu.colors.popup).
@@ -290,7 +340,7 @@ func tagPopup(node *AudioFile) (err error) {
 		lyricText = "No lyric embeded."
 		langExt = ""
 	}
-	lyricTextView = tview.NewTextView()
+
 	lyricTextView.
 		SetDynamicColors(true).
 		SetRegions(true).
@@ -304,7 +354,9 @@ func tagPopup(node *AudioFile) (err error) {
 		SetWrap(true).
 		SetBorder(true)
 	lyricTextView.SetChangedFunc(func() {
-		lyricTextView.ScrollToBeginning()
+		gomu.app.QueueUpdate(func() {
+			lyricTextView.ScrollToBeginning()
+		})
 	})
 
 	leftGrid.SetRows(3, 1, 3, 3, 3, 3, 0, 3, 3, 1, 3, 3).
@@ -319,15 +371,6 @@ func tagPopup(node *AudioFile) (err error) {
 		AddItem(lyricDropDown, 10, 0, 1, 3, 1, 10, true).
 		AddItem(deleteLyricButton, 11, 0, 1, 3, 1, 10, true)
 
-	box.SetBorder(true).
-		SetTitle(node.name).
-		SetBackgroundColor(gomu.colors.popup).
-		SetBorderColor(gomu.colors.accent).
-		SetTitleColor(gomu.colors.accent).
-		SetBorderPadding(1, 1, 2, 2)
-
-	leftGrid.Box = box
-
 	rightFlex.SetDirection(tview.FlexColumn).
 		AddItem(lyricTextView, 0, 1, true)
 
@@ -337,7 +380,10 @@ func tagPopup(node *AudioFile) (err error) {
 			AddItem(rightFlex, 0, 3, true),
 		nil,
 		nil,
+		leftBox,
 	}
+
+	leftGrid.Box = lyricFlex.box
 
 	lyricFlex.inputs = []tview.Primitive{
 		getTagButton,
@@ -352,6 +398,10 @@ func tagPopup(node *AudioFile) (err error) {
 		lyricTextView,
 	}
 
+	if gomu.playingBar.albumPhoto != nil {
+		gomu.playingBar.albumPhoto.Clear()
+	}
+
 	gomu.pages.AddPage(popupID, center(lyricFlex, 90, 36), true, true)
 	gomu.popups.push(lyricFlex)
 
@@ -362,13 +412,13 @@ func tagPopup(node *AudioFile) (err error) {
 		case tcell.KeyEsc:
 			gomu.pages.RemovePage(popupID)
 			gomu.popups.pop()
-		case tcell.KeyTab:
+		case tcell.KeyTab, tcell.KeyCtrlN, tcell.KeyCtrlJ:
 			lyricFlex.cycleFocus(gomu.app, false)
-		case tcell.KeyBacktab:
+		case tcell.KeyBacktab, tcell.KeyCtrlP, tcell.KeyCtrlK:
 			lyricFlex.cycleFocus(gomu.app, true)
-		case tcell.KeyRight:
+		case tcell.KeyDown:
 			lyricFlex.cycleFocus(gomu.app, false)
-		case tcell.KeyLeft:
+		case tcell.KeyUp:
 			lyricFlex.cycleFocus(gomu.app, true)
 		}
 
@@ -409,12 +459,12 @@ func (f *lyricFlex) cycleFocus(app *tview.Application, reverse bool) {
 		if f.inputs[9].HasFocus() {
 			f.inputs[9].(*tview.TextView).SetBorderColor(gomu.colors.accent).
 				SetTitleColor(gomu.colors.accent)
-			box.SetBorderColor(gomu.colors.background).
+			f.box.SetBorderColor(gomu.colors.background).
 				SetTitleColor(gomu.colors.background)
 		} else {
 			f.inputs[9].(*tview.TextView).SetBorderColor(gomu.colors.background).
 				SetTitleColor(gomu.colors.background)
-			box.SetBorderColor(gomu.colors.accent).
+			f.box.SetBorderColor(gomu.colors.accent).
 				SetTitleColor(gomu.colors.accent)
 		}
 		return
@@ -433,12 +483,12 @@ func (f *lyricFlex) Focus(delegate func(p tview.Primitive)) {
 }
 
 // loadTagMap will load from tag and return a map of langExt to lyrics
-func (node *AudioFile) loadTagMap() (tag *id3v2.Tag, popupLyricMap map[string]string, options []string, err error) {
+func (a *AudioFile) loadTagMap() (tag *id3v2.Tag, popupLyricMap map[string]string, options []string, err error) {
 
 	popupLyricMap = make(map[string]string)
 
-	if node.isAudioFile {
-		tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+	if a.isAudioFile {
+		tag, err = id3v2.Open(a.path, id3v2.Options{Parse: true})
 		if err != nil {
 			return nil, nil, nil, tracerr.Wrap(err)
 		}

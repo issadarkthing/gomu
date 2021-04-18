@@ -62,10 +62,8 @@ func (c Command) defineCommands() {
 			return
 		}
 
-		err := gomu.playlist.deleteSong(audioFile)
-		if err != nil {
-			logError(err)
-		}
+		gomu.playlist.deleteSong(audioFile)
+
 	})
 
 	c.define("youtube_search", func() {
@@ -94,7 +92,13 @@ func (c Command) defineCommands() {
 		audioFile := gomu.playlist.getCurrentFile()
 		currNode := gomu.playlist.GetCurrentNode()
 		if audioFile.isAudioFile {
-			gomu.queue.enqueue(audioFile)
+			gomu.queue.pushFront(audioFile)
+			if len(gomu.queue.items) == 1 && !gomu.player.IsRunning() {
+				err := gomu.queue.playQueue()
+				if err != nil {
+					errorPopup(err)
+				}
+			}
 		} else {
 			currNode.SetExpanded(true)
 		}
@@ -121,6 +125,12 @@ func (c Command) defineCommands() {
 
 		if !bulkAdd {
 			gomu.playlist.addAllToQueue(currNode)
+			if len(gomu.queue.items) > 0 && !gomu.player.IsRunning() {
+				err := gomu.queue.playQueue()
+				if err != nil {
+					errorPopup(err)
+				}
+			}
 			return
 		}
 
@@ -130,6 +140,12 @@ func (c Command) defineCommands() {
 
 				if label == "yes" {
 					gomu.playlist.addAllToQueue(currNode)
+					if len(gomu.queue.items) > 0 && !gomu.player.IsRunning() {
+						err := gomu.queue.playQueue()
+						if err != nil {
+							errorPopup(err)
+						}
+					}
 				}
 
 			})
@@ -205,7 +221,12 @@ func (c Command) defineCommands() {
 			}
 
 			gomu.queue.pushFront(a)
-			gomu.player.Skip()
+
+			if gomu.player.IsRunning() {
+				gomu.player.Skip()
+			} else {
+				gomu.queue.playQueue()
+			}
 		}
 	})
 
@@ -307,64 +328,64 @@ func (c Command) defineCommands() {
 
 	c.define("forward", func() {
 		if gomu.player.IsRunning() && !gomu.player.IsPaused() {
-			position := gomu.playingBar.progress + 10
-			if position < gomu.playingBar.full {
+			position := gomu.playingBar.getProgress() + 10
+			if position < gomu.playingBar.getFull() {
 				err := gomu.player.Seek(position)
 				if err != nil {
-					logError(err)
+					errorPopup(err)
 				}
-				gomu.playingBar.progress = position
+				gomu.playingBar.setProgress(position)
 			}
 		}
 	})
 
 	c.define("rewind", func() {
 		if gomu.player.IsRunning() && !gomu.player.IsPaused() {
-			position := gomu.playingBar.progress - 10
+			position := gomu.playingBar.getProgress() - 10
 			if position-1 > 0 {
 				err := gomu.player.Seek(position)
 				if err != nil {
-					logError(err)
+					errorPopup(err)
 				}
-				gomu.playingBar.progress = position
+				gomu.playingBar.setProgress(position)
 			} else {
 				err := gomu.player.Seek(0)
 				if err != nil {
-					logError(err)
+					errorPopup(err)
 				}
-				gomu.playingBar.progress = 0
+				gomu.playingBar.setProgress(0)
 			}
 		}
 	})
 
 	c.define("forward_fast", func() {
 		if gomu.player.IsRunning() && !gomu.player.IsPaused() {
-			position := gomu.playingBar.progress + 60
-			if position < gomu.playingBar.full {
+			position := gomu.playingBar.getProgress() + 60
+			if position < gomu.playingBar.getFull() {
 				err := gomu.player.Seek(position)
 				if err != nil {
-					logError(err)
+					errorPopup(err)
 				}
-				gomu.playingBar.progress = position
+				gomu.playingBar.setProgress(position)
 			}
 		}
 	})
 
 	c.define("rewind_fast", func() {
 		if gomu.player.IsRunning() && !gomu.player.IsPaused() {
-			position := gomu.playingBar.progress - 60
+			position := gomu.playingBar.getProgress() - 60
 			if position-1 > 0 {
 				err := gomu.player.Seek(position)
 				if err != nil {
-					logError(err)
+					errorPopup(err)
 				}
-				gomu.playingBar.progress = position
+				gomu.playingBar.setProgress(position)
 			} else {
 				err := gomu.player.Seek(0)
 				if err != nil {
-					logError(err)
+					errorPopup(err)
 				}
-				gomu.playingBar.progress = 0
+				gomu.playingBar.setProgress(0)
 			}
 		}
 	})
@@ -372,14 +393,14 @@ func (c Command) defineCommands() {
 	c.define("yank", func() {
 		err := gomu.playlist.yank()
 		if err != nil {
-			logError(err)
+			errorPopup(err)
 		}
 	})
 
 	c.define("paste", func() {
 		err := gomu.playlist.paste()
 		if err != nil {
-			logError(err)
+			errorPopup(err)
 		}
 	})
 
@@ -410,7 +431,6 @@ func (c Command) defineCommands() {
 				err := lyricPopup(lang, audioFile, &wg)
 				if err != nil {
 					errorPopup(err)
-					gomu.app.Draw()
 				}
 			}()
 		}
@@ -427,7 +447,6 @@ func (c Command) defineCommands() {
 				err := lyricPopup(lang, audioFile, &wg)
 				if err != nil {
 					errorPopup(err)
-					gomu.app.Draw()
 				}
 			}()
 		}
@@ -437,7 +456,6 @@ func (c Command) defineCommands() {
 		err := gomu.playingBar.delayLyric(500)
 		if err != nil {
 			errorPopup(err)
-			gomu.app.Draw()
 		}
 	})
 
@@ -445,7 +463,6 @@ func (c Command) defineCommands() {
 		err := gomu.playingBar.delayLyric(-500)
 		if err != nil {
 			errorPopup(err)
-			gomu.app.Draw()
 		}
 	})
 

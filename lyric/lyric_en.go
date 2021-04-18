@@ -8,11 +8,11 @@ import (
 	"github.com/gocolly/colly"
 )
 
-type GetLyricEn struct{}
+type LyricFetcherEn struct{}
 
-// GetLyric should receive SongTag that was returned from GetLyricOptions, and
+// LyricFetch should receive SongTag that was returned from GetLyricOptions, and
 // returns lyric of the queried song.
-func (en GetLyricEn) GetLyric(songTag *SongTag) (string, error) {
+func (en LyricFetcherEn) LyricFetch(songTag *SongTag) (string, error) {
 
 	var lyric string
 	c := colly.NewCollector()
@@ -39,8 +39,8 @@ func (en GetLyricEn) GetLyric(songTag *SongTag) (string, error) {
 	return "", fmt.Errorf("lyric not compatible")
 }
 
-// GetLyricOptions queries available song lyrics. It returns slice of SongTag
-func (en GetLyricEn) GetLyricOptions(search string) ([]*SongTag, error) {
+// LyricOptions queries available song lyrics. It returns slice of SongTag
+func (en LyricFetcherEn) LyricOptions(search string) ([]*SongTag, error) {
 
 	var songTags []*SongTag
 

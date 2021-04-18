@@ -19,9 +19,10 @@ type SongTag struct {
 	LyricID         string
 }
 
-type GetLyrics interface {
-	GetLyric(songTag *SongTag) (string, error)
-	GetLyricOptions(search string) ([]*SongTag, error)
+// LyricFetcher is the interface to get lyrics via different language
+type LyricFetcher interface {
+	LyricFetch(songTag *SongTag) (string, error)
+	LyricOptions(search string) ([]*SongTag, error)
 }
 
 // cleanHTML parses html text to valid utf-8 text

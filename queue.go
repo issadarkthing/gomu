@@ -70,6 +70,10 @@ func (q *Queue) deleteItem(index int) (*AudioFile, error) {
 		}
 
 		q.items = nItems
+		// here we move to next item if not at the end
+		if index < len(q.items) {
+			q.next()
+		}
 		q.updateTitle()
 
 	}
@@ -155,18 +159,6 @@ func (q *Queue) dequeue() (*AudioFile, error) {
 // Add item to the list and returns the length of the queue
 func (q *Queue) enqueue(audioFile *AudioFile) (int, error) {
 
-	isTestEnv := os.Getenv("TEST") == "false"
-
-	if !gomu.player.IsRunning() && !gomu.player.IsPaused() && isTestEnv {
-
-		err := gomu.player.Run(audioFile)
-		if err != nil {
-			die(err)
-		}
-
-		return q.GetItemCount(), nil
-	}
-
 	if !audioFile.isAudioFile {
 		return q.GetItemCount(), nil
 	}
@@ -205,12 +197,12 @@ func (q *Queue) getItems() []string {
 }
 
 // Save the current queue
-func (q *Queue) saveQueue(isQuit bool) error {
+func (q *Queue) saveQueue() error {
 
 	songPaths := q.getItems()
 	var content strings.Builder
 
-	if gomu.player.HasInit() && isQuit && gomu.player.GetCurrentSong() != nil {
+	if gomu.player.HasInit() && gomu.player.GetCurrentSong() != nil {
 		currentSongPath := gomu.player.GetCurrentSong().Path()
 		currentSongInQueue := false
 		for _, songPath := range songPaths {
@@ -424,9 +416,198 @@ func sha1Hex(input string) string {
 }
 
 // Modify the title of songs in queue
-func (q *Queue) updateQueueNames() error {
-	q.saveQueue(false)
-	q.clearQueue()
-	q.loadQueue()
+func (q *Queue) renameItem(oldAudio *AudioFile, newAudio *AudioFile) error {
+	for i, v := range q.items {
+		if v.name != oldAudio.name {
+			continue
+		}
+		err := q.insertItem(i, newAudio)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+		_, err = q.deleteItem(i + 1)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+
+	}
 	return nil
+}
+
+// playQueue play the first item in the queue
+func (q *Queue) playQueue() error {
+
+	audioFile, err := q.dequeue()
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	err = gomu.player.Run(audioFile)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	return nil
+}
+
+func (q *Queue) insertItem(index int, audioFile *AudioFile) error {
+
+	if index > len(q.items)-1 {
+		return tracerr.New("Index out of range")
+	}
+
+	if index != -1 {
+		songLength, err := getTagLength(audioFile.path)
+		if err != nil {
+			return tracerr.Wrap(err)
+		}
+		queueItemView := fmt.Sprintf(
+			"[ %s ] %s", fmtDuration(songLength), getName(audioFile.name),
+		)
+
+		q.InsertItem(index, queueItemView, audioFile.path, 0, nil)
+
+		var nItems []*AudioFile
+
+		for i, v := range q.items {
+
+			if i == index {
+				nItems = append(nItems, audioFile)
+			}
+
+			nItems = append(nItems, v)
+		}
+
+		q.items = nItems
+		q.updateTitle()
+
+	}
+
+	return nil
+}
+
+//update the path information in queue
+func (q *Queue) updateQueuePath() {
+
+	var songs []string
+	if len(q.items) < 1 {
+		return
+	}
+	for _, v := range q.items {
+		song := sha1Hex(getName(v.name))
+		songs = append(songs, song)
+	}
+
+	q.clearQueue()
+	for _, v := range songs {
+
+		audioFile, err := gomu.playlist.findAudioFile(v)
+
+		if err != nil {
+			continue
+		}
+		q.enqueue(audioFile)
+	}
+
+	q.updateTitle()
+}
+
+// update current playing song name to reflect the changes during rename and paste
+func (q *Queue) updateCurrentSongName(oldAudio *AudioFile, newAudio *AudioFile) error {
+
+	if !gomu.player.IsRunning() && !gomu.player.IsPaused() {
+		return nil
+	}
+
+	currentSong := gomu.player.GetCurrentSong()
+	position := gomu.playingBar.getProgress()
+	paused := gomu.player.IsPaused()
+
+	if oldAudio.name != currentSong.Name() {
+		return nil
+	}
+
+	// we insert it in the first of queue, then play it
+	gomu.queue.pushFront(newAudio)
+	tmpLoop := q.isLoop
+	q.isLoop = false
+	gomu.player.Skip()
+	gomu.player.Seek(position)
+	if paused {
+		gomu.player.TogglePause()
+	}
+	q.isLoop = tmpLoop
+	q.updateTitle()
+
+	return nil
+}
+
+// update current playing song path to reflect the changes during rename and paste
+func (q *Queue) updateCurrentSongPath(oldAudio *AudioFile, newAudio *AudioFile) error {
+
+	if !gomu.player.IsRunning() && !gomu.player.IsPaused() {
+		return nil
+	}
+
+	currentSong := gomu.player.GetCurrentSong()
+	position := gomu.playingBar.getProgress()
+	paused := gomu.player.IsPaused()
+
+	// Here we check the situation when currentsong is under oldAudio folder
+	if !strings.Contains(currentSong.Path(), oldAudio.path) {
+		return nil
+	}
+
+	// Here is the handling of folder rename and paste
+	currentSongAudioFile, err := gomu.playlist.findAudioFile(sha1Hex(getName(currentSong.Name())))
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	gomu.queue.pushFront(currentSongAudioFile)
+	tmpLoop := q.isLoop
+	q.isLoop = false
+	gomu.player.Skip()
+	gomu.player.Seek(position)
+	if paused {
+		gomu.player.TogglePause()
+	}
+	q.isLoop = tmpLoop
+
+	q.updateTitle()
+	return nil
+
+}
+
+// update current playing song simply delete it
+func (q *Queue) updateCurrentSongDelete(oldAudio *AudioFile) {
+	if !gomu.player.IsRunning() && !gomu.player.IsPaused() {
+		return
+	}
+
+	currentSong := gomu.player.GetCurrentSong()
+	paused := gomu.player.IsPaused()
+
+	var delete bool
+	if oldAudio.isAudioFile {
+		if oldAudio.name == currentSong.Name() {
+			delete = true
+		}
+	} else {
+		if strings.Contains(currentSong.Path(), oldAudio.path) {
+			delete = true
+		}
+	}
+
+	if !delete {
+		return
+	}
+
+	tmpLoop := q.isLoop
+	q.isLoop = false
+	gomu.player.Skip()
+	if paused {
+		gomu.player.TogglePause()
+	}
+	q.isLoop = tmpLoop
+	q.updateTitle()
+
 }

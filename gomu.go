@@ -140,7 +140,7 @@ func (g *Gomu) setUnfocusPanel(panel Panel) {
 func (g *Gomu) quit(args Args) error {
 
 	if !*args.empty {
-		err := gomu.queue.saveQueue(true)
+		err := gomu.queue.saveQueue()
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
