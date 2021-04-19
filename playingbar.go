@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"image"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -25,16 +26,18 @@ import (
 // PlayingBar shows song name, progress and lyric
 type PlayingBar struct {
 	*tview.Frame
-	full       int64
-	update     chan struct{}
-	progress   int64
-	skip       bool
-	text       *tview.TextView
-	hasTag     bool
-	tag        *id3v2.Tag
-	subtitle   *lyric.Lyric
-	subtitles  []*lyric.Lyric
-	albumPhoto *ugo.Image
+	full             int32
+	update           chan struct{}
+	progress         int32
+	skip             bool
+	text             *tview.TextView
+	hasTag           bool
+	tag              *id3v2.Tag
+	subtitle         *lyric.Lyric
+	subtitles        []*lyric.Lyric
+	albumPhoto       *ugo.Image
+	albumPhotoSource image.Image
+	width            int32
 }
 
 func (p *PlayingBar) help() []string {
@@ -100,6 +103,10 @@ func (p *PlayingBar) run() error {
 		})
 
 		progressBar := progresStr(progress, full, width/2, "█", "━")
+		if p.getWidth() != width {
+			p.updatePhoto()
+			p.setWidth(width)
+		}
 		// our progress bar
 		var lyricText string
 		if p.subtitle != nil {
@@ -321,41 +328,40 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		}
 
 		// Do something with picture frame.
-		img1, err := imaging.Decode(bytes.NewReader(pic.Picture))
+		imgTmp, err := imaging.Decode(bytes.NewReader(pic.Picture))
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
-		dstImage128 := imaging.Fit(img1, 128, 128, imaging.Lanczos)
 
-		go gomu.app.QueueUpdateDraw(func() {
-			x, y, _, _ := p.GetInnerRect()
-			width, height, windowWidth, windowHeight := getConsoleSize()
-
-			p.albumPhoto, err = ugo.NewImage(dstImage128, (x+3)*windowWidth/width, (y+2)*windowHeight/height)
-			if err != nil {
-				errorPopup(err)
-			}
-			p.albumPhoto.Show()
-		})
+		p.albumPhotoSource = imgTmp
+		p.setWidth(0)
 	}
 
 	return nil
 }
 
 func (p *PlayingBar) getProgress() int {
-	return int(atomic.LoadInt64(&p.progress))
+	return int(atomic.LoadInt32(&p.progress))
 }
 
 func (p *PlayingBar) setProgress(progress int) {
-	atomic.StoreInt64(&p.progress, int64(progress))
+	atomic.StoreInt32(&p.progress, int32(progress))
 }
 
 func (p *PlayingBar) getFull() int {
-	return int(atomic.LoadInt64(&p.full))
+	return int(atomic.LoadInt32(&p.full))
 }
 
 func (p *PlayingBar) setFull(full int) {
-	atomic.StoreInt64(&p.full, int64(full))
+	atomic.StoreInt32(&p.full, int32(full))
+}
+
+func (p *PlayingBar) getWidth() int {
+	return int(atomic.LoadInt32(&p.width))
+}
+
+func (p *PlayingBar) setWidth(width int) {
+	atomic.StoreInt32(&p.width, int32(width))
 }
 
 func getConsoleSize() (int, int, int, int) {
@@ -368,4 +374,36 @@ func getConsoleSize() (int, int, int, int) {
 	_, _, _ = syscall.Syscall(syscall.SYS_IOCTL,
 		uintptr(syscall.Stdout), uintptr(syscall.TIOCGWINSZ), uintptr(unsafe.Pointer(&sz)))
 	return int(sz.cols), int(sz.rows), int(sz.xpixels), int(sz.ypixels)
+}
+
+func (p *PlayingBar) updatePhoto() {
+	go gomu.app.QueueUpdateDraw(func() {
+		if p.albumPhotoSource == nil {
+			return
+		}
+
+		if p.albumPhoto != nil {
+			p.albumPhoto.Clear()
+			p.albumPhoto.Destroy()
+		}
+		x, y, width, height := p.GetInnerRect()
+		cols, rows, windowWidth, windowHeight := getConsoleSize()
+
+		colPixel := windowWidth / cols
+		rowPixel := windowHeight / rows
+		remainingX := width/4 - 7
+		imageWidth := remainingX*colPixel - colPixel
+		if imageWidth > height*rowPixel {
+			imageWidth = height * rowPixel
+		}
+		dstImage := imaging.Fit(p.albumPhotoSource, imageWidth, imageWidth, imaging.Lanczos)
+		var err error
+		positionX := x*colPixel + remainingX*colPixel/2 - imageWidth/2
+		positionY := y*rowPixel + height*rowPixel/2 - imageWidth*10/30
+		p.albumPhoto, err = ugo.NewImage(dstImage, positionX, positionY)
+		if err != nil {
+			errorPopup(err)
+		}
+		p.albumPhoto.Show()
+	})
 }
