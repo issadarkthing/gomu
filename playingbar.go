@@ -37,7 +37,7 @@ type PlayingBar struct {
 	subtitles        []*lyric.Lyric
 	albumPhoto       *ugo.Image
 	albumPhotoSource image.Image
-	width            int32
+	rowPixel         int32
 }
 
 func (p *PlayingBar) help() []string {
@@ -97,15 +97,17 @@ func (p *PlayingBar) run() error {
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
-		var width int
+		var width, rowPixel int
 		gomu.app.QueueUpdate(func() {
 			_, _, width, _ = p.GetInnerRect()
+			_, rows, _, windowHeight := getConsoleSize()
+			rowPixel = windowHeight / rows
 		})
 
 		progressBar := progresStr(progress, full, width/2, "█", "━")
-		if p.getWidth() != width {
+		if p.getRowPixel() != rowPixel {
 			p.updatePhoto()
-			p.setWidth(width)
+			p.setRowPixel(rowPixel)
 		}
 		// our progress bar
 		var lyricText string
@@ -334,7 +336,7 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		}
 
 		p.albumPhotoSource = imgTmp
-		p.setWidth(0)
+		p.setRowPixel(0)
 	}
 
 	return nil
@@ -356,12 +358,12 @@ func (p *PlayingBar) setFull(full int) {
 	atomic.StoreInt32(&p.full, int32(full))
 }
 
-func (p *PlayingBar) getWidth() int {
-	return int(atomic.LoadInt32(&p.width))
+func (p *PlayingBar) getRowPixel() int {
+	return int(atomic.LoadInt32(&p.rowPixel))
 }
 
-func (p *PlayingBar) setWidth(width int) {
-	atomic.StoreInt32(&p.width, int32(width))
+func (p *PlayingBar) setRowPixel(rowPixel int) {
+	atomic.StoreInt32(&p.rowPixel, int32(rowPixel))
 }
 
 func getConsoleSize() (int, int, int, int) {
@@ -376,7 +378,11 @@ func getConsoleSize() (int, int, int, int) {
 	return int(sz.cols), int(sz.rows), int(sz.xpixels), int(sz.ypixels)
 }
 
+// updatePhoto finish two tasks: 1. resize photo based on room left for photo
+// 2. register photo in the correct position
 func (p *PlayingBar) updatePhoto() {
+	// Put the whole block in goroutine, in order not to block the whole apps
+	// also to avoid data race by adding QueueUpdateDraw
 	go gomu.app.QueueUpdateDraw(func() {
 		if p.albumPhotoSource == nil {
 			return
@@ -385,6 +391,7 @@ func (p *PlayingBar) updatePhoto() {
 		if p.albumPhoto != nil {
 			p.albumPhoto.Clear()
 			p.albumPhoto.Destroy()
+			p.albumPhoto = nil
 		}
 		x, y, width, height := p.GetInnerRect()
 		cols, rows, windowWidth, windowHeight := getConsoleSize()
@@ -396,10 +403,12 @@ func (p *PlayingBar) updatePhoto() {
 		if imageWidth > height*rowPixel {
 			imageWidth = height * rowPixel
 		}
+		// resize the photo according to space left for x and y axis
 		dstImage := imaging.Fit(p.albumPhotoSource, imageWidth, imageWidth, imaging.Lanczos)
 		var err error
 		positionX := x*colPixel + remainingX*colPixel/2 - imageWidth/2
-		positionY := y*rowPixel + height*rowPixel/2 - imageWidth*10/30
+		positionY := y*rowPixel + height*rowPixel/2 - imageWidth*10/35
+		// register new image
 		p.albumPhoto, err = ugo.NewImage(dstImage, positionX, positionY)
 		if err != nil {
 			errorPopup(err)

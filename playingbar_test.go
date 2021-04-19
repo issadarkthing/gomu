@@ -36,7 +36,7 @@ func Test_NewProgress(t *testing.T) {
 
 	p.newProgress(&audio, full)
 
-	if p.full != int64(full) {
+	if p.full != int32(full) {
 		t.Errorf("Expected %d; got %d", full, p.full)
 	}
 
