@@ -37,7 +37,7 @@ type PlayingBar struct {
 	subtitles        []*lyric.Lyric
 	albumPhoto       *ugo.Image
 	albumPhotoSource image.Image
-	rowPixel         int32
+	colrowPixel      int32
 }
 
 func (p *PlayingBar) help() []string {
@@ -97,17 +97,19 @@ func (p *PlayingBar) run() error {
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
-		var width, rowPixel int
+		var width, colrowPixel int
 		gomu.app.QueueUpdate(func() {
 			_, _, width, _ = p.GetInnerRect()
-			_, rows, _, windowHeight := getConsoleSize()
-			rowPixel = windowHeight / rows
+			cols, rows, windowWidth, windowHeight := getConsoleSize()
+			rowPixel := windowHeight / rows
+			colPixel := windowWidth / cols
+			colrowPixel = rowPixel + colPixel
 		})
 
 		progressBar := progresStr(progress, full, width/2, "█", "━")
-		if p.getRowPixel() != rowPixel {
+		if p.getColRowPixel() != colrowPixel {
 			p.updatePhoto()
-			p.setRowPixel(rowPixel)
+			p.setColRowPixel(colrowPixel)
 		}
 		// our progress bar
 		var lyricText string
@@ -336,7 +338,7 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		}
 
 		p.albumPhotoSource = imgTmp
-		p.setRowPixel(0)
+		p.setColRowPixel(0)
 	}
 
 	return nil
@@ -358,12 +360,12 @@ func (p *PlayingBar) setFull(full int) {
 	atomic.StoreInt32(&p.full, int32(full))
 }
 
-func (p *PlayingBar) getRowPixel() int {
-	return int(atomic.LoadInt32(&p.rowPixel))
+func (p *PlayingBar) getColRowPixel() int {
+	return int(atomic.LoadInt32(&p.colrowPixel))
 }
 
-func (p *PlayingBar) setRowPixel(rowPixel int) {
-	atomic.StoreInt32(&p.rowPixel, int32(rowPixel))
+func (p *PlayingBar) setColRowPixel(colrowPixel int) {
+	atomic.StoreInt32(&p.colrowPixel, int32(colrowPixel))
 }
 
 func getConsoleSize() (int, int, int, int) {
@@ -393,21 +395,19 @@ func (p *PlayingBar) updatePhoto() {
 			p.albumPhoto.Destroy()
 			p.albumPhoto = nil
 		}
-		x, y, width, height := p.GetInnerRect()
+		x, y, width, height := gomu.queue.GetInnerRect()
+
 		cols, rows, windowWidth, windowHeight := getConsoleSize()
 
 		colPixel := windowWidth / cols
 		rowPixel := windowHeight / rows
-		remainingX := width/4 - 7
-		imageWidth := remainingX*colPixel - colPixel
-		if imageWidth > height*rowPixel {
-			imageWidth = height * rowPixel
-		}
+		imageWidth := width * colPixel / 3
+
 		// resize the photo according to space left for x and y axis
-		dstImage := imaging.Fit(p.albumPhotoSource, imageWidth, imageWidth, imaging.Lanczos)
+		dstImage := imaging.Resize(p.albumPhotoSource, imageWidth, 0, imaging.Lanczos)
 		var err error
-		positionX := x*colPixel + remainingX*colPixel/2 - imageWidth/2
-		positionY := y*rowPixel + height*rowPixel/2 - imageWidth*10/35
+		positionX := x*colPixel + width*colPixel - dstImage.Rect.Dx()
+		positionY := y*rowPixel + height*rowPixel - dstImage.Rect.Dy()
 		// register new image
 		p.albumPhoto, err = ugo.NewImage(dstImage, positionX, positionY)
 		if err != nil {
