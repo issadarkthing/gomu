@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"image"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -25,16 +26,18 @@ import (
 // PlayingBar shows song name, progress and lyric
 type PlayingBar struct {
 	*tview.Frame
-	full       int64
-	update     chan struct{}
-	progress   int64
-	skip       bool
-	text       *tview.TextView
-	hasTag     bool
-	tag        *id3v2.Tag
-	subtitle   *lyric.Lyric
-	subtitles  []*lyric.Lyric
-	albumPhoto *ugo.Image
+	full             int32
+	update           chan struct{}
+	progress         int32
+	skip             bool
+	text             *tview.TextView
+	hasTag           bool
+	tag              *id3v2.Tag
+	subtitle         *lyric.Lyric
+	subtitles        []*lyric.Lyric
+	albumPhoto       *ugo.Image
+	albumPhotoSource image.Image
+	colrowPixel      int32
 }
 
 func (p *PlayingBar) help() []string {
@@ -94,12 +97,20 @@ func (p *PlayingBar) run() error {
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
-		var width int
+		var width, colrowPixel int
 		gomu.app.QueueUpdate(func() {
 			_, _, width, _ = p.GetInnerRect()
+			cols, rows, windowWidth, windowHeight := getConsoleSize()
+			rowPixel := windowHeight / rows
+			colPixel := windowWidth / cols
+			colrowPixel = rowPixel + colPixel
 		})
 
 		progressBar := progresStr(progress, full, width/2, "█", "━")
+		if p.getColRowPixel() != colrowPixel {
+			p.updatePhoto()
+			p.setColRowPixel(colrowPixel)
+		}
 		// our progress bar
 		var lyricText string
 		if p.subtitle != nil {
@@ -321,41 +332,40 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		}
 
 		// Do something with picture frame.
-		img1, err := imaging.Decode(bytes.NewReader(pic.Picture))
+		imgTmp, err := imaging.Decode(bytes.NewReader(pic.Picture))
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
-		dstImage128 := imaging.Fit(img1, 128, 128, imaging.Lanczos)
 
-		go gomu.app.QueueUpdateDraw(func() {
-			x, y, _, _ := p.GetInnerRect()
-			width, height, windowWidth, windowHeight := getConsoleSize()
-
-			p.albumPhoto, err = ugo.NewImage(dstImage128, (x+3)*windowWidth/width, (y+2)*windowHeight/height)
-			if err != nil {
-				errorPopup(err)
-			}
-			p.albumPhoto.Show()
-		})
+		p.albumPhotoSource = imgTmp
+		p.setColRowPixel(0)
 	}
 
 	return nil
 }
 
 func (p *PlayingBar) getProgress() int {
-	return int(atomic.LoadInt64(&p.progress))
+	return int(atomic.LoadInt32(&p.progress))
 }
 
 func (p *PlayingBar) setProgress(progress int) {
-	atomic.StoreInt64(&p.progress, int64(progress))
+	atomic.StoreInt32(&p.progress, int32(progress))
 }
 
 func (p *PlayingBar) getFull() int {
-	return int(atomic.LoadInt64(&p.full))
+	return int(atomic.LoadInt32(&p.full))
 }
 
 func (p *PlayingBar) setFull(full int) {
-	atomic.StoreInt64(&p.full, int64(full))
+	atomic.StoreInt32(&p.full, int32(full))
+}
+
+func (p *PlayingBar) getColRowPixel() int {
+	return int(atomic.LoadInt32(&p.colrowPixel))
+}
+
+func (p *PlayingBar) setColRowPixel(colrowPixel int) {
+	atomic.StoreInt32(&p.colrowPixel, int32(colrowPixel))
 }
 
 func getConsoleSize() (int, int, int, int) {
@@ -368,4 +378,41 @@ func getConsoleSize() (int, int, int, int) {
 	_, _, _ = syscall.Syscall(syscall.SYS_IOCTL,
 		uintptr(syscall.Stdout), uintptr(syscall.TIOCGWINSZ), uintptr(unsafe.Pointer(&sz)))
 	return int(sz.cols), int(sz.rows), int(sz.xpixels), int(sz.ypixels)
+}
+
+// updatePhoto finish two tasks: 1. resize photo based on room left for photo
+// 2. register photo in the correct position
+func (p *PlayingBar) updatePhoto() {
+	// Put the whole block in goroutine, in order not to block the whole apps
+	// also to avoid data race by adding QueueUpdateDraw
+	go gomu.app.QueueUpdateDraw(func() {
+		if p.albumPhotoSource == nil {
+			return
+		}
+
+		if p.albumPhoto != nil {
+			p.albumPhoto.Clear()
+			p.albumPhoto.Destroy()
+			p.albumPhoto = nil
+		}
+		x, y, width, height := gomu.queue.GetInnerRect()
+
+		cols, rows, windowWidth, windowHeight := getConsoleSize()
+
+		colPixel := windowWidth / cols
+		rowPixel := windowHeight / rows
+		imageWidth := width * colPixel / 3
+
+		// resize the photo according to space left for x and y axis
+		dstImage := imaging.Resize(p.albumPhotoSource, imageWidth, 0, imaging.Lanczos)
+		var err error
+		positionX := x*colPixel + width*colPixel - dstImage.Rect.Dx()
+		positionY := y*rowPixel + height*rowPixel - dstImage.Rect.Dy()
+		// register new image
+		p.albumPhoto, err = ugo.NewImage(dstImage, positionX, positionY)
+		if err != nil {
+			errorPopup(err)
+		}
+		p.albumPhoto.Show()
+	})
 }
