@@ -359,7 +359,7 @@ func tagPopup(node *AudioFile) (err error) {
 		})
 	})
 
-	leftGrid.SetRows(3, 1, 3, 3, 3, 3, 0, 3, 3, 1, 3, 3).
+	leftGrid.SetRows(3, 1, 2, 2, 2, 3, 0, 3, 3, 1, 3, 3).
 		SetColumns(30).
 		AddItem(getTagButton, 0, 0, 1, 3, 1, 10, true).
 		AddItem(artistInputField, 2, 0, 1, 3, 1, 10, true).
@@ -402,7 +402,7 @@ func tagPopup(node *AudioFile) (err error) {
 		gomu.playingBar.albumPhoto.Clear()
 	}
 
-	gomu.pages.AddPage(popupID, center(lyricFlex, 90, 36), true, true)
+	gomu.pages.AddPage(popupID, center(lyricFlex, 90, 30), true, true)
 	gomu.popups.push(lyricFlex)
 
 	lyricFlex.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
