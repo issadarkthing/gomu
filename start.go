@@ -75,7 +75,7 @@ func defineInternals() {
 		root := gomu.playlist.GetRoot()
 		root.Walk(func(node, _ *tview.TreeNode) bool {
 
-			if node.GetReference().(*AudioFile).Path() == filepath {
+			if node.GetReference().(*player.AudioFile).Path() == filepath {
 				gomu.playlist.setHighlight(node)
 				return false
 			}
@@ -85,7 +85,7 @@ func defineInternals() {
 	})
 
 	queue, _ := gomu.anko.NewModule("Queue")
-	queue.Define("get_focused", func() *AudioFile {
+	queue.Define("get_focused", func() *player.AudioFile {
 		index := gomu.queue.GetCurrentItem()
 		if index < 0 || index > len(gomu.queue.items)-1 {
 			return nil
@@ -373,7 +373,7 @@ func start(application *tview.Application, args Args) {
 			}
 		}
 
-		audioFile := audio.(*AudioFile)
+		audioFile := audio.(*player.AudioFile)
 
 		gomu.playingBar.newProgress(audioFile, int(duration.Seconds()))
 
@@ -404,7 +404,7 @@ func start(application *tview.Application, args Args) {
 		gomu.playingBar.subtitles = nil
 		gomu.playingBar.subtitle = nil
 		if gomu.queue.isLoop {
-			_, err = gomu.queue.enqueue(currAudio.(*AudioFile))
+			_, err = gomu.queue.enqueue(currAudio.(*player.AudioFile))
 			if err != nil {
 				logError(err)
 			}

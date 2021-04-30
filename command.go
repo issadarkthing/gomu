@@ -46,10 +46,10 @@ func (c Command) defineCommands() {
 
 	c.define("delete_playlist", func() {
 		audioFile := gomu.playlist.getCurrentFile()
-		if audioFile.isAudioFile {
+		if audioFile.IsAudioFile() {
 			return
 		}
-		err := confirmDeleteAllPopup(audioFile.node)
+		err := confirmDeleteAllPopup(audioFile.Node())
 		if err != nil {
 			errorPopup(err)
 		}
@@ -58,7 +58,7 @@ func (c Command) defineCommands() {
 	c.define("delete_file", func() {
 		audioFile := gomu.playlist.getCurrentFile()
 		// prevent from deleting a directory
-		if !audioFile.isAudioFile {
+		if !audioFile.IsAudioFile() {
 			return
 		}
 
@@ -81,8 +81,8 @@ func (c Command) defineCommands() {
 		}
 		// this ensures it downloads to
 		// the correct dir
-		if audioFile.isAudioFile {
-			downloadMusicPopup(audioFile.parent)
+		if audioFile.IsAudioFile() {
+			downloadMusicPopup(audioFile.ParentNode())
 		} else {
 			downloadMusicPopup(currNode)
 		}
@@ -91,7 +91,7 @@ func (c Command) defineCommands() {
 	c.define("add_queue", func() {
 		audioFile := gomu.playlist.getCurrentFile()
 		currNode := gomu.playlist.GetCurrentNode()
-		if audioFile.isAudioFile {
+		if audioFile.IsAudioFile() {
 			gomu.queue.pushFront(audioFile)
 			if len(gomu.queue.items) == 1 && !gomu.player.IsRunning() {
 				err := gomu.queue.playQueue()
@@ -111,8 +111,8 @@ func (c Command) defineCommands() {
 		// close the node's parent
 		// remove the color of the node
 
-		if audioFile.isAudioFile {
-			parent := audioFile.parent
+		if audioFile.IsAudioFile() {
+			parent := audioFile.ParentNode()
 			gomu.playlist.setHighlight(parent)
 			parent.SetExpanded(false)
 		}
@@ -165,7 +165,7 @@ func (c Command) defineCommands() {
 		files := make([]string, len(gomu.playlist.getAudioFiles()))
 
 		for i, file := range gomu.playlist.getAudioFiles() {
-			files[i] = file.name
+			files[i] = file.Name()
 		}
 
 		searchPopup("Search", files, func(text string) {
@@ -175,7 +175,7 @@ func (c Command) defineCommands() {
 				logError(err)
 			}
 
-			gomu.playlist.setHighlight(audio.node)
+			gomu.playlist.setHighlight(audio.Node())
 			gomu.playlist.refresh()
 		})
 	})
@@ -245,14 +245,14 @@ func (c Command) defineCommands() {
 
 		audios := make([]string, 0, len(queue.items))
 		for _, file := range queue.items {
-			audios = append(audios, file.name)
+			audios = append(audios, file.Name())
 		}
 
 		searchPopup("Songs", audios, func(selected string) {
 
 			index := 0
 			for i, v := range queue.items {
-				if v.name == selected {
+				if v.Name() == selected {
 					index = i
 				}
 			}
@@ -426,7 +426,7 @@ func (c Command) defineCommands() {
 
 		var wg sync.WaitGroup
 		wg.Add(1)
-		if audioFile.isAudioFile {
+		if audioFile.IsAudioFile() {
 			go func() {
 				err := lyricPopup(lang, audioFile, &wg)
 				if err != nil {
@@ -442,7 +442,7 @@ func (c Command) defineCommands() {
 
 		var wg sync.WaitGroup
 		wg.Add(1)
-		if audioFile.isAudioFile {
+		if audioFile.IsAudioFile() {
 			go func() {
 				err := lyricPopup(lang, audioFile, &wg)
 				if err != nil {

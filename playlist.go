@@ -26,54 +26,6 @@ import (
 	"github.com/issadarkthing/gomu/player"
 )
 
-var _ player.Audio = (*AudioFile)(nil)
-
-// AudioFile represents directories and mp3 files
-// isAudioFile equals to false if it is a directory
-type AudioFile struct {
-	name        string
-	path        string
-	isAudioFile bool
-	length      time.Duration
-	node        *tview.TreeNode
-	parent      *tview.TreeNode
-}
-
-// Name return the name of AudioFile
-func (a *AudioFile) Name() string {
-	return a.name
-}
-
-// Path return the path of AudioFile
-func (a *AudioFile) Path() string {
-	return a.path
-}
-
-// IsAudioFile check if the file is song or directory
-func (a *AudioFile) IsAudioFile() bool {
-	return a.isAudioFile
-}
-
-// Len return the length of AudioFile
-func (a *AudioFile) Len() time.Duration {
-	return a.length
-}
-
-// GetParent return the parent directory of AudioFile
-func (a *AudioFile) GetParent() *AudioFile {
-	if a.parent == nil {
-		return nil
-	}
-	return a.parent.GetReference().(*AudioFile)
-}
-
-func (a *AudioFile) String() string {
-	if a == nil {
-		return "nil"
-	}
-	return fmt.Sprintf("%#v", a)
-}
-
 // Playlist struct represents playlist panel
 // that shows the tree of the music directory
 type Playlist struct {
@@ -83,7 +35,7 @@ type Playlist struct {
 	// number of downloads
 	download int
 	done     chan struct{}
-	yankFile *AudioFile
+	yankFile *player.AudioFile
 }
 
 func (p *Playlist) help() []string {
@@ -152,11 +104,10 @@ func newPlaylist(args Args) *Playlist {
 		done:         make(chan struct{}),
 	}
 
-	rootAudioFile := &AudioFile{
-		name: path.Base(rootDir),
-		node: root,
-		path: rootDir,
-	}
+	rootAudioFile := player.NewAudioFile()
+	rootAudioFile.SetName(path.Base(rootDir))
+	rootAudioFile.SetNode(root)
+	rootAudioFile.SetPath(rootDir)
 
 	root.SetReference(rootAudioFile)
 	root.SetColor(gomu.colors.playlistDir)
@@ -235,16 +186,16 @@ func newPlaylist(args Args) *Playlist {
 }
 
 // Returns the current file highlighted in the playlist
-func (p Playlist) getCurrentFile() *AudioFile {
+func (p Playlist) getCurrentFile() *player.AudioFile {
 	node := p.GetCurrentNode()
 	if node == nil {
 		return nil
 	}
-	return node.GetReference().(*AudioFile)
+	return node.GetReference().(*player.AudioFile)
 }
 
 // Deletes song from filesystem
-func (p *Playlist) deleteSong(audioFile *AudioFile) {
+func (p *Playlist) deleteSong(audioFile *player.AudioFile) {
 
 	confirmationPopup(
 		"Are you sure to delete this audio file?", func(_ int, buttonName string) {
@@ -256,14 +207,14 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) {
 			// hehe we need to move focus to next node before delete it
 			p.InputHandler()(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone), nil)
 
-			err := os.Remove(audioFile.path)
+			err := os.Remove(audioFile.Path())
 			if err != nil {
 				errorPopup(err)
 				return
 			}
 
 			defaultTimedPopup(" Success ",
-				audioFile.name+"\nhas been deleted successfully")
+				audioFile.Name()+"\nhas been deleted successfully")
 			go gomu.app.QueueUpdateDraw(func() {
 				p.refresh()
 				// Here we remove the song from queue
@@ -276,20 +227,20 @@ func (p *Playlist) deleteSong(audioFile *AudioFile) {
 }
 
 // Deletes playlist/dir from filesystem
-func (p *Playlist) deletePlaylist(audioFile *AudioFile) (err error) {
+func (p *Playlist) deletePlaylist(audioFile *player.AudioFile) (err error) {
 
 	// here we close the node and then move to next folder before delete
 	p.InputHandler()(tcell.NewEventKey(tcell.KeyRune, 'h', tcell.ModNone), nil)
 	p.InputHandler()(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone), nil)
 
-	err = os.RemoveAll(audioFile.path)
+	err = os.RemoveAll(audioFile.Path())
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
 
 	defaultTimedPopup(
 		" Success ",
-		audioFile.name+"\nhas been deleted successfully")
+		audioFile.Name()+"\nhas been deleted successfully")
 	go gomu.app.QueueUpdateDraw(func() {
 		p.refresh()
 		// Here we remove the song from queue
@@ -308,13 +259,13 @@ func (p *Playlist) addAllToQueue(root *tview.TreeNode) {
 	childrens = root.GetChildren()
 
 	// gets the parent if the highlighted item is a file
-	if root.GetReference().(*AudioFile).isAudioFile {
-		childrens = root.GetReference().(*AudioFile).parent.GetChildren()
+	if root.GetReference().(*player.AudioFile).IsAudioFile() {
+		childrens = root.GetReference().(*player.AudioFile).ParentNode().GetChildren()
 	}
 
 	for _, v := range childrens {
-		currNode := v.GetReference().(*AudioFile)
-		if currNode.isAudioFile {
+		currNode := v.GetReference().(*player.AudioFile)
+		if currNode.IsAudioFile() {
 
 			currSong := gomu.player.GetCurrentSong()
 			if currSong == nil || (currNode.Name() != currSong.Name()) {
@@ -331,17 +282,17 @@ func (p *Playlist) refresh() {
 
 	root := gomu.playlist.GetRoot()
 	prevNode := gomu.playlist.GetCurrentNode()
-	prevFilepath := prevNode.GetReference().(*AudioFile).Path()
+	prevFilepath := prevNode.GetReference().(*player.AudioFile).Path()
 
 	root.ClearChildren()
-	node := root.GetReference().(*AudioFile)
+	node := root.GetReference().(*player.AudioFile)
 
-	populate(root, node.path, gomu.anko.GetBool("General.sort_by_mtime"))
+	populate(root, node.Path(), gomu.anko.GetBool("General.sort_by_mtime"))
 
 	root.Walk(func(node, _ *tview.TreeNode) bool {
 
 		// to preserve previously highlighted node
-		if node.GetReference().(*AudioFile).Path() == prevFilepath {
+		if node.GetReference().(*player.AudioFile).Path() == prevFilepath {
 			p.setHighlight(node)
 			return false
 		}
@@ -371,14 +322,13 @@ func (p *Playlist) addSongToPlaylist(
 		return tracerr.Wrap(err)
 	}
 
-	audioFile := &AudioFile{
-		name:        songName,
-		path:        audioPath,
-		isAudioFile: true,
-		length:      audioLength,
-		node:        node,
-		parent:      selPlaylist,
-	}
+	var audioFile *player.AudioFile
+	audioFile.SetName(songName)
+	audioFile.SetPath(audioPath)
+	audioFile.SetIsAudioFile(true)
+	audioFile.SetLen(audioLength)
+	audioFile.SetNode(node)
+	audioFile.SetParentNode(selPlaylist)
 
 	displayText := setDisplayText(audioFile)
 
@@ -390,15 +340,15 @@ func (p *Playlist) addSongToPlaylist(
 }
 
 // Gets all audio files walks from music root directory
-func (p *Playlist) getAudioFiles() []*AudioFile {
+func (p *Playlist) getAudioFiles() []*player.AudioFile {
 
 	root := p.GetRoot()
 
-	audioFiles := []*AudioFile{}
+	audioFiles := []*player.AudioFile{}
 
 	root.Walk(func(node, _ *tview.TreeNode) bool {
 
-		audioFile := node.GetReference().(*AudioFile)
+		audioFile := node.GetReference().(*player.AudioFile)
 		audioFiles = append(audioFiles, audioFile)
 
 		return true
@@ -412,7 +362,7 @@ func (p *Playlist) createPlaylist(name string) error {
 
 	selectedNode := p.GetCurrentNode()
 
-	parentNode := selectedNode.GetReference().(*AudioFile).parent
+	parentNode := selectedNode.GetReference().(*player.AudioFile).ParentNode()
 
 	// if the current node is the root
 	// sets the parent to itself
@@ -420,9 +370,9 @@ func (p *Playlist) createPlaylist(name string) error {
 		parentNode = selectedNode
 	}
 
-	audioFile := parentNode.GetReference().(*AudioFile)
+	audioFile := parentNode.GetReference().(*player.AudioFile)
 
-	err := os.Mkdir(path.Join(audioFile.path, name), 0744)
+	err := os.Mkdir(path.Join(audioFile.Path(), name), 0744)
 
 	if err != nil {
 		return tracerr.Wrap(err)
@@ -439,7 +389,7 @@ func (p *Playlist) createPlaylist(name string) error {
 func (p *Playlist) setHighlight(currNode *tview.TreeNode) {
 
 	if p.prevNode != nil {
-		if p.prevNode.GetReference().(*AudioFile).isAudioFile {
+		if p.prevNode.GetReference().(*player.AudioFile).IsAudioFile() {
 			p.prevNode.SetColor(gomu.colors.foreground)
 		} else {
 			p.prevNode.SetColor(gomu.colors.playlistDir)
@@ -454,17 +404,17 @@ func (p *Playlist) setHighlight(currNode *tview.TreeNode) {
 
 // Traverses the playlist and finds the AudioFile struct
 // audioName must be hashed with sha1 first
-func (p *Playlist) findAudioFile(audioName string) (*AudioFile, error) {
+func (p *Playlist) findAudioFile(audioName string) (*player.AudioFile, error) {
 
 	root := p.GetRoot()
 
-	var selNode *AudioFile
+	var selNode *player.AudioFile
 
 	root.Walk(func(node, _ *tview.TreeNode) bool {
 
-		audioFile := node.GetReference().(*AudioFile)
+		audioFile := node.GetReference().(*player.AudioFile)
 
-		hashed := sha1Hex(getName(audioFile.name))
+		hashed := sha1Hex(getName(audioFile.Name()))
 
 		if hashed == audioName {
 			selNode = audioFile
@@ -484,16 +434,16 @@ func (p *Playlist) findAudioFile(audioName string) (*AudioFile, error) {
 func (p *Playlist) rename(newName string) error {
 
 	currentNode := p.GetCurrentNode()
-	audio := currentNode.GetReference().(*AudioFile)
+	audio := currentNode.GetReference().(*player.AudioFile)
 
-	pathToFile, _ := filepath.Split(audio.path)
+	pathToFile, _ := filepath.Split(audio.Path())
 	var newPath string
-	if audio.isAudioFile {
+	if audio.IsAudioFile() {
 		newPath = pathToFile + newName + ".mp3"
 	} else {
 		newPath = pathToFile + newName
 	}
-	err := os.Rename(audio.path, newPath)
+	err := os.Rename(audio.Path(), newPath)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -553,8 +503,8 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		return tracerr.Wrap(err)
 	}
 
-	selAudioFile := selPlaylist.GetReference().(*AudioFile)
-	dir := selAudioFile.path
+	selAudioFile := selPlaylist.GetReference().(*player.AudioFile)
+	dir := selAudioFile.Path()
 
 	defaultTimedPopup(" Ytdl ", "Downloading")
 
@@ -722,20 +672,19 @@ func populate(root *tview.TreeNode, rootPath string, sortMtime bool) error {
 				continue
 			}
 
-			audioFile := &AudioFile{
-				name:        songName,
-				path:        path,
-				isAudioFile: true,
-				node:        child,
-				parent:      root,
-			}
+			audioFile := player.NewAudioFile()
+			audioFile.SetName(songName)
+			audioFile.SetPath(path)
+			audioFile.SetIsAudioFile(true)
+			audioFile.SetNode(child)
+			audioFile.SetParentNode(root)
 
-			audioLength, err := getTagLength(audioFile.path)
+			audioLength, err := getTagLength(audioFile.Path())
 			if err != nil {
 				logError(err)
 			}
 
-			audioFile.length = audioLength
+			audioFile.SetLen(audioLength)
 
 			displayText := setDisplayText(audioFile)
 
@@ -747,13 +696,12 @@ func populate(root *tview.TreeNode, rootPath string, sortMtime bool) error {
 
 		if file.IsDir() || file.Mode()&os.ModeSymlink != 0 {
 
-			audioFile := &AudioFile{
-				name:        songName,
-				path:        path,
-				isAudioFile: false,
-				node:        child,
-				parent:      root,
-			}
+			audioFile := player.NewAudioFile()
+			audioFile.SetName(songName)
+			audioFile.SetPath(path)
+			audioFile.SetIsAudioFile(false)
+			audioFile.SetNode(child)
+			audioFile.SetParentNode(root)
 
 			displayText := setDisplayText(audioFile)
 
@@ -775,10 +723,10 @@ func (p *Playlist) yank() error {
 	if p.yankFile == nil {
 		return errors.New("no file has been yanked")
 	}
-	if p.yankFile.node == p.GetRoot() {
+	if p.yankFile.Node() == p.GetRoot() {
 		return errors.New("please don't yank the root directory")
 	}
-	defaultTimedPopup(" Success ", p.yankFile.name+"\n has been yanked successfully.")
+	defaultTimedPopup(" Success ", p.yankFile.Name()+"\n has been yanked successfully.")
 
 	return nil
 }
@@ -789,13 +737,13 @@ func (p *Playlist) paste() error {
 	}
 
 	oldAudio := p.yankFile
-	oldPathDir, oldPathFileName := filepath.Split(p.yankFile.path)
+	oldPathDir, oldPathFileName := filepath.Split(p.yankFile.Path())
 	pasteFile := p.getCurrentFile()
 	var newPathDir string
-	if pasteFile.isAudioFile {
-		newPathDir, _ = filepath.Split(pasteFile.path)
+	if pasteFile.IsAudioFile() {
+		newPathDir, _ = filepath.Split(pasteFile.Path())
 	} else {
-		newPathDir = pasteFile.path
+		newPathDir = pasteFile.Path()
 	}
 
 	if oldPathDir == newPathDir {
@@ -803,20 +751,20 @@ func (p *Playlist) paste() error {
 	}
 
 	newPathFull := filepath.Join(newPathDir, oldPathFileName)
-	err := os.Rename(p.yankFile.path, newPathFull)
+	err := os.Rename(p.yankFile.Path(), newPathFull)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
 
-	defaultTimedPopup(" Success ", p.yankFile.name+"\n has been pasted to\n"+newPathDir)
+	defaultTimedPopup(" Success ", p.yankFile.Name()+"\n has been pasted to\n"+newPathDir)
 
 	// keep queue references updated
 	newAudio := oldAudio
-	newAudio.path = newPathFull
+	newAudio.SetPath(newPathFull)
 
 	p.refresh()
 	gomu.queue.updateQueuePath()
-	if p.yankFile.isAudioFile {
+	if p.yankFile.IsAudioFile() {
 		err = gomu.queue.updateCurrentSongName(oldAudio, newAudio)
 		if err != nil {
 			return tracerr.Wrap(err)
@@ -833,23 +781,23 @@ func (p *Playlist) paste() error {
 	return nil
 }
 
-func setDisplayText(audioFile *AudioFile) string {
+func setDisplayText(audioFile *player.AudioFile) string {
 	useEmoji := gomu.anko.GetBool("General.use_emoji")
 	if !useEmoji {
-		return audioFile.name
+		return audioFile.Name()
 	}
 
-	if audioFile.isAudioFile {
+	if audioFile.IsAudioFile() {
 		emojiFile := gomu.anko.GetString("Emoji.file")
-		return fmt.Sprintf(" %s %s", emojiFile, audioFile.name)
+		return fmt.Sprintf(" %s %s", emojiFile, audioFile.Name())
 	}
 
 	emojiDir := gomu.anko.GetString("Emoji.playlist")
-	return fmt.Sprintf(" %s %s", emojiDir, audioFile.name)
+	return fmt.Sprintf(" %s %s", emojiDir, audioFile.Name())
 }
 
 // refreshByNode is called after rename of file or folder, to refresh queue info
-func (p *Playlist) refreshAfterRename(node *AudioFile, newName string) error {
+func (p *Playlist) refreshAfterRename(node *player.AudioFile, newName string) error {
 
 	root := p.GetRoot()
 	root.Walk(func(node, _ *tview.TreeNode) bool {
@@ -860,7 +808,7 @@ func (p *Playlist) refreshAfterRename(node *AudioFile, newName string) error {
 	})
 	// update queue
 	newNode := p.getCurrentFile()
-	if node.isAudioFile {
+	if node.IsAudioFile() {
 		err := gomu.queue.renameItem(node, newNode)
 		if err != nil {
 			return tracerr.Wrap(err)

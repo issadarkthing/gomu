@@ -5,7 +5,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
 	"sync"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/ztrue/tracerr"
 
 	"github.com/issadarkthing/gomu/lyric"
+	"github.com/issadarkthing/gomu/player"
 )
 
 // lyricFlex extend the flex control to modify the Focus item
@@ -26,10 +26,10 @@ type lyricFlex struct {
 }
 
 // tagPopup is used to edit tag, delete and fetch lyrics
-func tagPopup(node *AudioFile) (err error) {
+func tagPopup(node *player.AudioFile) (err error) {
 
 	popupID := "tag-editor-input-popup"
-	tag, popupLyricMap, options, err := node.loadTagMap()
+	tag, popupLyricMap, options, err := node.LoadTagMap()
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -66,7 +66,7 @@ func tagPopup(node *AudioFile) (err error) {
 
 	leftBox := tview.NewBox().
 		SetBorder(true).
-		SetTitle(node.name).
+		SetTitle(node.Name()).
 		SetBackgroundColor(gomu.colors.popup).
 		SetBorderColor(gomu.colors.accent).
 		SetTitleColor(gomu.colors.accent).
@@ -77,7 +77,7 @@ func tagPopup(node *AudioFile) (err error) {
 		audioFile := node
 		go func() {
 			var lyricFetcher lyric.LyricFetcherCn
-			results, err := lyricFetcher.LyricOptions(audioFile.name)
+			results, err := lyricFetcher.LyricOptions(audioFile.Name())
 			if err != nil {
 				errorPopup(err)
 				return
@@ -105,7 +105,7 @@ func tagPopup(node *AudioFile) (err error) {
 					titleInputField.SetText(newTag.Title)
 					albumInputField.SetText(newTag.Album)
 
-					tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+					tag, err = id3v2.Open(node.Path(), id3v2.Options{Parse: true})
 					if err != nil {
 						errorPopup(err)
 						return
@@ -150,7 +150,10 @@ func tagPopup(node *AudioFile) (err error) {
 		SetTitleColor(gomu.colors.accent)
 
 	saveTagButton.SetSelectedFunc(func() {
-		tag, err = id3v2.Open(node.path, id3v2.Options{Parse: true})
+		tag, err = id3v2.Open(node.Path(), id3v2.Options{
+			Parse:       true,
+			ParseFrames: []string{},
+		})
 		if err != nil {
 			errorPopup(err)
 			return
@@ -213,7 +216,7 @@ func tagPopup(node *AudioFile) (err error) {
 			LangExt: langExt,
 		}
 		if len(options) > 0 {
-			err := embedLyric(node.path, lyric, true)
+			err := embedLyric(node.Path(), lyric, true)
 			if err != nil {
 				errorPopup(err)
 				return
@@ -278,7 +281,7 @@ func tagPopup(node *AudioFile) (err error) {
 		audioFile := gomu.playlist.getCurrentFile()
 		_, lang := getLyricDropDown.GetCurrentOption()
 
-		if !audioFile.isAudioFile {
+		if !audioFile.IsAudioFile() {
 			errorPopup(errors.New("not an audio file"))
 			return
 		}
@@ -298,7 +301,7 @@ func tagPopup(node *AudioFile) (err error) {
 		go func() {
 			// This is to ensure that the above go routine finish.
 			wg.Wait()
-			_, popupLyricMap, newOptions, err := audioFile.loadTagMap()
+			_, popupLyricMap, newOptions, err := audioFile.LoadTagMap()
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
@@ -480,36 +483,4 @@ func (f *lyricFlex) Focus(delegate func(p tview.Primitive)) {
 	} else {
 		f.Flex.Focus(delegate)
 	}
-}
-
-// loadTagMap will load from tag and return a map of langExt to lyrics
-func (a *AudioFile) loadTagMap() (tag *id3v2.Tag, popupLyricMap map[string]string, options []string, err error) {
-
-	popupLyricMap = make(map[string]string)
-
-	if a.isAudioFile {
-		tag, err = id3v2.Open(a.path, id3v2.Options{Parse: true})
-		if err != nil {
-			return nil, nil, nil, tracerr.Wrap(err)
-		}
-		defer tag.Close()
-	} else {
-		return nil, nil, nil, fmt.Errorf("not an audio file")
-	}
-	usltFrames := tag.GetFrames(tag.CommonID("Unsynchronised lyrics/text transcription"))
-
-	for _, f := range usltFrames {
-		uslf, ok := f.(id3v2.UnsynchronisedLyricsFrame)
-		if !ok {
-			die(errors.New("USLT error"))
-		}
-		res := uslf.Lyrics
-		popupLyricMap[uslf.ContentDescriptor] = res
-	}
-	for option := range popupLyricMap {
-		options = append(options, option)
-	}
-	sort.Strings(options)
-
-	return tag, popupLyricMap, options, err
 }

@@ -21,6 +21,7 @@ import (
 	ugo "gitlab.com/diamondburned/ueberzug-go"
 
 	"github.com/issadarkthing/gomu/lyric"
+	"github.com/issadarkthing/gomu/player"
 )
 
 // PlayingBar shows song name, progress and lyric
@@ -145,7 +146,7 @@ func (p *PlayingBar) setSongTitle(title string) {
 }
 
 // Resets progress bar, ready for execution
-func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
+func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) {
 	p.setFull(full)
 	p.setProgress(0)
 	p.hasTag = false
@@ -158,7 +159,7 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 		p.albumPhoto = nil
 	}
 
-	err := p.loadLyrics(currentSong.path)
+	err := p.loadLyrics(currentSong.Path())
 	if err != nil {
 		errorPopup(err)
 		return
@@ -191,7 +192,7 @@ func (p *PlayingBar) newProgress(currentSong *AudioFile, full int) {
 			p.subtitle = p.subtitles[0]
 		}
 	}
-	p.setSongTitle(currentSong.name)
+	p.setSongTitle(currentSong.Name())
 
 }
 

@@ -17,13 +17,15 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
+
+	"github.com/issadarkthing/gomu/player"
 )
 
 // Queue shows queued songs for playing
 type Queue struct {
 	*tview.List
 	savedQueuePath string
-	items          []*AudioFile
+	items          []*player.AudioFile
 	isLoop         bool
 }
 
@@ -45,19 +47,19 @@ func (q *Queue) prev() {
 
 // Usually used with GetCurrentItem which can return -1 if
 // no item highlighted
-func (q *Queue) deleteItem(index int) (*AudioFile, error) {
+func (q *Queue) deleteItem(index int) (*player.AudioFile, error) {
 
 	if index > len(q.items)-1 {
 		return nil, tracerr.New("Index out of range")
 	}
 
 	// deleted audio file
-	var dAudio *AudioFile
+	var dAudio *player.AudioFile
 
 	if index != -1 {
 		q.RemoveItem(index)
 
-		var nItems []*AudioFile
+		var nItems []*player.AudioFile
 
 		for i, v := range q.items {
 
@@ -87,7 +89,7 @@ func (q *Queue) updateTitle() string {
 	var totalLength time.Duration
 
 	for _, v := range q.items {
-		totalLength += v.length
+		totalLength += v.Len()
 	}
 
 	fmtTime := fmtDurationH(totalLength)
@@ -127,23 +129,23 @@ func (q *Queue) updateTitle() string {
 }
 
 // Add item to the front of the queue
-func (q *Queue) pushFront(audioFile *AudioFile) {
+func (q *Queue) pushFront(audioFile *player.AudioFile) {
 
-	q.items = append([]*AudioFile{audioFile}, q.items...)
+	q.items = append([]*player.AudioFile{audioFile}, q.items...)
 
-	songLength := audioFile.length
+	songLength := audioFile.Len()
 
 	queueItemView := fmt.Sprintf(
-		"[ %s ] %s", fmtDuration(songLength), getName(audioFile.name),
+		"[ %s ] %s", fmtDuration(songLength), getName(audioFile.Name()),
 	)
 
-	q.InsertItem(0, queueItemView, audioFile.path, 0, nil)
+	q.InsertItem(0, queueItemView, audioFile.Path(), 0, nil)
 	q.updateTitle()
 }
 
 // gets the first item and remove it from the queue
 // app.Draw() must be called after calling this function
-func (q *Queue) dequeue() (*AudioFile, error) {
+func (q *Queue) dequeue() (*player.AudioFile, error) {
 
 	if q.GetItemCount() == 0 {
 		return nil, tracerr.New("Empty list")
@@ -157,23 +159,23 @@ func (q *Queue) dequeue() (*AudioFile, error) {
 }
 
 // Add item to the list and returns the length of the queue
-func (q *Queue) enqueue(audioFile *AudioFile) (int, error) {
+func (q *Queue) enqueue(audioFile *player.AudioFile) (int, error) {
 
-	if !audioFile.isAudioFile {
+	if !audioFile.IsAudioFile() {
 		return q.GetItemCount(), nil
 	}
 
 	q.items = append(q.items, audioFile)
-	songLength, err := getTagLength(audioFile.path)
+	songLength, err := getTagLength(audioFile.Path())
 
 	if err != nil {
 		return 0, tracerr.Wrap(err)
 	}
 
 	queueItemView := fmt.Sprintf(
-		"[ %s ] %s", fmtDuration(songLength), getName(audioFile.name),
+		"[ %s ] %s", fmtDuration(songLength), getName(audioFile.Name()),
 	)
-	q.AddItem(queueItemView, audioFile.path, 0, nil)
+	q.AddItem(queueItemView, audioFile.Path(), 0, nil)
 	q.updateTitle()
 
 	return q.GetItemCount(), nil
@@ -236,7 +238,7 @@ func (q *Queue) saveQueue() error {
 // Clears current queue
 func (q *Queue) clearQueue() {
 
-	q.items = []*AudioFile{}
+	q.items = []*player.AudioFile{}
 	q.Clear()
 	q.updateTitle()
 
@@ -335,13 +337,13 @@ func (q *Queue) shuffle() {
 	q.Clear()
 
 	for _, v := range q.items {
-		audioLen, err := getTagLength(v.path)
+		audioLen, err := getTagLength(v.Path())
 		if err != nil {
 			logError(err)
 		}
 
-		queueText := fmt.Sprintf("[ %s ] %s", fmtDuration(audioLen), v.name)
-		q.AddItem(queueText, v.path, 0, nil)
+		queueText := fmt.Sprintf("[ %s ] %s", fmtDuration(audioLen), v.Name())
+		q.AddItem(queueText, v.Path(), 0, nil)
 	}
 
 	// q.updateTitle()
@@ -416,9 +418,9 @@ func sha1Hex(input string) string {
 }
 
 // Modify the title of songs in queue
-func (q *Queue) renameItem(oldAudio *AudioFile, newAudio *AudioFile) error {
+func (q *Queue) renameItem(oldAudio *player.AudioFile, newAudio *player.AudioFile) error {
 	for i, v := range q.items {
-		if v.name != oldAudio.name {
+		if v.Name() != oldAudio.Name() {
 			continue
 		}
 		err := q.insertItem(i, newAudio)
@@ -449,24 +451,24 @@ func (q *Queue) playQueue() error {
 	return nil
 }
 
-func (q *Queue) insertItem(index int, audioFile *AudioFile) error {
+func (q *Queue) insertItem(index int, audioFile *player.AudioFile) error {
 
 	if index > len(q.items)-1 {
 		return tracerr.New("Index out of range")
 	}
 
 	if index != -1 {
-		songLength, err := getTagLength(audioFile.path)
+		songLength, err := getTagLength(audioFile.Path())
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
 		queueItemView := fmt.Sprintf(
-			"[ %s ] %s", fmtDuration(songLength), getName(audioFile.name),
+			"[ %s ] %s", fmtDuration(songLength), getName(audioFile.Name()),
 		)
 
-		q.InsertItem(index, queueItemView, audioFile.path, 0, nil)
+		q.InsertItem(index, queueItemView, audioFile.Path(), 0, nil)
 
-		var nItems []*AudioFile
+		var nItems []*player.AudioFile
 
 		for i, v := range q.items {
 
@@ -493,7 +495,7 @@ func (q *Queue) updateQueuePath() {
 		return
 	}
 	for _, v := range q.items {
-		song := sha1Hex(getName(v.name))
+		song := sha1Hex(getName(v.Name()))
 		songs = append(songs, song)
 	}
 
@@ -512,7 +514,7 @@ func (q *Queue) updateQueuePath() {
 }
 
 // update current playing song name to reflect the changes during rename and paste
-func (q *Queue) updateCurrentSongName(oldAudio *AudioFile, newAudio *AudioFile) error {
+func (q *Queue) updateCurrentSongName(oldAudio *player.AudioFile, newAudio *player.AudioFile) error {
 
 	if !gomu.player.IsRunning() && !gomu.player.IsPaused() {
 		return nil
@@ -522,7 +524,7 @@ func (q *Queue) updateCurrentSongName(oldAudio *AudioFile, newAudio *AudioFile) 
 	position := gomu.playingBar.getProgress()
 	paused := gomu.player.IsPaused()
 
-	if oldAudio.name != currentSong.Name() {
+	if oldAudio.Name() != currentSong.Name() {
 		return nil
 	}
 
@@ -542,7 +544,7 @@ func (q *Queue) updateCurrentSongName(oldAudio *AudioFile, newAudio *AudioFile) 
 }
 
 // update current playing song path to reflect the changes during rename and paste
-func (q *Queue) updateCurrentSongPath(oldAudio *AudioFile, newAudio *AudioFile) error {
+func (q *Queue) updateCurrentSongPath(oldAudio *player.AudioFile, newAudio *player.AudioFile) error {
 
 	if !gomu.player.IsRunning() && !gomu.player.IsPaused() {
 		return nil
@@ -553,7 +555,7 @@ func (q *Queue) updateCurrentSongPath(oldAudio *AudioFile, newAudio *AudioFile) 
 	paused := gomu.player.IsPaused()
 
 	// Here we check the situation when currentsong is under oldAudio folder
-	if !strings.Contains(currentSong.Path(), oldAudio.path) {
+	if !strings.Contains(currentSong.Path(), oldAudio.Path()) {
 		return nil
 	}
 
@@ -578,7 +580,7 @@ func (q *Queue) updateCurrentSongPath(oldAudio *AudioFile, newAudio *AudioFile) 
 }
 
 // update current playing song simply delete it
-func (q *Queue) updateCurrentSongDelete(oldAudio *AudioFile) {
+func (q *Queue) updateCurrentSongDelete(oldAudio *player.AudioFile) {
 	if !gomu.player.IsRunning() && !gomu.player.IsPaused() {
 		return
 	}
@@ -587,12 +589,12 @@ func (q *Queue) updateCurrentSongDelete(oldAudio *AudioFile) {
 	paused := gomu.player.IsPaused()
 
 	var delete bool
-	if oldAudio.isAudioFile {
-		if oldAudio.name == currentSong.Name() {
+	if oldAudio.IsAudioFile() {
+		if oldAudio.Name() == currentSong.Name() {
 			delete = true
 		}
 	} else {
-		if strings.Contains(currentSong.Path(), oldAudio.path) {
+		if strings.Contains(currentSong.Path(), oldAudio.Path()) {
 			delete = true
 		}
 	}
