@@ -34,10 +34,9 @@ func prepareTest() *Gomu {
 	}
 
 	root := tview.NewTreeNode("music")
-	rootAudioFile := &AudioFile{
-		name: root.GetText(),
-		path: rootDir,
-	}
+	rootAudioFile := new(player.AudioFile)
+	rootAudioFile.SetName(root.GetText())
+	rootAudioFile.SetPath(rootDir)
 
 	root.SetReference(rootAudioFile)
 	populate(root, rootDir, false)
@@ -86,10 +85,9 @@ func TestPopulate(t *testing.T) {
 
 	root := tview.NewTreeNode(path.Base(rootDir))
 
-	root.SetReference(&AudioFile{
-		name:        "Music",
-		isAudioFile: false,
-	})
+	rootAudioFile := new(player.AudioFile)
+	rootAudioFile.SetName("Music")
+	rootAudioFile.SetIsAudioFile(false)
 
 	populate(root, rootDir, false)
 	gotItems := 0
@@ -114,7 +112,7 @@ func TestAddAllToQueue(t *testing.T) {
 
 	gomu.playlist.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
 
-		if node.GetReference().(*AudioFile).name == "rap" {
+		if node.GetReference().(*player.AudioFile).Name() == "rap" {
 			gomu.playlist.addAllToQueue(node)
 		}
 
@@ -125,13 +123,13 @@ func TestAddAllToQueue(t *testing.T) {
 
 	for i, song := range songs {
 
-		audioFile := song.GetReference().(*AudioFile)
+		audioFile := song.GetReference().(*player.AudioFile)
 
 		// strips the path of the song in the queue
 		s := filepath.Base(queue[i])
 
-		if audioFile.name != s {
-			t.Errorf("Expected \"%s\", got \"%s\"", audioFile.name, s)
+		if audioFile.Name() != s {
+			t.Errorf("Expected \"%s\", got \"%s\"", audioFile.Name(), s)
 		}
 
 	}

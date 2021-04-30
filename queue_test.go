@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	"github.com/issadarkthing/gomu/player"
 	"github.com/rivo/tview"
 )
 
@@ -137,13 +138,13 @@ func TestEnqueue(t *testing.T) {
 
 	gomu = prepareTest()
 
-	var audioFiles []*AudioFile
+	var audioFiles []*player.AudioFile
 
-	gomu.playlist.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
+	gomu.playlist.GetRoot().Walk(func(node, _ *tview.TreeNode) bool {
 
-		audioFile := node.GetReference().(*AudioFile)
+		audioFile := node.GetReference().(*player.AudioFile)
 
-		if audioFile.isAudioFile {
+		if audioFile.IsAudioFile() {
 			audioFiles = append(audioFiles, audioFile)
 			return false
 		}
@@ -159,8 +160,8 @@ func TestEnqueue(t *testing.T) {
 
 	for i, audioFile := range audioFiles {
 
-		if queue[i] != audioFile.path {
-			t.Errorf("Invalid path; expected %s got %s", audioFile.path, queue[i])
+		if queue[i] != audioFile.Path() {
+			t.Errorf("Invalid path; expected %s got %s", audioFile.Path(), queue[i])
 		}
 	}
 
