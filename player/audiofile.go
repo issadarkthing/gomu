@@ -13,8 +13,6 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-var _ Audio = (*AudioFile)(nil)
-
 // AudioFile represents directories and mp3 files
 // isAudioFile equals to false if it is a directory
 type AudioFile struct {
