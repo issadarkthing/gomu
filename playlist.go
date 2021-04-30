@@ -322,7 +322,7 @@ func (p *Playlist) addSongToPlaylist(
 		return tracerr.Wrap(err)
 	}
 
-	var audioFile *player.AudioFile
+	audioFile := new(player.AudioFile)
 	audioFile.SetName(songName)
 	audioFile.SetPath(audioPath)
 	audioFile.SetIsAudioFile(true)
