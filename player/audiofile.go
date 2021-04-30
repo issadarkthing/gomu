@@ -26,11 +26,6 @@ type AudioFile struct {
 	parent      *tview.TreeNode
 }
 
-// NewAudioFile return a new instance of Audiofile
-func NewAudioFile() *AudioFile {
-	return &AudioFile{}
-}
-
 // Name return the name of AudioFile
 func (a *AudioFile) Name() string {
 	return a.name

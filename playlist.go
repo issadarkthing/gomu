@@ -104,7 +104,7 @@ func newPlaylist(args Args) *Playlist {
 		done:         make(chan struct{}),
 	}
 
-	rootAudioFile := player.NewAudioFile()
+	rootAudioFile := new(player.AudioFile)
 	rootAudioFile.SetName(path.Base(rootDir))
 	rootAudioFile.SetNode(root)
 	rootAudioFile.SetPath(rootDir)
@@ -672,7 +672,7 @@ func populate(root *tview.TreeNode, rootPath string, sortMtime bool) error {
 				continue
 			}
 
-			audioFile := player.NewAudioFile()
+			audioFile := new(player.AudioFile)
 			audioFile.SetName(songName)
 			audioFile.SetPath(path)
 			audioFile.SetIsAudioFile(true)
@@ -696,7 +696,7 @@ func populate(root *tview.TreeNode, rootPath string, sortMtime bool) error {
 
 		if file.IsDir() || file.Mode()&os.ModeSymlink != 0 {
 
-			audioFile := player.NewAudioFile()
+			audioFile := new(player.AudioFile)
 			audioFile.SetName(songName)
 			audioFile.SetPath(path)
 			audioFile.SetIsAudioFile(false)
