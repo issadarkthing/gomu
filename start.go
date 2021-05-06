@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/gdamore/tcell/v2"
@@ -402,7 +403,10 @@ func start(application *tview.Application, args Args) {
 	gomu.player.SetSongFinish(func(currAudio player.Audio) {
 
 		gomu.playingBar.subtitles = nil
+		var mu sync.Mutex
+		mu.Lock()
 		gomu.playingBar.subtitle = nil
+		mu.Unlock()
 		if gomu.queue.isLoop {
 			_, err = gomu.queue.enqueue(currAudio.(*player.AudioFile))
 			if err != nil {
