@@ -2,6 +2,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/issadarkthing/gomu/player"
 )
 
 const (
@@ -30,11 +32,10 @@ func Test_NewProgress(t *testing.T) {
 
 	p := newPlayingBar()
 	full := 100
-	audio := AudioFile{
-		path: "./test/rap/audio_test.mp3",
-	}
+	audio := new(player.AudioFile)
+	audio.SetPath("./test/rap/audio_test.mp3")
 
-	p.newProgress(&audio, full)
+	p.newProgress(audio, full)
 
 	if p.full != int32(full) {
 		t.Errorf("Expected %d; got %d", full, p.full)

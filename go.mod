@@ -6,7 +6,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.6.1 // indirect
 	github.com/antchfx/htmlquery v1.2.3 // indirect
 	github.com/antchfx/xmlquery v1.3.4 // indirect
-	github.com/bogem/id3v2 v1.2.0 // indirect
+	github.com/bogem/id3v2 v1.2.0 //indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/disintegration/imaging v1.6.2
 	github.com/faiface/beep v1.0.2
@@ -29,7 +29,6 @@ require (
 	github.com/tramhao/id3v2 v1.2.1
 	github.com/ztrue/tracerr v0.3.0
 	gitlab.com/diamondburned/ueberzug-go v0.0.0-20190521043425-7c15a5f63b06
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/exp v0.0.0-20201229011636-eab1b5eb1a03 // indirect
 	golang.org/x/image v0.0.0-20201208152932-35266b937fa6 // indirect
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777 // indirect

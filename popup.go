@@ -144,7 +144,7 @@ func confirmDeleteAllPopup(selPlaylist *tview.TreeNode) (err error) {
 			gomu.popups.pop()
 
 			if confirmationText == "DELETE" {
-				audioFile := selPlaylist.GetReference().(*AudioFile)
+				audioFile := selPlaylist.GetReference().(*player.AudioFile)
 				err = gomu.playlist.deletePlaylist(audioFile)
 				if err != nil {
 					errorPopup(err)
@@ -555,10 +555,10 @@ func newInputPopup(popupID, title, label string, text string) *tview.InputField 
 	return inputField
 }
 
-func renamePopup(node *AudioFile) {
+func renamePopup(node *player.AudioFile) {
 
 	popupID := "rename-input-popup"
-	input := newInputPopup(popupID, " Rename ", "New name: ", node.name)
+	input := newInputPopup(popupID, " Rename ", "New name: ", node.Name())
 	input.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
 
 		switch e.Key() {
@@ -831,10 +831,10 @@ func ytSearchPopup() {
 
 					var dir *tview.TreeNode
 
-					if audioFile.isAudioFile {
-						dir = audioFile.parent
+					if audioFile.IsAudioFile() {
+						dir = audioFile.ParentNode()
 					} else {
-						dir = audioFile.node
+						dir = audioFile.Node()
 					}
 
 					go func() {
@@ -860,14 +860,14 @@ func ytSearchPopup() {
 	})
 }
 
-func lyricPopup(lang string, audioFile *AudioFile, wg *sync.WaitGroup) error {
+func lyricPopup(lang string, audioFile *player.AudioFile, wg *sync.WaitGroup) error {
 
 	var titles []string
 
 	// below we chose LyricFetcher interfaces by language
 	lyricFetcher := lyricLang(lang)
 
-	results, err := lyricFetcher.LyricOptions(audioFile.name)
+	results, err := lyricFetcher.LyricOptions(audioFile.Name())
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -905,7 +905,7 @@ func lyricPopup(lang string, audioFile *AudioFile, wg *sync.WaitGroup) error {
 				return
 			}
 			lyric.LangExt = lang
-			err = embedLyric(audioFile.path, &lyric, false)
+			err = embedLyric(audioFile.Path(), &lyric, false)
 			if err != nil {
 				errorPopup(err)
 				gomu.app.Draw()
