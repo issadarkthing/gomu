@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
 	"syscall"
 
 	"github.com/gdamore/tcell/v2"
@@ -247,6 +246,10 @@ module General {
 	lang_lyric          = "en"
 	# When save tag, could rename the file by tag info: artist-songname-album
 	rename_bytag        = false
+	# Backend music playing server, default is beep, mpd is optional
+	backend_server	= "beep"
+	# mpd connect string
+	mpd_port	= "localhost:6600"
 }
 
 module Emoji {
@@ -367,7 +370,7 @@ func start(application *tview.Application, args Args) {
 
 		duration, err := getTagLength(audio.Path())
 		if err != nil || duration == 0 {
-			duration, err = player.GetLength(audio.Path())
+			duration, err = gomu.player.GetLength(audio.Path())
 			if err != nil {
 				logError(err)
 				return
@@ -403,10 +406,7 @@ func start(application *tview.Application, args Args) {
 	gomu.player.SetSongFinish(func(currAudio player.Audio) {
 
 		gomu.playingBar.subtitles = nil
-		var mu sync.Mutex
-		mu.Lock()
 		gomu.playingBar.subtitle = nil
-		mu.Unlock()
 		if gomu.queue.isLoop {
 			_, err = gomu.queue.enqueue(currAudio.(*player.AudioFile))
 			if err != nil {
@@ -415,13 +415,14 @@ func start(application *tview.Application, args Args) {
 		}
 
 		if len(gomu.queue.items) > 0 {
-			err := gomu.queue.playQueue()
-			if err != nil {
+			if err := gomu.queue.playQueue(); err != nil {
 				logError(err)
 			}
-		} else {
-			gomu.playingBar.setDefault()
+			return
 		}
+
+		// no song left so just stop
+		gomu.playingBar.setDefault()
 	})
 
 	flex := layout(gomu)

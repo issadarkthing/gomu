@@ -3,7 +3,6 @@ package main
 import (
 	"sync"
 
-	"github.com/issadarkthing/gomu/player"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
 )
@@ -280,7 +279,7 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("volume_up", func() {
-		v := player.VolToHuman(gomu.player.GetVolume())
+		v := gomu.player.VolToHuman(gomu.player.GetVolume())
 		if v < 100 {
 			vol := gomu.player.SetVolume(0.5)
 			volumePopup(vol)
@@ -288,7 +287,7 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("volume_down", func() {
-		v := player.VolToHuman(gomu.player.GetVolume())
+		v := gomu.player.VolToHuman(gomu.player.GetVolume())
 		if v > 0 {
 			vol := gomu.player.SetVolume(-0.5)
 			volumePopup(vol)

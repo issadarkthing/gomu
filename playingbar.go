@@ -9,6 +9,7 @@ import (
 	"image"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -39,6 +40,7 @@ type PlayingBar struct {
 	albumPhoto       *ugo.Image
 	albumPhotoSource image.Image
 	colrowPixel      int32
+	mu               sync.Mutex
 }
 
 func (p *PlayingBar) help() []string {
@@ -85,7 +87,6 @@ func (p *PlayingBar) run() error {
 			continue
 		}
 
-		// p.progress = int(gomu.player.GetPosition().Seconds())
 		p.setProgress(int(gomu.player.GetPosition().Seconds()))
 
 		start, err := time.ParseDuration(strconv.Itoa(progress) + "s")
@@ -112,6 +113,7 @@ func (p *PlayingBar) run() error {
 			p.updatePhoto()
 			p.setColRowPixel(colrowPixel)
 		}
+
 		// our progress bar
 		var lyricText string
 		if p.subtitle != nil {
@@ -139,6 +141,8 @@ func (p *PlayingBar) run() error {
 
 // Updates song title
 func (p *PlayingBar) setSongTitle(title string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	p.Clear()
 	titleColor := gomu.colors.title
 	p.AddText(title, true, tview.AlignCenter, titleColor)
@@ -172,7 +176,9 @@ func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) {
 		// First we check if the lyric language preferred is presented
 		for _, v := range p.subtitles {
 			if strings.Contains(langLyricFromConfig, v.LangExt) {
+				p.mu.Lock()
 				p.subtitle = v
+				p.mu.Unlock()
 				break
 			}
 		}

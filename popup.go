@@ -241,7 +241,7 @@ func defaultTimedPopup(title, description string) {
 // Shows popup for the current volume
 func volumePopup(volume float64) {
 
-	currVol := player.VolToHuman(volume)
+	currVol := gomu.player.VolToHuman(volume)
 	maxVol := 100
 	// max progress bar length
 	maxLength := 50

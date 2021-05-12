@@ -21,7 +21,6 @@ import (
 	"github.com/ztrue/tracerr"
 
 	"github.com/issadarkthing/gomu/lyric"
-	"github.com/issadarkthing/gomu/player"
 )
 
 // logError logs the error message.
@@ -320,7 +319,7 @@ func embedLength(songPath string) (time.Duration, error) {
 	defer tag.Close()
 
 	var lengthSongTimeDuration time.Duration
-	lengthSongTimeDuration, err = player.GetLength(songPath)
+	lengthSongTimeDuration, err = gomu.player.GetLength(songPath)
 	if err != nil {
 		return 0, tracerr.Wrap(err)
 	}

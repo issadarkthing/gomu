@@ -14,7 +14,7 @@ import (
 func prepareTest() *Gomu {
 
 	gomu := newGomu()
-	gomu.player = player.New(0)
+	gomu.player = player.NewPlayer(0, "beep")
 	gomu.queue = newQueue()
 	gomu.playlist = &Playlist{
 		TreeView: tview.NewTreeView(),
