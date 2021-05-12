@@ -54,10 +54,7 @@ func (g *Gomu) initPanels(app *tview.Application, args Args) {
 	g.playingBar = newPlayingBar()
 	g.queue = newQueue()
 	g.playlist = newPlaylist(args)
-	// g.player = player.New(g.anko.GetInt("General.volume"))
-	// g.player, err = player.NewPlayer(g.anko.GetInt("General.volume"), "mpd")
 	g.player, err = player.NewPlayer(g.anko.GetInt("General.volume"), g.anko.GetString("General.backend_server"), g.anko.GetString("General.mpd_port"))
-	// g.player, err = player.NewPlayer(g.anko.GetInt("General.volume"), "beep")
 	if err != nil {
 		errorPopup(err)
 	}

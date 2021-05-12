@@ -115,8 +115,7 @@ func (p *MPDPlayer) Run(currSong Audio) (err error) {
 	p.execSongStart(currSong)
 
 	if p.client == nil {
-		err = p.reconnect()
-		if err != nil {
+		if err = p.reconnect(); err != nil {
 			return tracerr.Wrap(err)
 		}
 	}
@@ -155,6 +154,12 @@ func (p *MPDPlayer) Run(currSong Audio) (err error) {
 
 	go func() {
 		for {
+			if p.client == nil {
+				if err = p.reconnect(); err != nil {
+					return
+				}
+			}
+
 			status, err := p.client.Status()
 			if err != nil {
 				log.Fatalln(err)
@@ -228,6 +233,12 @@ func (p *MPDPlayer) GetPosition() time.Duration {
 	if !p.isRunning {
 		return 0
 	}
+	if p.client == nil {
+		if err := p.reconnect(); err != nil {
+			return 0
+		}
+	}
+
 	status, err := p.client.Status()
 	if err != nil {
 		return 0
@@ -245,15 +256,8 @@ func (p *MPDPlayer) GetPosition() time.Duration {
 
 // Seek is the function to move forward and rewind
 func (p *MPDPlayer) Seek(pos int) error {
-	// p.mu.Lock()
-	// speaker.Lock()
-	// defer speaker.Unlock()
-	// defer p.mu.Unlock()
-	// err := p.streamSeekCloser.Seek(pos * int(p.format.SampleRate))
-	// return err
 	if p.client == nil {
-		err := p.reconnect()
-		if err != nil {
+		if err := p.reconnect(); err != nil {
 			return tracerr.Wrap(err)
 		}
 	}
@@ -267,16 +271,6 @@ func (p *MPDPlayer) Seek(pos int) error {
 
 // IsPaused is used to distinguish the player between pause and stop
 func (p *MPDPlayer) IsPaused() bool {
-	// p.mu.Lock()
-	// speaker.Lock()
-	// defer speaker.Unlock()
-	// defer p.mu.Unlock()
-	// if p.ctrl == nil {
-	// 	return false
-	// }
-
-	// return p.ctrl.Paused
-
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return !(p.isRunning)
