@@ -49,9 +49,14 @@ func NewMPDPlayer(volume int, mpdPort string) (*MPDPlayer, error) {
 	if err := mpdConn.Clear(); err != nil { // Clear mpd on startup
 		return nil, tracerr.Wrap(err)
 	}
+
 	log.Println("Successfully connected to MPD")
 
 	if err := mpdConn.SetVolume(volume); err != nil {
+		return nil, tracerr.Wrap(err)
+	}
+
+	if _, err := mpdConn.Update(""); err != nil {
 		return nil, tracerr.Wrap(err)
 	}
 
@@ -69,6 +74,7 @@ func NewMPDPlayer(volume int, mpdPort string) (*MPDPlayer, error) {
 		songSkip: func(Audio) {
 		},
 		client: mpdConn,
+		mu:     sync.Mutex{},
 	}, nil
 }
 
@@ -263,7 +269,7 @@ func (p *MPDPlayer) Seek(pos int) error {
 		}
 	}
 
-	if err := p.client.SeekPos(0, time.Duration(pos)*time.Second); err != nil {
+	if err := p.client.SeekCur(time.Duration(pos)*time.Second, false); err != nil {
 		return tracerr.Wrap(err)
 	}
 
@@ -327,10 +333,11 @@ func (p *MPDPlayer) GetLength(audioPath string) (time.Duration, error) {
 func (p *MPDPlayer) VolToHuman(volume float64) int {
 	return int(volume*10) + 100
 }
+
 func (p *MPDPlayer) reconnect() (err error) {
 	p.client, err = mpd.Dial("tcp", p.mpdPort)
 	if err != nil {
-		return err
+		return tracerr.Wrap(err)
 	}
 	return nil
 }
