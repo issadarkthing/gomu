@@ -44,10 +44,10 @@ func NewMPDPlayer(volume int, mpdPort string) (*MPDPlayer, error) {
 	}
 
 	if err := mpdConn.Consume(true); err != nil { // Remove song when finished playing
-		log.Fatalln(err)
+		return nil, tracerr.Wrap(err)
 	}
 	if err := mpdConn.Clear(); err != nil { // Clear mpd on startup
-		log.Fatalln(err)
+		return nil, tracerr.Wrap(err)
 	}
 	log.Println("Successfully connected to MPD")
 
@@ -166,6 +166,7 @@ func (p *MPDPlayer) Run(currSong Audio) (err error) {
 			}
 
 			if status["state"] == "stop" {
+				p.isRunning = false
 				p.execSongFinish(currSong)
 				break
 			}

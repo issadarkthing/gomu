@@ -56,7 +56,7 @@ func (g *Gomu) initPanels(app *tview.Application, args Args) {
 	g.playlist = newPlaylist(args)
 	g.player, err = player.NewPlayer(g.anko.GetInt("General.volume"), g.anko.GetString("General.backend_server"), g.anko.GetString("General.mpd_port"))
 	if err != nil {
-		errorPopup(err)
+		logError(err)
 	}
 
 	g.pages = tview.NewPages()

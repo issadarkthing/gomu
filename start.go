@@ -421,6 +421,10 @@ func start(application *tview.Application, args Args) {
 			return
 		}
 
+		// if gomu.player.IsRunning() {
+		// 	gomu.playingBar.setSongTitle(currAudio.Name())
+		// 	return
+		// }
 		// no song left so just stop
 		gomu.playingBar.setDefault()
 	})
