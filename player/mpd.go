@@ -304,30 +304,6 @@ func (p *MPDPlayer) IsRunning() bool {
 	return p.isRunning
 }
 
-// GetLength return the length of the song in the queue
-func (p *MPDPlayer) GetLength(audioPath string) (time.Duration, error) {
-
-	if !p.hasInit {
-		return 0, nil
-	}
-	if p.client == nil {
-		if err := p.reconnect(); err != nil {
-			return 0, tracerr.Wrap(err)
-		}
-	}
-
-	status, err := p.client.Status()
-	if err != nil {
-		return 0, tracerr.Wrap(err)
-	}
-	total, err := strconv.ParseFloat(status["duration"], 64)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	return time.Duration(total) * time.Second, nil
-}
-
 // VolToHuman converts float64 volume that is used by audio library to human
 // readable form (0 - 100)
 func (p *MPDPlayer) VolToHuman(volume float64) int {

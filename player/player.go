@@ -52,8 +52,6 @@ type Player interface {
 	HasInit() bool
 	// IsRunning returns true if Player is running an audio.
 	IsRunning() bool
-	// GetLength return the length of the song in the queue
-	GetLength(audioPath string) (time.Duration, error)
 	// VolToHuman converts float64 volume that is used by audio library to human
 	// readable form (0 - 100)
 	VolToHuman(volume float64) int

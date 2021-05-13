@@ -299,26 +299,6 @@ func (p *BeepPlayer) IsRunning() bool {
 	return p.isRunning
 }
 
-// GetLength return the length of the song in the queue
-func (p *BeepPlayer) GetLength(audioPath string) (time.Duration, error) {
-	f, err := os.Open(audioPath)
-
-	if err != nil {
-		return 0, tracerr.Wrap(err)
-	}
-
-	defer f.Close()
-
-	streamer, format, err := mp3.Decode(f)
-
-	if err != nil {
-		return 0, tracerr.Wrap(err)
-	}
-
-	defer streamer.Close()
-	return format.SampleRate.D(streamer.Len()), nil
-}
-
 // VolToHuman converts float64 volume that is used by audio library to human
 // readable form (0 - 100)
 func (p *BeepPlayer) VolToHuman(volume float64) int {

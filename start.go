@@ -370,7 +370,7 @@ func start(application *tview.Application, args Args) {
 
 		duration, err := getTagLength(audio.Path())
 		if err != nil || duration == 0 {
-			duration, err = gomu.player.GetLength(audio.Path())
+			duration, err = getLength(audio.Path())
 			if err != nil {
 				logError(err)
 				return
