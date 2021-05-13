@@ -61,6 +61,7 @@ type Player interface {
 	// that is used by the audio library
 	//	AbsVolume(volume int) float64
 	Stop() error
+	UpdateDB() error
 }
 
 func NewPlayer(volume int, player string, mpdPort string) (Player, error) {

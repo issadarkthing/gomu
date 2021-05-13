@@ -360,3 +360,19 @@ func (p *MPDPlayer) Stop() (err error) {
 	}
 	return nil
 }
+
+// UpdateDB update the datebase
+func (p *MPDPlayer) UpdateDB() (err error) {
+
+	if p.client == nil {
+		if err = p.reconnect(); err != nil {
+			return tracerr.Wrap(err)
+		}
+	}
+
+	if _, err = p.client.Update(""); err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	return nil
+}

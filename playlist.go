@@ -300,6 +300,10 @@ func (p *Playlist) refresh() {
 		return true
 	})
 
+	if err := gomu.player.UpdateDB(); err != nil {
+		logError(err)
+	}
+
 }
 
 // Adds child while setting reference to audio file
@@ -335,6 +339,8 @@ func (p *Playlist) addSongToPlaylist(
 	node.SetReference(audioFile)
 	node.SetText(displayText)
 	selPlaylist.AddChild(node)
+
+	p.refresh()
 
 	return nil
 }
@@ -445,6 +451,10 @@ func (p *Playlist) rename(newName string) error {
 	}
 	err := os.Rename(audio.Path(), newPath)
 	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	if err := gomu.player.UpdateDB(); err != nil {
 		return tracerr.Wrap(err)
 	}
 

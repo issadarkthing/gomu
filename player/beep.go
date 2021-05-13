@@ -335,3 +335,8 @@ func AbsVolume(volume int) float64 {
 func (p *BeepPlayer) Stop() error {
 	return nil
 }
+
+// UpdateDB is just empty for beep
+func (p *BeepPlayer) UpdateDB() error {
+	return nil
+}
