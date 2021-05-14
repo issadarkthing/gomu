@@ -36,7 +36,7 @@ type Player interface {
 	// TogglePause toggles the pause state.
 	TogglePause()
 	// Skip current song.
-	Skip()
+	Skip() error
 	// GetPosition returns the current position of audio file.
 	GetPosition() time.Duration
 	// Seek is the function to move forward and rewind

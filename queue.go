@@ -532,7 +532,9 @@ func (q *Queue) updateCurrentSongName(oldAudio *player.AudioFile, newAudio *play
 	gomu.queue.pushFront(newAudio)
 	tmpLoop := q.isLoop
 	q.isLoop = false
-	gomu.player.Skip()
+	if err := gomu.player.Skip(); err != nil {
+		return tracerr.Wrap(err)
+	}
 	gomu.player.Seek(position)
 	if paused {
 		gomu.player.TogglePause()
@@ -567,7 +569,9 @@ func (q *Queue) updateCurrentSongPath(oldAudio *player.AudioFile, newAudio *play
 	gomu.queue.pushFront(currentSongAudioFile)
 	tmpLoop := q.isLoop
 	q.isLoop = false
-	gomu.player.Skip()
+	if err := gomu.player.Skip(); err != nil {
+		return tracerr.Wrap(err)
+	}
 	gomu.player.Seek(position)
 	if paused {
 		gomu.player.TogglePause()
@@ -580,9 +584,9 @@ func (q *Queue) updateCurrentSongPath(oldAudio *player.AudioFile, newAudio *play
 }
 
 // update current playing song simply delete it
-func (q *Queue) updateCurrentSongDelete(oldAudio *player.AudioFile) {
+func (q *Queue) updateCurrentSongDelete(oldAudio *player.AudioFile) error {
 	if !gomu.player.IsRunning() && !gomu.player.IsPaused() {
-		return
+		return nil
 	}
 
 	currentSong := gomu.player.GetCurrentSong()
@@ -600,16 +604,20 @@ func (q *Queue) updateCurrentSongDelete(oldAudio *player.AudioFile) {
 	}
 
 	if !delete {
-		return
+		return nil
 	}
 
 	tmpLoop := q.isLoop
 	q.isLoop = false
-	gomu.player.Skip()
+	if err := gomu.player.Skip(); err != nil {
+		return tracerr.Wrap(err)
+	}
 	if paused {
 		gomu.player.TogglePause()
 	}
 	q.isLoop = tmpLoop
 	q.updateTitle()
+
+	return nil
 
 }

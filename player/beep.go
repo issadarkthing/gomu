@@ -2,6 +2,7 @@
 package player
 
 import (
+	"errors"
 	"os"
 	"sync"
 	"time"
@@ -222,23 +223,26 @@ func (p *BeepPlayer) TogglePause() {
 }
 
 // Skip current song.
-func (p *BeepPlayer) Skip() {
+func (p *BeepPlayer) Skip() error {
 
 	p.execSongSkip(p.currentSong)
 
 	if p.currentSong == nil {
-		return
+		return errors.New("currentSong is not set")
 	}
 
 	// drain the stream
 	speaker.Lock()
 	p.ctrl.Streamer = nil
-	p.streamSeekCloser.Close()
+	if err := p.streamSeekCloser.Close(); err != nil {
+		return tracerr.Wrap(err)
+	}
 	p.isRunning = false
 	p.format = nil
 	speaker.Unlock()
 
 	p.execSongFinish(p.currentSong)
+	return nil
 }
 
 // GetPosition returns the current position of audio file.

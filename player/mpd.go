@@ -2,6 +2,7 @@
 package player
 
 import (
+	"errors"
 	"log"
 	"strconv"
 	"strings"
@@ -145,6 +146,7 @@ func (p *MPDPlayer) Run(currSong Audio) (err error) {
 	p.currentSong = currSong
 
 	fileName := p.currentSong.Name()
+	var added bool = false
 	for _, f := range files {
 		if !strings.Contains(f, fileName) {
 			continue
@@ -152,7 +154,11 @@ func (p *MPDPlayer) Run(currSong Audio) (err error) {
 		if err = p.client.Add(f); err != nil {
 			return tracerr.Wrap(err)
 		}
+		added = true
 		break
+	}
+	if !added {
+		return errors.New("no song found in db")
 	}
 	if err = p.client.Play(-1); err != nil {
 		return tracerr.Wrap(err)
@@ -217,17 +223,28 @@ func (p *MPDPlayer) TogglePause() {
 }
 
 // Skip current song.
-func (p *MPDPlayer) Skip() {
+func (p *MPDPlayer) Skip() error {
 
 	p.execSongSkip(p.currentSong)
 
 	if p.currentSong == nil {
-		return
+		return errors.New("currentSong is not set")
 	}
 
-	p.isRunning = false
+	// drain the stream
+	if p.client == nil {
+		if err := p.reconnect(); err != nil {
+			return tracerr.Wrap(err)
+		}
+	}
 
+	if err := p.client.Clear(); err != nil {
+		return tracerr.Wrap(err)
+	}
+	p.isRunning = false
 	p.execSongFinish(p.currentSong)
+
+	return nil
 }
 
 // GetPosition returns the current position of audio file.

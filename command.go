@@ -222,7 +222,9 @@ func (c Command) defineCommands() {
 			gomu.queue.pushFront(a)
 
 			if gomu.player.IsRunning() {
-				gomu.player.Skip()
+				if err := gomu.player.Skip(); err != nil {
+					errorPopup(err)
+				}
 			} else {
 				gomu.queue.playQueue()
 			}
@@ -295,7 +297,9 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("skip", func() {
-		gomu.player.Skip()
+		if err := gomu.player.Skip(); err != nil {
+			errorPopup(err)
+		}
 	})
 
 	c.define("toggle_help", func() {
