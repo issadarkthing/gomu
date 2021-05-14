@@ -382,8 +382,11 @@ func getConsoleSize() (int, int, int, int) {
 		xpixels uint16
 		ypixels uint16
 	}
-	_, _, _ = syscall.Syscall(syscall.SYS_IOCTL,
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL,
 		uintptr(syscall.Stdout), uintptr(syscall.TIOCGWINSZ), uintptr(unsafe.Pointer(&sz)))
+	if errno != 0 {
+		logError(errno)
+	}
 	return int(sz.cols), int(sz.rows), int(sz.xpixels), int(sz.ypixels)
 }
 

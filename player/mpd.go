@@ -327,6 +327,8 @@ func (p *MPDPlayer) Stop() (err error) {
 		}
 	}
 
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	if err = p.client.Stop(); err != nil {
 		return tracerr.Wrap(err)
 	}
