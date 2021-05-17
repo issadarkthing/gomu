@@ -14,6 +14,7 @@ import (
 )
 
 type MPDPlayer struct {
+	sync.RWMutex
 	hasInit     bool
 	isRunning   bool
 	vol         int
@@ -25,7 +26,6 @@ type MPDPlayer struct {
 	songStart  func(Audio)
 	songSkip   func(Audio)
 	client     *mpd.Client
-	mu         sync.Mutex
 }
 
 // NewMPDPlayer returns new Player instance.
@@ -75,7 +75,6 @@ func NewMPDPlayer(volume int, mpdPort string) (*MPDPlayer, error) {
 		songSkip: func(Audio) {
 		},
 		client: mpdConn,
-		mu:     sync.Mutex{},
 	}, nil
 }
 
@@ -295,8 +294,8 @@ func (p *MPDPlayer) Seek(pos int) error {
 
 // IsPaused is used to distinguish the player between pause and stop
 func (p *MPDPlayer) IsPaused() bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.RLock()
+	defer p.RUnlock()
 	return !(p.isRunning)
 }
 
@@ -344,8 +343,8 @@ func (p *MPDPlayer) Stop() (err error) {
 		}
 	}
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.RLock()
+	defer p.RUnlock()
 	if err = p.client.Stop(); err != nil {
 		return tracerr.Wrap(err)
 	}
