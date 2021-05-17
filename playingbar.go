@@ -102,7 +102,10 @@ func (p *PlayingBar) run() error {
 		var width, colrowPixel int
 		gomu.app.QueueUpdate(func() {
 			_, _, width, _ = p.GetInnerRect()
-			cols, rows, windowWidth, windowHeight := getConsoleSize()
+			cols, rows, windowWidth, windowHeight, err := getConsoleSize()
+			if err != nil {
+				return
+			}
 			rowPixel := windowHeight / rows
 			colPixel := windowWidth / cols
 			colrowPixel = rowPixel + colPixel
@@ -375,7 +378,7 @@ func (p *PlayingBar) setColRowPixel(colrowPixel int) {
 	atomic.StoreInt32(&p.colrowPixel, int32(colrowPixel))
 }
 
-func getConsoleSize() (int, int, int, int) {
+func getConsoleSize() (int, int, int, int, error) {
 	var sz struct {
 		rows    uint16
 		cols    uint16
@@ -384,10 +387,14 @@ func getConsoleSize() (int, int, int, int) {
 	}
 	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL,
 		uintptr(syscall.Stdout), uintptr(syscall.TIOCGWINSZ), uintptr(unsafe.Pointer(&sz)))
+	var err error
 	if errno != 0 {
-		logError(errno)
+		err = errno
 	}
-	return int(sz.cols), int(sz.rows), int(sz.xpixels), int(sz.ypixels)
+	if err != nil {
+		return 0, 0, 0, 0, tracerr.Wrap(err)
+	}
+	return int(sz.cols), int(sz.rows), int(sz.xpixels), int(sz.ypixels), nil
 }
 
 // updatePhoto finish two tasks: 1. resize photo based on room left for photo
@@ -407,7 +414,10 @@ func (p *PlayingBar) updatePhoto() {
 		}
 		x, y, width, height := gomu.queue.GetInnerRect()
 
-		cols, rows, windowWidth, windowHeight := getConsoleSize()
+		cols, rows, windowWidth, windowHeight, err := getConsoleSize()
+		if err != nil {
+			return
+		}
 
 		colPixel := windowWidth / cols
 		rowPixel := windowHeight / rows
@@ -415,7 +425,7 @@ func (p *PlayingBar) updatePhoto() {
 
 		// resize the photo according to space left for x and y axis
 		dstImage := imaging.Resize(p.albumPhotoSource, imageWidth, 0, imaging.Lanczos)
-		var err error
+		// var err error
 		positionX := x*colPixel + width*colPixel - dstImage.Rect.Dx()
 		positionY := y*rowPixel + height*rowPixel - dstImage.Rect.Dy()
 		// register new image
