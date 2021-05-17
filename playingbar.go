@@ -11,9 +11,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/disintegration/imaging"
 	"github.com/rivo/tview"
@@ -100,19 +98,22 @@ func (p *PlayingBar) run() error {
 			return tracerr.Wrap(err)
 		}
 		var width, colrowPixel int
+		oldColRowPixel := p.getColRowPixel()
 		gomu.app.QueueUpdate(func() {
+
 			_, _, width, _ = p.GetInnerRect()
-			cols, rows, windowWidth, windowHeight, err := getConsoleSize()
+
+			_, _, _, colPixel, rowPixel, err := p.getConsoleSize()
 			if err != nil {
 				return
 			}
-			rowPixel := windowHeight / rows
-			colPixel := windowWidth / cols
+
 			colrowPixel = rowPixel + colPixel
+
 		})
 
 		progressBar := progresStr(progress, full, width/2, "█", "━")
-		if p.getColRowPixel() != colrowPixel {
+		if oldColRowPixel != colrowPixel {
 			p.updatePhoto()
 			p.setColRowPixel(colrowPixel)
 		}
@@ -378,61 +379,61 @@ func (p *PlayingBar) setColRowPixel(colrowPixel int) {
 	atomic.StoreInt32(&p.colrowPixel, int32(colrowPixel))
 }
 
-func getConsoleSize() (int, int, int, int, error) {
-	var sz struct {
-		rows    uint16
-		cols    uint16
-		xpixels uint16
-		ypixels uint16
-	}
-	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL,
-		uintptr(syscall.Stdout), uintptr(syscall.TIOCGWINSZ), uintptr(unsafe.Pointer(&sz)))
-	var err error
-	if errno != 0 {
-		err = errno
-	}
-	if err != nil {
-		return 0, 0, 0, 0, tracerr.Wrap(err)
-	}
-	return int(sz.cols), int(sz.rows), int(sz.xpixels), int(sz.ypixels), nil
-}
-
 // updatePhoto finish two tasks: 1. resize photo based on room left for photo
 // 2. register photo in the correct position
-func (p *PlayingBar) updatePhoto() {
-	// Put the whole block in goroutine, in order not to block the whole apps
-	// also to avoid data race by adding QueueUpdateDraw
-	go gomu.app.QueueUpdateDraw(func() {
-		if p.albumPhotoSource == nil {
-			return
-		}
+func (p *PlayingBar) updatePhoto() (err error) {
 
-		if p.albumPhoto != nil {
-			p.albumPhoto.Clear()
-			p.albumPhoto.Destroy()
-			p.albumPhoto = nil
-		}
-		x, y, width, height := gomu.queue.GetInnerRect()
+	if p.albumPhotoSource == nil {
+		return nil
+	}
 
-		cols, rows, windowWidth, windowHeight, err := getConsoleSize()
-		if err != nil {
-			return
-		}
+	if p.albumPhoto != nil {
+		p.albumPhoto.Clear()
+		p.albumPhoto.Destroy()
+		p.albumPhoto = nil
+	}
 
-		colPixel := windowWidth / cols
-		rowPixel := windowHeight / rows
-		imageWidth := width * colPixel / 3
+	// get related size
+	x, y, width, colPixel, rowPixel, err := p.getConsoleSize()
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
 
-		// resize the photo according to space left for x and y axis
-		dstImage := imaging.Resize(p.albumPhotoSource, imageWidth, 0, imaging.Lanczos)
-		// var err error
-		positionX := x*colPixel + width*colPixel - dstImage.Rect.Dx()
-		positionY := y*rowPixel + height*rowPixel - dstImage.Rect.Dy()
-		// register new image
-		p.albumPhoto, err = ugo.NewImage(dstImage, positionX, positionY)
-		if err != nil {
-			errorPopup(err)
-		}
-		p.albumPhoto.Show()
-	})
+	imageWidth := width * colPixel / 3
+
+	// resize the photo according to space left for x and y axis
+	dstImage := imaging.Resize(p.albumPhotoSource, imageWidth, 0, imaging.Lanczos)
+	positionX := x*colPixel + width*colPixel - dstImage.Rect.Dx() - colPixel
+	positionY := y*rowPixel - dstImage.Rect.Dy() - rowPixel/2
+
+	// register new image
+	p.albumPhoto, err = ugo.NewImage(dstImage, positionX, positionY)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	p.albumPhoto.Show()
+
+	return nil
+}
+
+func (p *PlayingBar) getConsoleSize() (int, int, int, int, int, error) {
+	// get colums and rows count
+	x, y, width, height := p.GetRect()
+
+	cols := x + width
+	rows := y + height
+
+	// get terminal size
+	windowWidth, windowHeight, err := ugo.GetParentSize()
+	if err != nil {
+		return 0, 0, 0, 0, 0, tracerr.Wrap(err)
+	}
+
+	colPixel := windowWidth / cols
+	rowPixel := windowHeight / rows
+	colrowPixel := rowPixel + colPixel
+
+	p.setColRowPixel(colrowPixel)
+
+	return x, y, width, colPixel, rowPixel, nil
 }
