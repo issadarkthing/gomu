@@ -160,7 +160,9 @@ func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) {
 	p.hasTag = false
 	p.tag = nil
 	p.subtitles = nil
+	p.mu.RLock()
 	p.subtitle = nil
+	p.mu.RUnlock()
 	if p.albumPhoto != nil {
 		p.albumPhoto.Clear()
 		p.albumPhoto.Destroy()
@@ -315,12 +317,12 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 	for _, f := range syltFrames {
 		sylf, ok := f.(id3v2.SynchronisedLyricsFrame)
 		if !ok {
-			return fmt.Errorf("sylt error")
+			return errors.New("sylt error")
 		}
 		for _, u := range usltFrames {
 			uslf, ok := u.(id3v2.UnsynchronisedLyricsFrame)
 			if !ok {
-				return errors.New("USLT error")
+				return errors.New("uslt error")
 			}
 			if sylf.ContentDescriptor == uslf.ContentDescriptor {
 				var lyric lyric.Lyric
