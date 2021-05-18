@@ -25,6 +25,19 @@ type LyricFetcher interface {
 	LyricOptions(search string) ([]*SongTag, error)
 }
 
+func LyricLang(lang string) LyricFetcher {
+
+	switch lang {
+	case "en":
+		return LyricFetcherEn{}
+	case "zh-CN":
+		return LyricFetcherCn{}
+	default:
+		return LyricFetcherEn{}
+	}
+
+}
+
 // cleanHTML parses html text to valid utf-8 text
 func cleanHTML(input string) string {
 

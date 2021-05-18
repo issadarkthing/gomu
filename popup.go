@@ -867,7 +867,7 @@ func lyricPopup(lang string, audioFile *player.AudioFile, wg *sync.WaitGroup) er
 	var titles []string
 
 	// below we chose LyricFetcher interfaces by language
-	lyricFetcher := lyricLang(lang)
+	lyricFetcher := lyric.LyricLang(lang)
 
 	results, err := lyricFetcher.LyricOptions(audioFile.Name())
 	if err != nil {
@@ -922,17 +922,4 @@ func lyricPopup(lang string, audioFile *player.AudioFile, wg *sync.WaitGroup) er
 	gomu.app.Draw()
 
 	return nil
-}
-
-func lyricLang(lang string) lyric.LyricFetcher {
-
-	switch lang {
-	case "en":
-		return lyric.LyricFetcherEn{}
-	case "zh-CN":
-		return lyric.LyricFetcherCn{}
-	default:
-		return lyric.LyricFetcherEn{}
-	}
-
 }
