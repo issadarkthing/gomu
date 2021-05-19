@@ -237,9 +237,14 @@ func (p *MPDPlayer) Skip() error {
 		}
 	}
 
+	if err := p.client.Stop(); err != nil {
+		return tracerr.Wrap(err)
+	}
+
 	if err := p.client.Clear(); err != nil {
 		return tracerr.Wrap(err)
 	}
+
 	p.isRunning = false
 	p.execSongFinish(p.currentSong)
 
