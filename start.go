@@ -405,8 +405,6 @@ func start(application *tview.Application, args Args) {
 
 	gomu.player.SetSongFinish(func(currAudio player.Audio) {
 
-		// gomu.playingBar.subtitles = nil
-		// gomu.playingBar.subtitle = nil
 		if gomu.queue.isLoop {
 			_, err = gomu.queue.enqueue(currAudio.(*player.AudioFile))
 			if err != nil {
@@ -421,10 +419,6 @@ func start(application *tview.Application, args Args) {
 			return
 		}
 
-		// if gomu.player.IsRunning() {
-		// 	gomu.playingBar.setSongTitle(currAudio.Name())
-		// 	return
-		// }
 		// no song left so just stop
 		gomu.playingBar.setDefault()
 	})

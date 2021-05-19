@@ -157,7 +157,6 @@ func (g *Gomu) quit(args Args) error {
 	}
 
 	if gomu.playingBar.albumPhoto != nil {
-		gomu.playingBar.albumPhoto.Clear()
 		gomu.playingBar.albumPhoto.Destroy()
 		gomu.playingBar.albumPhoto = nil
 	}

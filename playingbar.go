@@ -164,7 +164,6 @@ func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) {
 	p.subtitle = nil
 	p.mu.RUnlock()
 	if p.albumPhoto != nil {
-		p.albumPhoto.Clear()
 		p.albumPhoto.Destroy()
 		p.albumPhoto = nil
 	}
@@ -306,7 +305,6 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 	p.tag = tag
 
 	if p.albumPhoto != nil {
-		p.albumPhoto.Clear()
 		p.albumPhoto.Destroy()
 		p.albumPhoto = nil
 	}
@@ -392,7 +390,6 @@ func (p *PlayingBar) updatePhoto() {
 		}
 
 		if p.albumPhoto != nil {
-			p.albumPhoto.Clear()
 			p.albumPhoto.Destroy()
 			p.albumPhoto = nil
 		}
