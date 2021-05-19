@@ -4,8 +4,6 @@ package main
 
 import (
 	"bufio"
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -392,13 +390,6 @@ func newQueue() *Queue {
 		SetBackgroundColor(gomu.colors.background)
 
 	return queue
-}
-
-// Convert string to sha1.
-func sha1Hex(input string) string {
-	h := sha1.New()
-	h.Write([]byte(input))
-	return hex.EncodeToString(h.Sum(nil))
 }
 
 // Modify the title of songs in queue

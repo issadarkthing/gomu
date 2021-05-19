@@ -4,6 +4,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -395,4 +397,11 @@ func getTagLength(songPath string) (songLength time.Duration, err error) {
 	}
 
 	return songLength, err
+}
+
+// Convert string to sha1.
+func sha1Hex(input string) string {
+	h := sha1.New()
+	h.Write([]byte(input))
+	return hex.EncodeToString(h.Sum(nil))
 }
