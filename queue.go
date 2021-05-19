@@ -102,23 +102,7 @@ func (q *Queue) updateTitle() string {
 		count = "song"
 	}
 
-	var loop string
-
-	isEmoji := gomu.anko.GetBool("General.use_emoji")
-
-	if q.isLoop {
-		if isEmoji {
-			loop = gomu.anko.GetString("Emoji.loop")
-		} else {
-			loop = "Loop"
-		}
-	} else {
-		if isEmoji {
-			loop = gomu.anko.GetString("Emoji.noloop")
-		} else {
-			loop = "No loop"
-		}
-	}
+	loop := q.getLoopString()
 
 	title := fmt.Sprintf("─ Queue ───┤ %d %s | %s | %s ├",
 		len(q.items), count, fmtTime, loop)
@@ -619,5 +603,26 @@ func (q *Queue) updateCurrentSongDelete(oldAudio *player.AudioFile) error {
 	q.updateTitle()
 
 	return nil
+
+}
+
+// getLoopString generate a string represent loop for displaying in queue title
+func (q *Queue) getLoopString() string {
+
+	isEmoji := gomu.anko.GetBool("General.use_emoji")
+
+	if q.isLoop && isEmoji {
+		return gomu.anko.GetString("Emoji.loop")
+	}
+
+	if q.isLoop {
+		return "Loop"
+	}
+
+	if isEmoji {
+		return gomu.anko.GetString("Emoji.noloop")
+	}
+
+	return "No loop"
 
 }
