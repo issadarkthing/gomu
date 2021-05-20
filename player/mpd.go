@@ -57,7 +57,7 @@ func NewMPDPlayer(volume int, mpdPort string) (*MPDPlayer, error) {
 		return nil, tracerr.Wrap(err)
 	}
 
-	if _, err := mpdConn.Update(""); err != nil {
+	if _, err := mpdConn.Update("/"); err != nil {
 		return nil, tracerr.Wrap(err)
 	}
 
@@ -118,6 +118,7 @@ func (p *MPDPlayer) execSongSkip(a Audio) {
 func (p *MPDPlayer) Run(currSong Audio) (err error) {
 
 	p.isRunning = true
+	p.currentSong = currSong
 	p.execSongStart(currSong)
 
 	if p.client == nil {
@@ -142,7 +143,6 @@ func (p *MPDPlayer) Run(currSong Audio) (err error) {
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
-	p.currentSong = currSong
 
 	fileName := p.currentSong.Name()
 	var added bool = false
@@ -369,7 +369,7 @@ func (p *MPDPlayer) UpdateDB() (err error) {
 		}
 	}
 
-	if _, err = p.client.Update(""); err != nil {
+	if _, err = p.client.Update("/"); err != nil {
 		return tracerr.Wrap(err)
 	}
 

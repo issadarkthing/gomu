@@ -387,7 +387,10 @@ func start(application *tview.Application, args Args) {
 		if len(gomu.playingBar.subtitles) == 0 {
 			description = name
 		} else {
-			lang := gomu.playingBar.subtitle.LangExt
+			var lang string
+			if gomu.playingBar.subtitle != nil {
+				lang = gomu.playingBar.subtitle.LangExt
+			}
 
 			description = fmt.Sprintf("%s \n\n %s lyric loaded", name, lang)
 		}
