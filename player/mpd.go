@@ -61,7 +61,7 @@ func NewMPDPlayer(volume int, mpdPort string) (*MPDPlayer, error) {
 		return nil, tracerr.Wrap(err)
 	}
 
-	return &MPDPlayer{
+	client := &MPDPlayer{
 		hasInit:     true,
 		isRunning:   false,
 		vol:         volume,
@@ -75,7 +75,10 @@ func NewMPDPlayer(volume int, mpdPort string) (*MPDPlayer, error) {
 		songSkip: func(Audio) {
 		},
 		client: mpdConn,
-	}, nil
+	}
+
+	go client.keepAlive()
+	return client, nil
 }
 
 // SetSongFinish accepts callback which will be executed when the song finishes.
@@ -121,11 +124,6 @@ func (p *MPDPlayer) Run(currSong Audio) (err error) {
 	p.currentSong = currSong
 	p.execSongStart(currSong)
 
-	if p.client == nil {
-		if err = p.reconnect(); err != nil {
-			return tracerr.Wrap(err)
-		}
-	}
 	status, err := p.client.Status()
 	if err != nil {
 		log.Fatalln(err)
@@ -165,15 +163,11 @@ func (p *MPDPlayer) Run(currSong Audio) (err error) {
 
 	go func() {
 		for {
-			if p.client == nil {
-				if err = p.reconnect(); err != nil {
-					return
-				}
-			}
 
 			status, err := p.client.Status()
 			if err != nil {
 				log.Fatalln(err)
+				continue
 			}
 
 			if status["state"] == "stop" {
@@ -231,11 +225,6 @@ func (p *MPDPlayer) Skip() error {
 	}
 
 	// drain the stream
-	if p.client == nil {
-		if err := p.reconnect(); err != nil {
-			return tracerr.Wrap(err)
-		}
-	}
 
 	if err := p.client.Stop(); err != nil {
 		return tracerr.Wrap(err)
@@ -261,11 +250,6 @@ func (p *MPDPlayer) GetPosition() time.Duration {
 	if !p.isRunning {
 		return 0
 	}
-	if p.client == nil {
-		if err := p.reconnect(); err != nil {
-			return 0
-		}
-	}
 
 	status, err := p.client.Status()
 	if err != nil {
@@ -284,11 +268,6 @@ func (p *MPDPlayer) GetPosition() time.Duration {
 
 // Seek is the function to move forward and rewind
 func (p *MPDPlayer) Seek(pos int) error {
-	if p.client == nil {
-		if err := p.reconnect(); err != nil {
-			return tracerr.Wrap(err)
-		}
-	}
 
 	if err := p.client.SeekCur(time.Duration(pos)*time.Second, false); err != nil {
 		return tracerr.Wrap(err)
@@ -331,23 +310,8 @@ func (p *MPDPlayer) VolToHuman(volume float64) int {
 	return int(volume*10) + 100
 }
 
-func (p *MPDPlayer) reconnect() (err error) {
-	p.client, err = mpd.Dial("tcp", p.mpdPort)
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-	return nil
-}
-
 // Stop is the place to stop playing
 func (p *MPDPlayer) Stop() (err error) {
-
-	if p.client == nil {
-		if err = p.reconnect(); err != nil {
-			return tracerr.Wrap(err)
-		}
-	}
-
 	p.RLock()
 	defer p.RUnlock()
 	if err = p.client.Stop(); err != nil {
@@ -363,15 +327,28 @@ func (p *MPDPlayer) Stop() (err error) {
 // UpdateDB update the datebase
 func (p *MPDPlayer) UpdateDB() (err error) {
 
-	if p.client == nil {
-		if err = p.reconnect(); err != nil {
-			return tracerr.Wrap(err)
-		}
-	}
-
 	if _, err = p.client.Update("/"); err != nil {
 		return tracerr.Wrap(err)
 	}
 
 	return nil
+}
+
+func (p *MPDPlayer) reconnect() (err error) {
+	p.client, err = mpd.Dial("tcp", p.mpdPort)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+	return nil
+}
+
+func (p *MPDPlayer) keepAlive() {
+	for {
+		err := p.client.Ping()
+		if err != nil {
+			log.Println("Disconnected. Reconnecting...")
+			p.reconnect()
+		}
+		time.Sleep(3 * time.Second)
+	}
 }
