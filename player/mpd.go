@@ -21,6 +21,7 @@ type MPDPlayer struct {
 	volume      float64
 	currentSong Audio
 	mpdPort     string
+	done        chan bool
 
 	songFinish func(Audio)
 	songStart  func(Audio)
@@ -68,6 +69,7 @@ func NewMPDPlayer(volume int, mpdPort string) (*MPDPlayer, error) {
 		volume:      initVol,
 		currentSong: nil,
 		mpdPort:     mpdPort,
+		done:        make(chan bool),
 		songFinish: func(Audio) {
 		},
 		songStart: func(Audio) {
@@ -161,22 +163,29 @@ func (p *MPDPlayer) Run(currSong Audio) (err error) {
 		return tracerr.Wrap(err)
 	}
 
+	ticker := time.NewTicker(time.Second)
 	go func() {
 		for {
-
-			status, err := p.client.Status()
-			if err != nil {
-				log.Fatalln(err)
-				continue
-			}
-
-			if status["state"] == "stop" {
+			select {
+			case <-p.done:
+				ticker.Stop()
 				p.isRunning = false
 				p.execSongFinish(currSong)
-				break
-			}
+				return
 
-			<-time.After(time.Second)
+			case <-ticker.C:
+
+				status, err := p.client.Status()
+				if err != nil {
+					log.Fatalln(err)
+					continue
+				}
+
+				if status["state"] == "stop" {
+					p.done <- true
+				}
+
+			}
 		}
 	}()
 
@@ -235,7 +244,9 @@ func (p *MPDPlayer) Skip() error {
 	}
 
 	p.isRunning = false
-	p.execSongFinish(p.currentSong)
+
+	p.done <- true
+	// p.execSongFinish(p.currentSong)
 
 	return nil
 }
@@ -344,6 +355,9 @@ func (p *MPDPlayer) reconnect() (err error) {
 
 func (p *MPDPlayer) keepAlive() {
 	for {
+		if p.client == nil {
+			p.reconnect()
+		}
 		err := p.client.Ping()
 		if err != nil {
 			log.Println("Disconnected. Reconnecting...")

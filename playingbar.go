@@ -393,8 +393,7 @@ func (p *PlayingBar) updatePhoto() {
 
 		if p.albumPhoto != nil {
 			p.albumPhoto.Clear()
-			// p.albumPhoto.Destroy()
-			ugo.Initialize()
+			p.albumPhoto.Destroy()
 			p.albumPhoto = nil
 		}
 

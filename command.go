@@ -221,13 +221,13 @@ func (c Command) defineCommands() {
 
 			gomu.queue.pushFront(a)
 
-			if gomu.player.IsRunning() {
-				if err := gomu.player.Skip(); err != nil {
-					errorPopup(err)
-				}
-			} else {
-				gomu.queue.playQueue()
-			}
+			// if gomu.player.IsRunning() {
+			// 	if err := gomu.player.Skip(); err != nil {
+			// 		errorPopup(err)
+			// 	}
+			// } else {
+			gomu.queue.playQueue()
+			// }
 		}
 	})
 
