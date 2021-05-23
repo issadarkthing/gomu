@@ -224,6 +224,7 @@ func (p *MPDPlayer) TogglePause() {
 // Skip current song.
 func (p *MPDPlayer) Skip() error {
 
+	p.isRunning = false
 	p.execSongSkip(p.currentSong)
 
 	if p.currentSong == nil {
@@ -245,8 +246,7 @@ func (p *MPDPlayer) Skip() error {
 		return tracerr.Wrap(err)
 	}
 
-	p.isRunning = false
-	p.execSongFinish(p.currentSong)
+	// p.execSongFinish(p.currentSong)
 
 	return nil
 }
