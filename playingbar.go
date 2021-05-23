@@ -85,7 +85,7 @@ func (p *PlayingBar) run() error {
 			continue
 		}
 
-		gomu.app.QueueUpdate(func() { p.setProgress(int(gomu.player.GetPosition().Seconds())) })
+		p.setProgress(int(gomu.player.GetPosition().Seconds()))
 
 		start, err := time.ParseDuration(strconv.Itoa(progress) + "s")
 		if err != nil {
@@ -164,7 +164,9 @@ func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) {
 	p.subtitle = nil
 	p.mu.RUnlock()
 	if p.albumPhoto != nil {
+		p.albumPhoto.Clear()
 		p.albumPhoto.Destroy()
+		p.albumPhoto = nil
 	}
 
 	err := p.loadLyrics(currentSong.Path())
@@ -304,7 +306,9 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 	p.tag = tag
 
 	if p.albumPhoto != nil {
+		p.albumPhoto.Clear()
 		p.albumPhoto.Destroy()
+		p.albumPhoto = nil
 	}
 
 	syltFrames := tag.GetFrames(tag.CommonID("Synchronised lyrics/text"))
@@ -388,7 +392,9 @@ func (p *PlayingBar) updatePhoto() {
 	}
 
 	if p.albumPhoto != nil {
+		p.albumPhoto.Clear()
 		p.albumPhoto.Destroy()
+		p.albumPhoto = nil
 	}
 
 	// get related size
