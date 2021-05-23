@@ -386,40 +386,40 @@ func (p *PlayingBar) setColRowPixel(colrowPixel int) {
 func (p *PlayingBar) updatePhoto() {
 	// Put the whole block in goroutine, in order not to block the whole apps
 	// also to avoid data race by adding QueueUpdateDraw
-	// go gomu.app.QueueUpdateDraw(func() {
-	if p.albumPhotoSource == nil {
-		return
-	}
+	go gomu.app.QueueUpdateDraw(func() {
+		if p.albumPhotoSource == nil {
+			return
+		}
 
-	if p.albumPhoto != nil {
-		p.albumPhoto.Clear()
-		p.albumPhoto.Destroy()
-		p.albumPhoto = nil
-	}
+		if p.albumPhoto != nil {
+			p.albumPhoto.Clear()
+			p.albumPhoto.Destroy()
+			p.albumPhoto = nil
+		}
 
-	// get related size
-	x, y, width, colPixel, rowPixel, err := p.getConsoleSize()
-	if err != nil {
-		logError(err)
-		return
-	}
+		// get related size
+		x, y, width, colPixel, rowPixel, err := p.getConsoleSize()
+		if err != nil {
+			logError(err)
+			return
+		}
 
-	imageWidth := width * colPixel / 3
+		imageWidth := width * colPixel / 3
 
-	// resize the photo according to space left for x and y axis
-	dstImage := imaging.Resize(p.albumPhotoSource, imageWidth, 0, imaging.Lanczos)
-	positionX := x*colPixel + width*colPixel - dstImage.Rect.Dx() - colPixel
-	positionY := y*rowPixel - dstImage.Rect.Dy() - rowPixel/2
+		// resize the photo according to space left for x and y axis
+		dstImage := imaging.Resize(p.albumPhotoSource, imageWidth, 0, imaging.Lanczos)
+		positionX := x*colPixel + width*colPixel - dstImage.Rect.Dx() - colPixel
+		positionY := y*rowPixel - dstImage.Rect.Dy() - rowPixel/2
 
-	// register new image
-	p.albumPhoto, err = ugo.NewImage(dstImage, positionX, positionY)
-	if err != nil {
-		logError(err)
-		return
-	}
-	p.albumPhoto.Show()
+		// register new image
+		p.albumPhoto, err = ugo.NewImage(dstImage, positionX, positionY)
+		if err != nil {
+			logError(err)
+			return
+		}
+		p.albumPhoto.Show()
 
-	// })
+	})
 }
 
 func (p *PlayingBar) getConsoleSize() (int, int, int, int, int, error) {
