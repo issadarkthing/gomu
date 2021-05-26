@@ -297,6 +297,7 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("skip", func() {
+		gomu.playingBar.stop()
 		if err := gomu.player.Skip(); err != nil {
 			errorPopup(err)
 		}

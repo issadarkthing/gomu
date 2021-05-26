@@ -397,12 +397,7 @@ func start(application *tview.Application, args Args) {
 
 		defaultTimedPopup(" Now Playing ", description)
 
-		go func() {
-			err := gomu.playingBar.run()
-			if err != nil {
-				logError(err)
-			}
-		}()
+		gomu.playingBar.run()
 
 	})
 

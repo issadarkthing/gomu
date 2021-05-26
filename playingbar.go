@@ -66,81 +66,89 @@ func newPlayingBar() *PlayingBar {
 }
 
 // Start processing progress bar
-func (p *PlayingBar) run() error {
+func (p *PlayingBar) run() {
+	// Prepare for values needed in go routine
 
-	for {
+	go func() {
+		for {
 
-		// stop progressing if song ends or skipped
-		progress := p.getProgress()
-		full := p.getFull()
+			// stop progressing if song ends or skipped
+			progress := p.getProgress()
+			full := p.getFull()
 
-		if progress > full || p.skip {
-			p.skip = false
-			p.setProgress(0)
-			break
-		}
+			if progress > full || p.skip {
+				p.skip = false
+				p.setProgress(0)
+				break
+			}
 
-		if gomu.player.IsPaused() {
-			time.Sleep(1 * time.Second)
-			continue
-		}
+			if gomu.player.IsPaused() {
+				time.Sleep(1 * time.Second)
+				continue
+			}
 
-		p.setProgress(int(gomu.player.GetPosition().Seconds()))
+			p.setProgress(int(gomu.player.GetPosition().Seconds()))
 
-		start, err := time.ParseDuration(strconv.Itoa(progress) + "s")
-		if err != nil {
-			return tracerr.Wrap(err)
-		}
-
-		end, err := time.ParseDuration(strconv.Itoa(full) + "s")
-
-		if err != nil {
-			return tracerr.Wrap(err)
-		}
-		var width, colrowPixel int
-		oldColRowPixel := p.getColRowPixel()
-		gomu.app.QueueUpdate(func() {
-
-			_, _, width, _ = p.GetInnerRect()
-
-			_, _, _, colPixel, rowPixel, err := p.getConsoleSize()
+			start, err := time.ParseDuration(strconv.Itoa(progress) + "s")
 			if err != nil {
+				errorPopup(err)
 				return
 			}
 
-			colrowPixel = rowPixel + colPixel
-
-		})
-
-		progressBar := progresStr(progress, full, width/2, "█", "━")
-		if oldColRowPixel != colrowPixel {
-			p.updatePhoto()
-			p.setColRowPixel(colrowPixel)
-		}
-
-		// our progress bar
-		var lyricText string
-		if p.subtitle != nil {
-			lyricText, err = p.subtitle.GetText(progress)
+			end, err := time.ParseDuration(strconv.Itoa(full) + "s")
 			if err != nil {
-				return tracerr.Wrap(err)
+				errorPopup(err)
+				return
 			}
+			var width int
+			gomu.app.QueueUpdate(func() {
+				_, _, width, _ = p.GetInnerRect()
+			})
+
+			if p.albumPhoto != nil {
+				oldColRowPixel := p.getColRowPixel()
+				var colrowPixel int
+				gomu.app.QueueUpdate(func() {
+					_, _, _, colPixel, rowPixel, err := p.getConsoleSize()
+					if err != nil {
+						errorPopup(err)
+						return
+					}
+					colrowPixel = rowPixel + colPixel
+				})
+
+				if oldColRowPixel != colrowPixel {
+					p.updatePhoto()
+					p.setColRowPixel(colrowPixel)
+				}
+			}
+
+			progressBar := progresStr(progress, full, width/2, "█", "━")
+
+			// our progress bar
+			var lyricText string
+			if p.subtitle != nil {
+				lyricText, err = p.subtitle.GetText(progress)
+				if err != nil {
+					return
+				}
+			}
+
+			gomu.app.QueueUpdateDraw(func() {
+				p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n\n[%s]%v[-]",
+					fmtDuration(start),
+					progressBar,
+					fmtDuration(end),
+					gomu.colors.subtitle,
+					lyricText,
+				))
+			})
+
+			<-time.After(time.Second)
 		}
 
-		gomu.app.QueueUpdateDraw(func() {
-			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n\n[%s]%v[-]",
-				fmtDuration(start),
-				progressBar,
-				fmtDuration(end),
-				gomu.colors.subtitle,
-				lyricText,
-			))
-		})
+	}()
 
-		<-time.After(time.Second)
-	}
-
-	return nil
 }
 
 // Updates song title
@@ -351,7 +359,7 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		}
 
 		p.albumPhotoSource = imgTmp
-		p.setColRowPixel(0)
+		p.updatePhoto()
 	}
 
 	return nil
