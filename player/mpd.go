@@ -354,6 +354,10 @@ func (p *MPDPlayer) Stop() (err error) {
 		return tracerr.Wrap(err)
 	}
 
+	if err = p.client.Clear(); err != nil {
+		return tracerr.Wrap(err)
+	}
+
 	if err = p.client.Close(); err != nil {
 		return tracerr.Wrap(err)
 	}
