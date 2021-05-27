@@ -27,7 +27,6 @@ import (
 type PlayingBar struct {
 	*tview.Frame
 	full             int32
-	update           chan struct{}
 	progress         int32
 	skip             bool
 	text             *tview.TextView
@@ -57,9 +56,8 @@ func newPlayingBar() *PlayingBar {
 	frame.SetBackgroundColor(gomu.colors.background)
 
 	p := &PlayingBar{
-		Frame:  frame,
-		text:   textView,
-		update: make(chan struct{}),
+		Frame: frame,
+		text:  textView,
 	}
 
 	return p
