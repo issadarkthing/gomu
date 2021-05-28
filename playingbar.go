@@ -67,17 +67,17 @@ func newPlayingBar() *PlayingBar {
 
 // Start processing progress bar
 func (p *PlayingBar) run() {
-	// Prepare for values needed in go routine
 
 	go func() {
+		// In order to avoid data race, below use a lot of getter and setter
 		for {
 
 			// stop progressing if song ends or skipped
 			progress := p.getProgress()
 			full := p.getFull()
 
-			if progress > full || p.skip {
-				p.skip = false
+			if progress > full || p.getSkip() {
+				p.setSkip(false)
 				p.setProgress(0)
 				break
 			}
@@ -105,7 +105,8 @@ func (p *PlayingBar) run() {
 				_, _, width, _ = p.GetInnerRect()
 			})
 
-			if p.albumPhoto != nil {
+			albumPhoto := p.getAlbumPhoto()
+			if albumPhoto != nil {
 				oldColRowPixel := p.getColRowPixel()
 				var colrowPixel int
 				gomu.app.QueueUpdate(func() {
@@ -127,8 +128,9 @@ func (p *PlayingBar) run() {
 
 			// our progress bar
 			var lyricText string
-			if p.subtitle != nil {
-				lyricText, err = p.subtitle.GetText(progress)
+			subtitle := p.getSubtitle()
+			if subtitle != nil {
+				lyricText, err = subtitle.GetText(progress)
 				if err != nil {
 					return
 				}
@@ -153,8 +155,8 @@ func (p *PlayingBar) run() {
 
 // Updates song title
 func (p *PlayingBar) setSongTitle(title string) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	p.Clear()
 	titleColor := gomu.colors.title
 	p.AddText(title, true, tview.AlignCenter, titleColor)
@@ -168,9 +170,9 @@ func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) {
 	p.hasTag = false
 	p.tag = nil
 	p.subtitles = nil
-	p.mu.RLock()
+	p.mu.Lock()
 	p.subtitle = nil
-	p.mu.RUnlock()
+	p.mu.Unlock()
 	if p.albumPhoto != nil {
 		p.albumPhoto.Clear()
 		p.albumPhoto.Destroy()
@@ -190,9 +192,9 @@ func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) {
 		// First we check if the lyric language preferred is presented
 		for _, v := range p.subtitles {
 			if strings.Contains(langLyricFromConfig, v.LangExt) {
-				p.mu.RLock()
+				p.mu.Lock()
 				p.subtitle = v
-				p.mu.RUnlock()
+				p.mu.Unlock()
 				break
 			}
 		}
@@ -231,7 +233,7 @@ func (p *PlayingBar) setDefault() {
 
 // Skips the current playing song
 func (p *PlayingBar) stop() {
-	p.skip = true
+	p.setSkip(true)
 }
 
 // When switch lyrics, we reload the lyrics from mp3 to reflect changes
@@ -450,4 +452,32 @@ func (p *PlayingBar) getConsoleSize() (int, int, int, int, int, error) {
 	p.setColRowPixel(colrowPixel)
 
 	return x, y, width, colPixel, rowPixel, nil
+}
+
+func (p *PlayingBar) getSubtitle() *lyric.Lyric {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.subtitle
+}
+
+func (p *PlayingBar) getAlbumPhoto() *ugo.Image {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.albumPhoto
+}
+
+func (p *PlayingBar) setSkip(skip bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if skip {
+		p.skip = true
+		return
+	}
+	p.skip = false
+}
+
+func (p *PlayingBar) getSkip() bool {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.skip
 }
