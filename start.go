@@ -404,21 +404,25 @@ func start(application *tview.Application, args Args) {
 	gomu.player.SetSongFinish(func(currAudio player.Audio) {
 
 		if gomu.queue.isLoop {
-			_, err = gomu.queue.enqueue(currAudio.(*player.AudioFile))
-			if err != nil {
-				logError(err)
-			}
+			gomu.app.QueueUpdate(func() {
+				_, err = gomu.queue.enqueue(currAudio.(*player.AudioFile))
+				if err != nil {
+					logError(err)
+				}
+			})
 		}
 
 		if len(gomu.queue.items) > 0 {
-			if err := gomu.queue.playQueue(); err != nil {
-				logError(err)
-			}
-			return
+			gomu.app.QueueUpdate(func() {
+				if err := gomu.queue.playQueue(); err != nil {
+					logError(err)
+				}
+				// return
+			})
+		} else {
+			// no song left so just stop
+			gomu.playingBar.setDefault()
 		}
-
-		// no song left so just stop
-		gomu.playingBar.setDefault()
 	})
 
 	flex := layout(gomu)

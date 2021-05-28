@@ -226,8 +226,9 @@ func (p *PlayingBar) setDefault() {
 		"%s ┣%s┫ %s", "00:00", strings.Repeat("━", width/2), "00:00",
 	)
 	p.text.SetText(text)
-	if p.albumPhoto != nil {
-		p.albumPhoto.Clear()
+	albumPhoto := p.getAlbumPhoto()
+	if albumPhoto != nil {
+		albumPhoto.Clear()
 	}
 }
 
@@ -422,12 +423,13 @@ func (p *PlayingBar) updatePhoto() {
 		positionY := y*rowPixel - dstImage.Rect.Dy() - rowPixel/2
 
 		// register new image
-		p.albumPhoto, err = ugo.NewImage(dstImage, positionX, positionY)
+		albumPhoto, err := ugo.NewImage(dstImage, positionX, positionY)
 		if err != nil {
 			logError(err)
 			return
 		}
-		p.albumPhoto.Show()
+		p.setAlbumPhoto(albumPhoto)
+		p.getAlbumPhoto().Show()
 
 	})
 }
@@ -464,6 +466,12 @@ func (p *PlayingBar) getAlbumPhoto() *ugo.Image {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.albumPhoto
+}
+
+func (p *PlayingBar) setAlbumPhoto(albumPhoto *ugo.Image) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.albumPhoto = albumPhoto
 }
 
 func (p *PlayingBar) setSkip(skip bool) {
