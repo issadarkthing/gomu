@@ -31,6 +31,7 @@ type PlayingBar struct {
 	progress         int32
 	skip             bool
 	text             *tview.TextView
+	lyricTextView    *tview.TextView
 	hasTag           bool
 	tag              *id3v2.Tag
 	subtitle         *lyric.Lyric
@@ -52,14 +53,24 @@ func newPlayingBar() *PlayingBar {
 	textView.SetBackgroundColor(gomu.colors.background)
 	textView.SetDynamicColors(true)
 
-	frame := tview.NewFrame(textView).SetBorders(1, 1, 1, 1, 1, 1)
+	lyricText := tview.NewTextView().SetTextAlign(tview.AlignCenter)
+	lyricText.SetBackgroundColor(gomu.colors.background)
+	lyricText.SetDynamicColors(true)
+	lyricText.SetScrollable(false)
+
+	flex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(textView, 1, 0, false).
+		AddItem(lyricText, 3, 0, false)
+
+	frame := tview.NewFrame(flex).SetBorders(1, 1, 1, 1, 1, 1)
 	frame.SetBorder(true).SetTitle(" Now Playing ")
 	frame.SetBackgroundColor(gomu.colors.background)
 
 	p := &PlayingBar{
-		Frame:  frame,
-		text:   textView,
-		update: make(chan struct{}),
+		Frame:         frame,
+		text:          textView,
+		lyricTextView: lyricText,
+		update:        make(chan struct{}),
 	}
 
 	return p
@@ -137,10 +148,12 @@ func (p *PlayingBar) run() {
 			}
 
 			gomu.app.QueueUpdateDraw(func() {
-				p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n\n[%s]%v[-]",
+				p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s",
 					fmtDuration(start),
 					progressBar,
 					fmtDuration(end),
+				))
+				p.lyricTextView.SetText(fmt.Sprintf("\n[%s]%v[-]",
 					gomu.colors.subtitle,
 					lyricText,
 				))
