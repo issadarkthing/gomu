@@ -433,7 +433,7 @@ func (p *PlayingBar) updatePhoto() {
 		// resize the photo according to space left for x and y axis
 		dstImage := imaging.Resize(p.albumPhotoSource, imageWidth, 0, imaging.Lanczos)
 		positionX := x*colPixel + width*colPixel - dstImage.Rect.Dx() - colPixel
-		positionY := y*rowPixel - dstImage.Rect.Dy() - rowPixel/2
+		positionY := y*rowPixel - dstImage.Rect.Dy() - rowPixel*2/3
 
 		// register new image
 		albumPhoto, err := ugo.NewImage(dstImage, positionX, positionY)
