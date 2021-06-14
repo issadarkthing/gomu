@@ -20,7 +20,7 @@ type Gomu struct {
 	playingBar *PlayingBar
 	queue      *Queue
 	playlist   *Playlist
-	player     *player.Player
+	player     player.Player
 	pages      *tview.Pages
 	colors     *Colors
 	command    Command
@@ -49,11 +49,16 @@ func newGomu() *Gomu {
 // constructor function `newGomu` so that we can
 // test independently
 func (g *Gomu) initPanels(app *tview.Application, args Args) {
+	var err error
 	g.app = app
 	g.playingBar = newPlayingBar()
 	g.queue = newQueue()
 	g.playlist = newPlaylist(args)
-	g.player = player.New(g.anko.GetInt("General.volume"))
+	g.player, err = player.NewPlayer(g.anko.GetInt("General.volume"), g.anko.GetString("General.backend_server"), g.anko.GetString("General.mpd_port"))
+	if err != nil {
+		logError(err)
+	}
+
 	g.pages = tview.NewPages()
 	g.panels = []Panel{g.playlist, g.queue, g.playingBar}
 }
@@ -144,6 +149,17 @@ func (g *Gomu) quit(args Args) error {
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
+	}
+
+	err := gomu.player.Stop()
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	if gomu.playingBar.albumPhoto != nil {
+		gomu.playingBar.albumPhoto.Clear()
+		gomu.playingBar.albumPhoto.Destroy()
+		gomu.playingBar.albumPhoto = nil
 	}
 
 	gomu.app.Stop()
