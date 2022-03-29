@@ -529,8 +529,6 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 		"--all-subs",
 		"--convert-subs",
 		"lrc",
-		// "--cookies",
-		// "~/Downloads/youtube.com_cookies.txt",
 		url,
 	}
 
