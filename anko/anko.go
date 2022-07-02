@@ -155,12 +155,18 @@ func (a *Anko) KeybindExists(panel string, eventKey *tcell.EventKey) bool {
 	name := eventKey.Name()
 
 	if strings.Contains(name, "Ctrl") {
-		key := extractCtrlRune(name)
+		key, ok := extractCtrlRune(name)
+		if !ok {
+			return false
+		}
 		src = fmt.Sprintf("Keybinds.%s[\"ctrl_%s\"]",
 			panel, strings.ToLower(string(key)))
 
 	} else if strings.Contains(name, "Alt") {
-		key := extractAltRune(name)
+		key, ok := extractAltRune(name)
+		if !ok {
+			return false
+		}
 		src = fmt.Sprintf("Keybinds.%s[\"alt_%c\"]", panel, key)
 
 	} else if strings.Contains(name, "Rune") {
@@ -186,12 +192,18 @@ func (a *Anko) ExecKeybind(panel string, eventKey *tcell.EventKey) error {
 	name := eventKey.Name()
 
 	if strings.Contains(name, "Ctrl") {
-		key := extractCtrlRune(name)
+		key, ok := extractCtrlRune(name)
+		if !ok {
+			return nil
+		}
 		src = fmt.Sprintf("Keybinds.%s[\"ctrl_%s\"]()",
 			panel, strings.ToLower(string(key)))
 
 	} else if strings.Contains(name, "Alt") {
-		key := extractAltRune(name)
+		key, ok := extractAltRune(name)
+		if !ok {
+			return nil
+		}
 		src = fmt.Sprintf("Keybinds.%s[\"alt_%c\"]()", panel, key)
 
 	} else if strings.Contains(name, "Rune") {
@@ -210,14 +222,20 @@ func (a *Anko) ExecKeybind(panel string, eventKey *tcell.EventKey) error {
 	return nil
 }
 
-func extractCtrlRune(str string) rune {
+func extractCtrlRune(str string) (rune, bool) {
 	re := regexp.MustCompile(`\+(.)$`)
 	x := re.FindStringSubmatch(str)
-	return rune(x[0][1])
+	if len(x) == 0 {
+		return rune(' '), false
+	}
+	return rune(x[0][1]), true
 }
 
-func extractAltRune(str string) rune {
+func extractAltRune(str string) (rune, bool) {
 	re := regexp.MustCompile(`\[(.)\]`)
 	x := re.FindStringSubmatch(str)
-	return rune(x[0][1])
+	if len(x) == 0 {
+		return rune(' '), false
+	}
+	return rune(x[0][1]), true
 }

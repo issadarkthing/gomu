@@ -145,18 +145,22 @@ func TestExtractCtrlRune(t *testing.T) {
 	tests := []struct {
 		in  string
 		out rune
+		ok  bool
 	}{
-		{in: "Ctrl+x", out: 'x'},
-		{in: "Ctrl+]", out: ']'},
-		{in: "Ctrl+%", out: '%'},
-		{in: "Ctrl+^", out: '^'},
-		{in: "Ctrl+7", out: '7'},
-		{in: "Ctrl+B", out: 'B'},
+		{in: "Ctrl+x", out: 'x', ok: true},
+		{in: "Ctrl+]", out: ']', ok: true},
+		{in: "Ctrl+%", out: '%', ok: true},
+		{in: "Ctrl+^", out: '^', ok: true},
+		{in: "Ctrl+7", out: '7', ok: true},
+		{in: "Ctrl+B", out: 'B', ok: true},
+		{in: "Ctrl+Down", out: ' ', ok: false},
+		{in: "Ctrl+Left", out: ' ', ok: false},
 	}
 
 	for _, test := range tests {
-		got := extractCtrlRune(test.in)
+		got, ok := extractCtrlRune(test.in)
 		assert.Equal(t, test.out, got)
+		assert.Equal(t, test.ok, ok)
 	}
 }
 
@@ -164,18 +168,20 @@ func TestExtractAltRune(t *testing.T) {
 	tests := []struct {
 		in  string
 		out rune
+		ok  bool
 	}{
-		{in: "Alt+Rune[x]", out: 'x'},
-		{in: "Alt+Rune[]]", out: ']'},
-		{in: "Alt+Rune[%]", out: '%'},
-		{in: "Alt+Rune[^]", out: '^'},
-		{in: "Alt+Rune[7]", out: '7'},
-		{in: "Alt+Rune[B]", out: 'B'},
+		{in: "Alt+Rune[x]", out: 'x', ok: true},
+		{in: "Alt+Rune[]]", out: ']', ok: true},
+		{in: "Alt+Rune[%]", out: '%', ok: true},
+		{in: "Alt+Rune[^]", out: '^', ok: true},
+		{in: "Alt+Rune[7]", out: '7', ok: true},
+		{in: "Alt+Rune[B]", out: 'B', ok: true},
 	}
 
 	for _, test := range tests {
-		got := extractAltRune(test.in)
+		got, ok := extractAltRune(test.in)
 		assert.Equal(t, test.out, got)
+		assert.Equal(t, test.ok, ok)
 	}
 }
 
