@@ -135,7 +135,7 @@ I just wanted to implement my own music player with a programming language i'm c
 - forward and rewind
 
 ### Similar Projects
-- [termusic](https://github.com/tramhao/termusic)
+- [termusic](https://github.com/tramhao/termusic) Written in rust and well maintained
 
 ### Album Photo
 For songs downloaded by Gomu, the thumbnail will be embeded as Album cover. If you're not satisfied with the cover, you can edit it with kid3 and attach an image as album cover. Jpeg is tested, but other formats should work as well.
