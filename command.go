@@ -3,7 +3,6 @@ package main
 import (
 	"sync"
 
-	"github.com/issadarkthing/gomu/player"
 	"github.com/rivo/tview"
 	"github.com/ztrue/tracerr"
 )
@@ -223,7 +222,9 @@ func (c Command) defineCommands() {
 			gomu.queue.pushFront(a)
 
 			if gomu.player.IsRunning() {
-				gomu.player.Skip()
+				if err := gomu.player.Skip(); err != nil {
+					errorPopup(err)
+				}
 			} else {
 				gomu.queue.playQueue()
 			}
@@ -280,7 +281,7 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("volume_up", func() {
-		v := player.VolToHuman(gomu.player.GetVolume())
+		v := gomu.player.VolToHuman(gomu.player.GetVolume())
 		if v < 100 {
 			vol := gomu.player.SetVolume(0.5)
 			volumePopup(vol)
@@ -288,7 +289,7 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("volume_down", func() {
-		v := player.VolToHuman(gomu.player.GetVolume())
+		v := gomu.player.VolToHuman(gomu.player.GetVolume())
 		if v > 0 {
 			vol := gomu.player.SetVolume(-0.5)
 			volumePopup(vol)
@@ -296,7 +297,10 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("skip", func() {
-		gomu.player.Skip()
+		gomu.playingBar.stop()
+		if err := gomu.player.Skip(); err != nil {
+			errorPopup(err)
+		}
 	})
 
 	c.define("toggle_help", func() {

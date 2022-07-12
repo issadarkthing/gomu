@@ -4,8 +4,6 @@ package main
 
 import (
 	"bufio"
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -102,23 +100,7 @@ func (q *Queue) updateTitle() string {
 		count = "song"
 	}
 
-	var loop string
-
-	isEmoji := gomu.anko.GetBool("General.use_emoji")
-
-	if q.isLoop {
-		if isEmoji {
-			loop = gomu.anko.GetString("Emoji.loop")
-		} else {
-			loop = "Loop"
-		}
-	} else {
-		if isEmoji {
-			loop = gomu.anko.GetString("Emoji.noloop")
-		} else {
-			loop = "No loop"
-		}
-	}
+	loop := q.getLoopString()
 
 	title := fmt.Sprintf("─ Queue ───┤ %d %s | %s | %s ├",
 		len(q.items), count, fmtTime, loop)
@@ -410,13 +392,6 @@ func newQueue() *Queue {
 	return queue
 }
 
-// Convert string to sha1.
-func sha1Hex(input string) string {
-	h := sha1.New()
-	h.Write([]byte(input))
-	return hex.EncodeToString(h.Sum(nil))
-}
-
 // Modify the title of songs in queue
 func (q *Queue) renameItem(oldAudio *player.AudioFile, newAudio *player.AudioFile) error {
 	for i, v := range q.items {
@@ -532,7 +507,9 @@ func (q *Queue) updateCurrentSongName(oldAudio *player.AudioFile, newAudio *play
 	gomu.queue.pushFront(newAudio)
 	tmpLoop := q.isLoop
 	q.isLoop = false
-	gomu.player.Skip()
+	if err := gomu.player.Skip(); err != nil {
+		return tracerr.Wrap(err)
+	}
 	gomu.player.Seek(position)
 	if paused {
 		gomu.player.TogglePause()
@@ -567,7 +544,9 @@ func (q *Queue) updateCurrentSongPath(oldAudio *player.AudioFile, newAudio *play
 	gomu.queue.pushFront(currentSongAudioFile)
 	tmpLoop := q.isLoop
 	q.isLoop = false
-	gomu.player.Skip()
+	if err := gomu.player.Skip(); err != nil {
+		return tracerr.Wrap(err)
+	}
 	gomu.player.Seek(position)
 	if paused {
 		gomu.player.TogglePause()
@@ -580,9 +559,9 @@ func (q *Queue) updateCurrentSongPath(oldAudio *player.AudioFile, newAudio *play
 }
 
 // update current playing song simply delete it
-func (q *Queue) updateCurrentSongDelete(oldAudio *player.AudioFile) {
+func (q *Queue) updateCurrentSongDelete(oldAudio *player.AudioFile) error {
 	if !gomu.player.IsRunning() && !gomu.player.IsPaused() {
-		return
+		return nil
 	}
 
 	currentSong := gomu.player.GetCurrentSong()
@@ -600,16 +579,41 @@ func (q *Queue) updateCurrentSongDelete(oldAudio *player.AudioFile) {
 	}
 
 	if !delete {
-		return
+		return nil
 	}
 
 	tmpLoop := q.isLoop
 	q.isLoop = false
-	gomu.player.Skip()
+	if err := gomu.player.Skip(); err != nil {
+		return tracerr.Wrap(err)
+	}
 	if paused {
 		gomu.player.TogglePause()
 	}
 	q.isLoop = tmpLoop
 	q.updateTitle()
+
+	return nil
+
+}
+
+// getLoopString generate a string represent loop for displaying in queue title
+func (q *Queue) getLoopString() string {
+
+	isEmoji := gomu.anko.GetBool("General.use_emoji")
+
+	if q.isLoop && isEmoji {
+		return gomu.anko.GetString("Emoji.loop")
+	}
+
+	if q.isLoop {
+		return "Loop"
+	}
+
+	if isEmoji {
+		return gomu.anko.GetString("Emoji.noloop")
+	}
+
+	return "No loop"
 
 }

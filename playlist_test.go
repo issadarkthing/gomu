@@ -14,14 +14,15 @@ import (
 func prepareTest() *Gomu {
 
 	gomu := newGomu()
-	gomu.player = player.New(0)
+	var err error
+	gomu.player, err = player.NewPlayer(0, "beep", "localhost:6600")
 	gomu.queue = newQueue()
 	gomu.playlist = &Playlist{
 		TreeView: tview.NewTreeView(),
 	}
 	gomu.app = tview.NewApplication()
 
-	err := execConfig(expandFilePath(testConfigPath))
+	err = execConfig(expandFilePath(testConfigPath))
 	if err != nil {
 		panic(err)
 	}

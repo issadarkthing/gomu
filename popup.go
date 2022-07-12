@@ -150,7 +150,9 @@ func confirmDeleteAllPopup(selPlaylist *tview.TreeNode) (err error) {
 					errorPopup(err)
 				}
 				gomu.queue.updateQueuePath()
-				gomu.queue.updateCurrentSongDelete(audioFile)
+				if err = gomu.queue.updateCurrentSongDelete(audioFile); err != nil {
+					errorPopup(err)
+				}
 			}
 
 		case tcell.KeyEscape:
@@ -241,7 +243,7 @@ func defaultTimedPopup(title, description string) {
 // Shows popup for the current volume
 func volumePopup(volume float64) {
 
-	currVol := player.VolToHuman(volume)
+	currVol := gomu.player.VolToHuman(volume)
 	maxVol := 100
 	// max progress bar length
 	maxLength := 50
@@ -865,7 +867,7 @@ func lyricPopup(lang string, audioFile *player.AudioFile, wg *sync.WaitGroup) er
 	var titles []string
 
 	// below we chose LyricFetcher interfaces by language
-	lyricFetcher := lyricLang(lang)
+	lyricFetcher := lyric.LyricLang(lang)
 
 	results, err := lyricFetcher.LyricOptions(audioFile.Name())
 	if err != nil {
@@ -920,17 +922,4 @@ func lyricPopup(lang string, audioFile *player.AudioFile, wg *sync.WaitGroup) er
 	gomu.app.Draw()
 
 	return nil
-}
-
-func lyricLang(lang string) lyric.LyricFetcher {
-
-	switch lang {
-	case "en":
-		return lyric.LyricFetcherEn{}
-	case "zh-CN":
-		return lyric.LyricFetcherCn{}
-	default:
-		return lyric.LyricFetcherEn{}
-	}
-
 }

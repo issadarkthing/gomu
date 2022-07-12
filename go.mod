@@ -10,6 +10,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/disintegration/imaging v1.6.2
 	github.com/faiface/beep v1.0.2
+	github.com/fhs/gompd/v2 v2.2.0
 	github.com/gdamore/tcell/v2 v2.2.0
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gocolly/colly v1.2.0

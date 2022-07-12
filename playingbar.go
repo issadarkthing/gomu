@@ -9,10 +9,9 @@ import (
 	"image"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/disintegration/imaging"
 	"github.com/rivo/tview"
@@ -32,6 +31,7 @@ type PlayingBar struct {
 	progress         int32
 	skip             bool
 	text             *tview.TextView
+	lyricTextView    *tview.TextView
 	hasTag           bool
 	tag              *id3v2.Tag
 	subtitle         *lyric.Lyric
@@ -39,6 +39,7 @@ type PlayingBar struct {
 	albumPhoto       *ugo.Image
 	albumPhotoSource image.Image
 	colrowPixel      int32
+	mu               sync.RWMutex
 }
 
 func (p *PlayingBar) help() []string {
@@ -52,93 +53,123 @@ func newPlayingBar() *PlayingBar {
 	textView.SetBackgroundColor(gomu.colors.background)
 	textView.SetDynamicColors(true)
 
-	frame := tview.NewFrame(textView).SetBorders(1, 1, 1, 1, 1, 1)
+	lyricText := tview.NewTextView().SetTextAlign(tview.AlignCenter)
+	lyricText.SetBackgroundColor(gomu.colors.background)
+	lyricText.SetDynamicColors(true)
+	lyricText.SetScrollable(false)
+
+	flex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(textView, 1, 0, false).
+		AddItem(lyricText, 3, 0, false)
+
+	frame := tview.NewFrame(flex).SetBorders(1, 1, 1, 1, 1, 1)
 	frame.SetBorder(true).SetTitle(" Now Playing ")
 	frame.SetBackgroundColor(gomu.colors.background)
 
 	p := &PlayingBar{
-		Frame:  frame,
-		text:   textView,
-		update: make(chan struct{}),
+		Frame:         frame,
+		text:          textView,
+		lyricTextView: lyricText,
+		update:        make(chan struct{}),
 	}
 
 	return p
 }
 
 // Start processing progress bar
-func (p *PlayingBar) run() error {
+func (p *PlayingBar) run() {
 
-	for {
+	go func() {
+		// In order to avoid data race, below use a lot of getter and setter
+		for {
 
-		// stop progressing if song ends or skipped
-		progress := p.getProgress()
-		full := p.getFull()
+			// stop progressing if song ends or skipped
+			progress := p.getProgress()
+			full := p.getFull()
 
-		if progress > full || p.skip {
-			p.skip = false
-			p.setProgress(0)
-			break
-		}
-
-		if gomu.player.IsPaused() {
-			time.Sleep(1 * time.Second)
-			continue
-		}
-
-		// p.progress = int(gomu.player.GetPosition().Seconds())
-		p.setProgress(int(gomu.player.GetPosition().Seconds()))
-
-		start, err := time.ParseDuration(strconv.Itoa(progress) + "s")
-		if err != nil {
-			return tracerr.Wrap(err)
-		}
-
-		end, err := time.ParseDuration(strconv.Itoa(full) + "s")
-
-		if err != nil {
-			return tracerr.Wrap(err)
-		}
-		var width, colrowPixel int
-		gomu.app.QueueUpdate(func() {
-			_, _, width, _ = p.GetInnerRect()
-			cols, rows, windowWidth, windowHeight := getConsoleSize()
-			rowPixel := windowHeight / rows
-			colPixel := windowWidth / cols
-			colrowPixel = rowPixel + colPixel
-		})
-
-		progressBar := progresStr(progress, full, width/2, "█", "━")
-		if p.getColRowPixel() != colrowPixel {
-			p.updatePhoto()
-			p.setColRowPixel(colrowPixel)
-		}
-		// our progress bar
-		var lyricText string
-		if p.subtitle != nil {
-			lyricText, err = p.subtitle.GetText(progress)
-			if err != nil {
-				return tracerr.Wrap(err)
+			if progress > full || p.getSkip() {
+				p.setSkip(false)
+				p.setProgress(0)
+				break
 			}
+
+			if gomu.player.IsPaused() {
+				time.Sleep(1 * time.Second)
+				continue
+			}
+
+			p.setProgress(int(gomu.player.GetPosition().Seconds()))
+
+			start, err := time.ParseDuration(strconv.Itoa(progress) + "s")
+			if err != nil {
+				errorPopup(err)
+				return
+			}
+
+			end, err := time.ParseDuration(strconv.Itoa(full) + "s")
+			if err != nil {
+				errorPopup(err)
+				return
+			}
+			var width int
+			gomu.app.QueueUpdate(func() {
+				_, _, width, _ = p.GetInnerRect()
+			})
+
+			albumPhoto := p.getAlbumPhoto()
+			if albumPhoto != nil {
+				oldColRowPixel := p.getColRowPixel()
+				var colrowPixel int
+				gomu.app.QueueUpdate(func() {
+					_, _, _, colPixel, rowPixel, err := p.getConsoleSize()
+					if err != nil {
+						errorPopup(err)
+						return
+					}
+					colrowPixel = rowPixel + colPixel
+				})
+
+				if oldColRowPixel != colrowPixel {
+					p.updatePhoto()
+					p.setColRowPixel(colrowPixel)
+				}
+			}
+
+			progressBar := progresStr(progress, full, width/2, "█", "━")
+
+			// our progress bar
+			var lyricText string
+			subtitle := p.getSubtitle()
+			if subtitle != nil {
+				lyricText, err = subtitle.GetText(progress)
+				if err != nil {
+					return
+				}
+			}
+
+			gomu.app.QueueUpdateDraw(func() {
+				p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s",
+					fmtDuration(start),
+					progressBar,
+					fmtDuration(end),
+				))
+				p.lyricTextView.SetText(fmt.Sprintf("\n[%s]%v[-]",
+					gomu.colors.subtitle,
+					lyricText,
+				))
+			})
+
+			<-time.After(time.Second)
 		}
 
-		gomu.app.QueueUpdateDraw(func() {
-			p.text.SetText(fmt.Sprintf("%s ┃%s┫ %s\n\n[%s]%v[-]",
-				fmtDuration(start),
-				progressBar,
-				fmtDuration(end),
-				gomu.colors.subtitle,
-				lyricText,
-			))
-		})
+	}()
 
-		<-time.After(time.Second)
-	}
-
-	return nil
 }
 
 // Updates song title
 func (p *PlayingBar) setSongTitle(title string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	p.Clear()
 	titleColor := gomu.colors.title
 	p.AddText(title, true, tview.AlignCenter, titleColor)
@@ -152,7 +183,9 @@ func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) {
 	p.hasTag = false
 	p.tag = nil
 	p.subtitles = nil
+	p.mu.Lock()
 	p.subtitle = nil
+	p.mu.Unlock()
 	if p.albumPhoto != nil {
 		p.albumPhoto.Clear()
 		p.albumPhoto.Destroy()
@@ -172,7 +205,9 @@ func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) {
 		// First we check if the lyric language preferred is presented
 		for _, v := range p.subtitles {
 			if strings.Contains(langLyricFromConfig, v.LangExt) {
+				p.mu.Lock()
 				p.subtitle = v
+				p.mu.Unlock()
 				break
 			}
 		}
@@ -204,14 +239,15 @@ func (p *PlayingBar) setDefault() {
 		"%s ┣%s┫ %s", "00:00", strings.Repeat("━", width/2), "00:00",
 	)
 	p.text.SetText(text)
-	if p.albumPhoto != nil {
-		p.albumPhoto.Clear()
+	albumPhoto := p.getAlbumPhoto()
+	if albumPhoto != nil {
+		albumPhoto.Clear()
 	}
 }
 
 // Skips the current playing song
 func (p *PlayingBar) stop() {
-	p.skip = true
+	p.setSkip(true)
 }
 
 // When switch lyrics, we reload the lyrics from mp3 to reflect changes
@@ -305,12 +341,12 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 	for _, f := range syltFrames {
 		sylf, ok := f.(id3v2.SynchronisedLyricsFrame)
 		if !ok {
-			return fmt.Errorf("sylt error")
+			return errors.New("sylt error")
 		}
 		for _, u := range usltFrames {
 			uslf, ok := u.(id3v2.UnsynchronisedLyricsFrame)
 			if !ok {
-				return errors.New("USLT error")
+				return errors.New("uslt error")
 			}
 			if sylf.ContentDescriptor == uslf.ContentDescriptor {
 				var lyric lyric.Lyric
@@ -339,7 +375,7 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 		}
 
 		p.albumPhotoSource = imgTmp
-		p.setColRowPixel(0)
+		p.updatePhoto()
 	}
 
 	return nil
@@ -369,18 +405,6 @@ func (p *PlayingBar) setColRowPixel(colrowPixel int) {
 	atomic.StoreInt32(&p.colrowPixel, int32(colrowPixel))
 }
 
-func getConsoleSize() (int, int, int, int) {
-	var sz struct {
-		rows    uint16
-		cols    uint16
-		xpixels uint16
-		ypixels uint16
-	}
-	_, _, _ = syscall.Syscall(syscall.SYS_IOCTL,
-		uintptr(syscall.Stdout), uintptr(syscall.TIOCGWINSZ), uintptr(unsafe.Pointer(&sz)))
-	return int(sz.cols), int(sz.rows), int(sz.xpixels), int(sz.ypixels)
-}
-
 // updatePhoto finish two tasks: 1. resize photo based on room left for photo
 // 2. register photo in the correct position
 func (p *PlayingBar) updatePhoto() {
@@ -396,24 +420,85 @@ func (p *PlayingBar) updatePhoto() {
 			p.albumPhoto.Destroy()
 			p.albumPhoto = nil
 		}
-		x, y, width, height := gomu.queue.GetInnerRect()
 
-		cols, rows, windowWidth, windowHeight := getConsoleSize()
+		// get related size
+		x, y, width, colPixel, rowPixel, err := p.getConsoleSize()
+		if err != nil {
+			logError(err)
+			return
+		}
 
-		colPixel := windowWidth / cols
-		rowPixel := windowHeight / rows
 		imageWidth := width * colPixel / 3
 
 		// resize the photo according to space left for x and y axis
 		dstImage := imaging.Resize(p.albumPhotoSource, imageWidth, 0, imaging.Lanczos)
-		var err error
-		positionX := x*colPixel + width*colPixel - dstImage.Rect.Dx()
-		positionY := y*rowPixel + height*rowPixel - dstImage.Rect.Dy()
+		positionX := x*colPixel + width*colPixel - dstImage.Rect.Dx() - colPixel
+		positionY := y*rowPixel - dstImage.Rect.Dy() - rowPixel*2/3
+
 		// register new image
-		p.albumPhoto, err = ugo.NewImage(dstImage, positionX, positionY)
+		albumPhoto, err := ugo.NewImage(dstImage, positionX, positionY)
 		if err != nil {
-			errorPopup(err)
+			logError(err)
+			return
 		}
-		p.albumPhoto.Show()
+		p.setAlbumPhoto(albumPhoto)
+		p.getAlbumPhoto().Show()
+
 	})
+}
+
+func (p *PlayingBar) getConsoleSize() (int, int, int, int, int, error) {
+	// get colums and rows count
+	x, y, width, height := p.GetRect()
+
+	cols := x + width
+	rows := y + height
+
+	// get terminal size
+	windowWidth, windowHeight, err := ugo.GetParentSize()
+	if err != nil {
+		return 0, 0, 0, 0, 0, tracerr.Wrap(err)
+	}
+
+	colPixel := windowWidth / cols
+	rowPixel := windowHeight / rows
+	colrowPixel := rowPixel + colPixel
+
+	p.setColRowPixel(colrowPixel)
+
+	return x, y, width, colPixel, rowPixel, nil
+}
+
+func (p *PlayingBar) getSubtitle() *lyric.Lyric {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.subtitle
+}
+
+func (p *PlayingBar) getAlbumPhoto() *ugo.Image {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.albumPhoto
+}
+
+func (p *PlayingBar) setAlbumPhoto(albumPhoto *ugo.Image) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.albumPhoto = albumPhoto
+}
+
+func (p *PlayingBar) setSkip(skip bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if skip {
+		p.skip = true
+		return
+	}
+	p.skip = false
+}
+
+func (p *PlayingBar) getSkip() bool {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.skip
 }

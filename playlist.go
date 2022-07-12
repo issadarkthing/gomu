@@ -219,7 +219,9 @@ func (p *Playlist) deleteSong(audioFile *player.AudioFile) {
 				p.refresh()
 				// Here we remove the song from queue
 				gomu.queue.updateQueuePath()
-				gomu.queue.updateCurrentSongDelete(audioFile)
+				if err := gomu.queue.updateCurrentSongDelete(audioFile); err != nil {
+					errorPopup(err)
+				}
 			})
 
 		})
@@ -245,7 +247,9 @@ func (p *Playlist) deletePlaylist(audioFile *player.AudioFile) (err error) {
 		p.refresh()
 		// Here we remove the song from queue
 		gomu.queue.updateQueuePath()
-		gomu.queue.updateCurrentSongDelete(audioFile)
+		if err := gomu.queue.updateCurrentSongDelete(audioFile); err != nil {
+			errorPopup(err)
+		}
 
 	})
 
@@ -300,6 +304,10 @@ func (p *Playlist) refresh() {
 		return true
 	})
 
+	if err := gomu.player.UpdateDB(); err != nil {
+		logError(err)
+	}
+
 }
 
 // Adds child while setting reference to audio file
@@ -335,6 +343,7 @@ func (p *Playlist) addSongToPlaylist(
 	node.SetReference(audioFile)
 	node.SetText(displayText)
 	selPlaylist.AddChild(node)
+	//p.refresh()
 
 	return nil
 }
@@ -445,6 +454,10 @@ func (p *Playlist) rename(newName string) error {
 	}
 	err := os.Rename(audio.Path(), newPath)
 	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	if err := gomu.player.UpdateDB(); err != nil {
 		return tracerr.Wrap(err)
 	}
 
@@ -616,6 +629,8 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s\n%v lyrics embeded", getName(audioPath), lyricWritten)
 	defaultTimedPopup(" Ytdl ", downloadFinishedMessage)
 	gomu.app.Draw()
+
+	gomu.playlist.refresh()
 
 	return nil
 }

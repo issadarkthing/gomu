@@ -4,6 +4,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -17,11 +19,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/faiface/beep/mp3"
 	"github.com/tramhao/id3v2"
 	"github.com/ztrue/tracerr"
 
 	"github.com/issadarkthing/gomu/lyric"
-	"github.com/issadarkthing/gomu/player"
 )
 
 // logError logs the error message.
@@ -320,7 +322,7 @@ func embedLength(songPath string) (time.Duration, error) {
 	defer tag.Close()
 
 	var lengthSongTimeDuration time.Duration
-	lengthSongTimeDuration, err = player.GetLength(songPath)
+	lengthSongTimeDuration, err = getLength(songPath)
 	if err != nil {
 		return 0, tracerr.Wrap(err)
 	}
@@ -338,6 +340,26 @@ func embedLength(songPath string) (time.Duration, error) {
 		return 0, tracerr.Wrap(err)
 	}
 	return lengthSongTimeDuration, err
+}
+
+// getLength return the length of the song in the queue
+func getLength(audioPath string) (time.Duration, error) {
+	f, err := os.Open(audioPath)
+
+	if err != nil {
+		return 0, tracerr.Wrap(err)
+	}
+
+	defer f.Close()
+
+	streamer, format, err := mp3.Decode(f)
+
+	if err != nil {
+		return 0, tracerr.Wrap(err)
+	}
+
+	defer streamer.Close()
+	return format.SampleRate.D(streamer.Len()), nil
 }
 
 func getTagLength(songPath string) (songLength time.Duration, err error) {
@@ -375,4 +397,11 @@ func getTagLength(songPath string) (songLength time.Duration, err error) {
 	}
 
 	return songLength, err
+}
+
+// Convert string to sha1.
+func sha1Hex(input string) string {
+	h := sha1.New()
+	h.Write([]byte(input))
+	return hex.EncodeToString(h.Sum(nil))
 }
