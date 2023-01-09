@@ -33,14 +33,14 @@ type Panel interface {
 }
 
 // Default values for command line arguments.
-// TODO: change to $XDG_* variables
+// TODO: change to os.UserHomeDir() calls
 const (
 	configPath     = "~/.config/gomu/config"
 	cacheQueuePath = "~/.local/share/gomu/queue.cache"
 	musicPath      = "~/music" //by default this is uppercase
 )
 
-// Args is the augs for gomu executable
+// Args is the args for gomu executable
 type Args struct {
 	config  *string
 	empty   *bool
