@@ -33,13 +33,14 @@ type Panel interface {
 }
 
 // Default values for command line arguments.
+// TODO: change to os.UserHomeDir() calls
 const (
 	configPath     = "~/.config/gomu/config"
 	cacheQueuePath = "~/.local/share/gomu/queue.cache"
-	musicPath      = "~/music"
+	musicPath      = "~/music" //by default this is uppercase
 )
 
-// Args is the augs for gomu executable
+// Args is the args for gomu executable
 type Args struct {
 	config  *string
 	empty   *bool
@@ -48,14 +49,17 @@ type Args struct {
 }
 
 func getArgs() Args {
-	ar := Args{
-		config:  flag.String("config", configPath, "Specify config file"),
-		empty:   flag.Bool("empty", false, "Open gomu with empty queue. Does not override previous queue"),
-		music:   flag.String("music", musicPath, "Specify music directory"),
-		version: flag.Bool("version", false, "Print gomu version"),
-	}
+	configFlag := flag.String("config", configPath, "Specify config file")
+	emptyFlag := flag.Bool("empty", false, "Open gomu with empty queue. Does not override previous queue")
+	musicFlag := flag.String("music", musicPath, "Specify music directory")
+	versionFlag := flag.Bool("version", false, "Print gomu version")
 	flag.Parse()
-	return ar
+	return Args{
+		config:  configFlag,
+		empty:   emptyFlag,
+		music:   musicFlag,
+		version: versionFlag,
+	}
 }
 
 // built-in functions
