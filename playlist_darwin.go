@@ -1,5 +1,5 @@
-//go:build !darwin
-// +build !darwin
+//go:build darwin
+// +build darwin
 
 // Copyright (C) 2020  Raziman
 
@@ -637,8 +637,8 @@ func populate(root *tview.TreeNode, rootPath string, sortMtime bool) error {
 			stat1 := files[i].Sys().(*syscall.Stat_t)
 			stat2 := files[j].Sys().(*syscall.Stat_t)
 
-			time1 := time.Unix(stat1.Mtim.Unix())
-			time2 := time.Unix(stat2.Mtim.Unix())
+			time1 := time.Unix(stat1.Mtimespec.Unix())
+			time2 := time.Unix(stat2.Mtimespec.Unix())
 
 			return time1.After(time2)
 		})
