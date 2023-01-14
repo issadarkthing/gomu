@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -354,7 +355,11 @@ func (q *Queue) shuffle() {
 func newQueue() *Queue {
 
 	list := tview.NewList()
-
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		logError(err)
+	}
+	cacheQueuePath := filepath.Join(cacheDir, "gomu", "queue.cache")
 	queue := &Queue{
 		List:           list,
 		savedQueuePath: cacheQueuePath,
@@ -487,7 +492,7 @@ func (q *Queue) insertItem(index int, audioFile *player.AudioFile) error {
 	return nil
 }
 
-//update the path information in queue
+// update the path information in queue
 func (q *Queue) updateQueuePath() {
 
 	var songs []string

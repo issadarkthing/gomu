@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
@@ -32,14 +33,6 @@ type Panel interface {
 	help() []string
 }
 
-// Default values for command line arguments.
-// TODO: change to os.UserHomeDir() calls
-const (
-	configPath     = "~/.config/gomu/config"
-	cacheQueuePath = "~/.local/share/gomu/queue.cache"
-	musicPath      = "~/music" //by default this is uppercase
-)
-
 // Args is the args for gomu executable
 type Args struct {
 	config  *string
@@ -49,8 +42,18 @@ type Args struct {
 }
 
 func getArgs() Args {
+	cfd, err := os.UserConfigDir()
+	if err != nil {
+		logError(tracerr.Wrap(err))
+	}
+	configPath := filepath.Join(cfd, "gomu", "config")
 	configFlag := flag.String("config", configPath, "Specify config file")
 	emptyFlag := flag.Bool("empty", false, "Open gomu with empty queue. Does not override previous queue")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		logError(tracerr.Wrap(err))
+	}
+	musicPath := filepath.Join(home, "Music")
 	musicFlag := flag.String("music", musicPath, "Specify music directory")
 	versionFlag := flag.Bool("version", false, "Print gomu version")
 	flag.Parse()
