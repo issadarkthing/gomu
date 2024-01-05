@@ -33,7 +33,7 @@ require (
 	github.com/tramhao/id3v2 v1.2.1
 	github.com/ztrue/tracerr v0.3.0
 	gitlab.com/diamondburned/ueberzug-go v0.0.0-20190521043425-7c15a5f63b06
-	golang.org/x/image v0.5.0 // indirect
+	golang.org/x/image v0.10.0 // indirect
 	golang.org/x/mobile v0.0.0-20221110043201-43a038452099 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
