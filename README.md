@@ -26,28 +26,36 @@ and event hook to enable user to customize their config extensively.
 ### Dependencies
 If you are using ubuntu, you need to install alsa and required dependencies
 ```sh
-$ sudo apt install libasound2-dev go
+sudo apt install libasound2-dev go
 ```
 Optional dependencies can be installed by this command
 ```sh
-$ sudo apt install youtube-dl
+sudo apt install youtube-dl
 ```
 
 ### Installation
 
+Using the latest vesrion of go:
+
 ```sh
-$ go get -u github.com/issadarkthing/gomu
+go install github.com/issadarkthing/gomu@latest
+```
+
+Older versions of go can use
+
+```sh
+go get -u github.com/issadarkthing/gomu
 ```
 
 For arch users, you can install from the AUR
 
 using [yay](https://github.com/Jguer/yay):
 ```sh
-$ yay -S gomu
+yay -S gomu
 ```
 using [aura](https://github.com/fosskers/aura):
 ```sh
-$ sudo aura -A gomu
+sudo aura -A gomu
 ```
 
 
