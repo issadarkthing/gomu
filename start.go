@@ -6,7 +6,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -296,7 +295,7 @@ module Color {
 		}
 	}
 
-	content, err := ioutil.ReadFile(cfg)
+	content, err := os.ReadFile(cfg)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
