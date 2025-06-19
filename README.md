@@ -36,7 +36,7 @@ $ sudo apt install youtube-dl
 ### Installation
 
 ```sh
-$ go get -u github.com/issadarkthing/gomu
+$ make install
 ```
 
 For arch users, you can install from the AUR
