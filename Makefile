@@ -5,6 +5,7 @@ BIN_NAME     = gomu
 REPO_NAME    = gomu
 BIN_DIR     := $(CURDIR)/bin
 INSTALL_DIR := $${HOME}/.local/bin
+CONFIG_DIR  := $${HOME}/.config/gomu
 VERSION      = $(shell git describe --abbrev=0 --tags)
 GIT_COMMIT   = $(shell git rev-parse HEAD)
 BUILD_DATE   = $(shell date '+%Y-%m-%d-%H:%M:%S')
@@ -26,6 +27,9 @@ $(BIN_DIR):
 $(INSTALL_DIR):
 	mkdir -p $@
 
+$(CONFIG_DIR):
+	mkdir -p $@
+
 build: $(BIN_DIR) 
 	@echo === BUILDING ===
 	${GO} build -ldflags "-X main.VERSION=${VERSION}" -v -o $(BIN_DIR)/$(BIN_NAME)
@@ -33,9 +37,10 @@ build: $(BIN_DIR)
 run: build $(BIN_DIR)
 	bin/gomu -config ./test/config
 
-install: build $(INSTALL_DIR)
+install: build $(INSTALL_DIR) $(CONFIG_DIR)
 	@echo === INSTALLING ===
 	cp ${BIN_DIR}/${BIN_NAME} ${INSTALL_DIR}/${BIN_NAME}
+	cp test/config ${CONFIG_DIR}/config
 
 release: build
 	@echo === RELEASING ===
