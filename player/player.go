@@ -52,44 +52,62 @@ func New(volume int) *Player {
 
 // SetSongFinish accepts callback which will be executed when the song finishes.
 func (p *Player) SetSongFinish(f func(Audio)) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	p.songFinish = f
 }
 
 // SetSongStart accepts callback which will be executed when the song starts.
 func (p *Player) SetSongStart(f func(Audio)) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	p.songStart = f
 }
 
 // SetSongSkip accepts callback which will be executed when the song is skipped.
 func (p *Player) SetSongSkip(f func(Audio)) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	p.songSkip = f
 }
 
 // executes songFinish callback.
 func (p *Player) execSongFinish(a Audio) {
-	if p.songFinish != nil {
-		p.songFinish(a)
+	p.mu.Lock()
+	f := p.songFinish
+	p.mu.Unlock()
+	if f != nil {
+		f(a)
 	}
 }
 
 // executes songStart callback.
 func (p *Player) execSongStart(a Audio) {
-	if p.songStart != nil {
-		p.songStart(a)
+	p.mu.Lock()
+	f := p.songStart
+	p.mu.Unlock()
+	if f != nil {
+		f(a)
 	}
 }
 
 // executes songFinish callback.
 func (p *Player) execSongSkip(a Audio) {
-	if p.songSkip != nil {
-		p.songSkip(a)
+	p.mu.Lock()
+	f := p.songSkip
+	p.mu.Unlock()
+	if f != nil {
+		f(a)
 	}
 }
 
 // Run plays the passed Audio.
 func (p *Player) Run(currSong Audio) error {
-
+	p.mu.Lock()
 	p.isRunning = true
+	p.currentSong = currSong
+	p.mu.Unlock()
+
 	p.execSongStart(currSong)
 
 	f, err := os.Open(currSong.Path())
@@ -102,35 +120,37 @@ func (p *Player) Run(currSong Audio) error {
 		return tracerr.Wrap(err)
 	}
 
+	p.mu.Lock()
 	p.streamSeekCloser = stream
-
-	// song duration
-	p.length = format.SampleRate.D(p.streamSeekCloser.Len())
+	p.length = format.SampleRate.D(stream.Len())
+	hasInit := p.hasInit
+	p.mu.Unlock()
 
 	sr := beep.SampleRate(48000)
-	if !p.hasInit {
-
-		// p.mu.Lock()
+	if !hasInit {
 		err := speaker.Init(sr, sr.N(time.Second/10))
-		// p.mu.Unlock()
-
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
-
+		p.mu.Lock()
 		p.hasInit = true
+		p.mu.Unlock()
 	}
 
-	p.currentSong = currSong
-
 	// resample to adapt to sample rate of new songs
-	resampled := beep.Resample(4, format.SampleRate, sr, p.streamSeekCloser)
+	resampled := beep.Resample(4, format.SampleRate, sr, stream)
 
 	sstreamer := beep.Seq(resampled, beep.Callback(func() {
-		p.isRunning = false
-		p.format = nil
-		p.streamSeekCloser.Close()
-		go p.execSongFinish(currSong)
+		go func() {
+			p.mu.Lock()
+			p.isRunning = false
+			p.format = nil
+			if p.streamSeekCloser != nil {
+				p.streamSeekCloser.Close()
+			}
+			p.mu.Unlock()
+			p.execSongFinish(currSong)
+		}()
 	}))
 
 	ctrl := &beep.Ctrl{
@@ -142,6 +162,7 @@ func (p *Player) Run(currSong Audio) error {
 	p.format = &format
 	p.ctrl = ctrl
 	p.mu.Unlock()
+
 	resampler := beep.ResampleRatio(4, 1, ctrl)
 
 	volume := &effects.Volume{
@@ -151,34 +172,45 @@ func (p *Player) Run(currSong Audio) error {
 		Silent:   false,
 	}
 
-	// sets the volume of previous player
+	p.mu.Lock()
 	volume.Volume += p.volume
 	p.vol = volume
+	p.mu.Unlock()
 
 	// starts playing the audio
-	speaker.Play(p.vol)
+	speaker.Play(volume)
 
 	return nil
 }
 
 // Pause pauses Player.
 func (p *Player) Pause() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	speaker.Lock()
-	p.ctrl.Paused = true
+	if p.ctrl != nil {
+		p.ctrl.Paused = true
+	}
 	p.isRunning = false
 	speaker.Unlock()
 }
 
 // Play unpauses Player.
 func (p *Player) Play() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	speaker.Lock()
-	p.ctrl.Paused = false
+	if p.ctrl != nil {
+		p.ctrl.Paused = false
+	}
 	p.isRunning = true
 	speaker.Unlock()
 }
 
 // SetVolume set volume up and volume down using -0.5 or +0.5.
 func (p *Player) SetVolume(v float64) float64 {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	// check if no songs playing currently
 	if p.vol == nil {
@@ -195,12 +227,19 @@ func (p *Player) SetVolume(v float64) float64 {
 
 // TogglePause toggles the pause state.
 func (p *Player) TogglePause() {
+	p.mu.Lock()
+	ctrl := p.ctrl
+	p.mu.Unlock()
 
-	if p.ctrl == nil {
+	if ctrl == nil {
 		return
 	}
 
-	if p.ctrl.Paused {
+	speaker.Lock()
+	paused := ctrl.Paused
+	speaker.Unlock()
+
+	if paused {
 		p.Play()
 	} else {
 		p.Pause()
@@ -209,27 +248,34 @@ func (p *Player) TogglePause() {
 
 // Skip current song.
 func (p *Player) Skip() {
+	p.mu.Lock()
+	currentSong := p.currentSong
+	p.mu.Unlock()
 
-	p.execSongSkip(p.currentSong)
-
-	if p.currentSong == nil {
+	if currentSong == nil {
 		return
 	}
 
-	// drain the stream
+	p.execSongSkip(currentSong)
+
+	p.mu.Lock()
 	speaker.Lock()
-	p.ctrl.Streamer = nil
-	p.streamSeekCloser.Close()
+	if p.ctrl != nil {
+		p.ctrl.Streamer = nil
+	}
+	if p.streamSeekCloser != nil {
+		p.streamSeekCloser.Close()
+	}
 	p.isRunning = false
 	p.format = nil
 	speaker.Unlock()
+	p.mu.Unlock()
 
-	p.execSongFinish(p.currentSong)
+	p.execSongFinish(currentSong)
 }
 
 // GetPosition returns the current position of audio file.
 func (p *Player) GetPosition() time.Duration {
-
 	p.mu.Lock()
 	speaker.Lock()
 	defer speaker.Unlock()
@@ -247,6 +293,9 @@ func (p *Player) Seek(pos int) error {
 	speaker.Lock()
 	defer speaker.Unlock()
 	defer p.mu.Unlock()
+	if p.streamSeekCloser == nil {
+		return nil
+	}
 	err := p.streamSeekCloser.Seek(pos * int(p.format.SampleRate))
 	return err
 }
@@ -266,22 +315,30 @@ func (p *Player) IsPaused() bool {
 
 // GetVolume returns current volume.
 func (p *Player) GetVolume() float64 {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	return p.volume
 }
 
 // GetCurrentSong returns current song.
 func (p *Player) GetCurrentSong() Audio {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	return p.currentSong
 }
 
 // HasInit checks if the speaker has been initialized or not. Speaker
 // initialization will only happen once.
 func (p *Player) HasInit() bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	return p.hasInit
 }
 
 // IsRunning returns true if Player is running an audio.
 func (p *Player) IsRunning() bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	return p.isRunning
 }
 

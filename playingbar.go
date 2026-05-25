@@ -39,6 +39,7 @@ type PlayingBar struct {
 	albumPhoto       *ugo.Image
 	albumPhotoSource image.Image
 	colrowPixel      int32
+	currentGen       int64
 }
 
 func (p *PlayingBar) help() []string {
@@ -66,9 +67,12 @@ func newPlayingBar() *PlayingBar {
 }
 
 // Start processing progress bar
-func (p *PlayingBar) run() error {
+func (p *PlayingBar) run(gen int64) error {
 
 	for {
+		if atomic.LoadInt64(&p.currentGen) != gen {
+			break
+		}
 
 		// stop progressing if song ends or skipped
 		progress := p.getProgress()
@@ -146,7 +150,7 @@ func (p *PlayingBar) setSongTitle(title string) {
 }
 
 // Resets progress bar, ready for execution
-func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) {
+func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) int64 {
 	p.setFull(full)
 	p.setProgress(0)
 	p.hasTag = false
@@ -162,7 +166,7 @@ func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) {
 	err := p.loadLyrics(currentSong.Path())
 	if err != nil {
 		errorPopup(err)
-		return
+		return atomic.AddInt64(&p.currentGen, 1)
 	}
 	langLyricFromConfig := gomu.anko.GetString("General.lang_lyric")
 	if langLyricFromConfig == "" {
@@ -194,6 +198,7 @@ func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) {
 	}
 	p.setSongTitle(currentSong.Name())
 
+	return atomic.AddInt64(&p.currentGen, 1)
 }
 
 // Sets default title and progress bar
@@ -212,6 +217,7 @@ func (p *PlayingBar) setDefault() {
 // Skips the current playing song
 func (p *PlayingBar) stop() {
 	p.skip = true
+	atomic.AddInt64(&p.currentGen, 1)
 }
 
 // When switch lyrics, we reload the lyrics from mp3 to reflect changes

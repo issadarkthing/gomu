@@ -10,7 +10,6 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
-	"sync"
 	"syscall"
 
 	"github.com/gdamore/tcell/v2"
@@ -382,7 +381,7 @@ func start(application *tview.Application, args Args) {
 
 		audioFile := audio.(*player.AudioFile)
 
-		gomu.playingBar.newProgress(audioFile, int(duration.Seconds()))
+		gen := gomu.playingBar.newProgress(audioFile, int(duration.Seconds()))
 
 		name := audio.Name()
 		var description string
@@ -398,7 +397,7 @@ func start(application *tview.Application, args Args) {
 		defaultTimedPopup(" Now Playing ", description)
 
 		go func() {
-			err := gomu.playingBar.run()
+			err := gomu.playingBar.run(gen)
 			if err != nil {
 				logError(err)
 			}
@@ -407,27 +406,25 @@ func start(application *tview.Application, args Args) {
 	})
 
 	gomu.player.SetSongFinish(func(currAudio player.Audio) {
-
-		gomu.playingBar.subtitles = nil
-		var mu sync.Mutex
-		mu.Lock()
-		gomu.playingBar.subtitle = nil
-		mu.Unlock()
-		if gomu.queue.isLoop {
-			_, err = gomu.queue.enqueue(currAudio.(*player.AudioFile))
-			if err != nil {
-				logError(err)
+		gomu.app.QueueUpdateDraw(func() {
+			gomu.playingBar.subtitles = nil
+			gomu.playingBar.subtitle = nil
+			if gomu.queue.isLoop {
+				_, err = gomu.queue.enqueue(currAudio.(*player.AudioFile))
+				if err != nil {
+					logError(err)
+				}
 			}
-		}
 
-		if len(gomu.queue.items) > 0 {
-			err := gomu.queue.playQueue()
-			if err != nil {
-				logError(err)
+			if len(gomu.queue.items) > 0 {
+				err := gomu.queue.playQueue()
+				if err != nil {
+					logError(err)
+				}
+			} else {
+				gomu.playingBar.setDefault()
 			}
-		} else {
-			gomu.playingBar.setDefault()
-		}
+		})
 	})
 
 	flex := layout(gomu)
