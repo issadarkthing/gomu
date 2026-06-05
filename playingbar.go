@@ -9,6 +9,7 @@ import (
 	"image"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -40,6 +41,7 @@ type PlayingBar struct {
 	albumPhotoSource image.Image
 	colrowPixel      int32
 	currentGen       int64
+	mu               sync.Mutex
 }
 
 func (p *PlayingBar) help() []string {
@@ -78,18 +80,22 @@ func (p *PlayingBar) run(gen int64) error {
 		progress := p.getProgress()
 		full := p.getFull()
 
-		if progress > full || p.skip {
+		p.mu.Lock()
+		skip := p.skip
+		if progress > full || skip {
 			p.skip = false
+			p.mu.Unlock()
 			p.setProgress(0)
 			break
 		}
+		subtitle := p.subtitle
+		p.mu.Unlock()
 
 		if gomu.player.IsPaused() {
 			time.Sleep(1 * time.Second)
 			continue
 		}
 
-		// p.progress = int(gomu.player.GetPosition().Seconds())
 		p.setProgress(int(gomu.player.GetPosition().Seconds()))
 
 		start, err := time.ParseDuration(strconv.Itoa(progress) + "s")
@@ -116,10 +122,9 @@ func (p *PlayingBar) run(gen int64) error {
 			p.updatePhoto()
 			p.setColRowPixel(colrowPixel)
 		}
-		// our progress bar
 		var lyricText string
-		if p.subtitle != nil {
-			lyricText, err = p.subtitle.GetText(progress)
+		if subtitle != nil {
+			lyricText, err = subtitle.GetText(progress)
 			if err != nil {
 				return tracerr.Wrap(err)
 			}
@@ -153,6 +158,7 @@ func (p *PlayingBar) setSongTitle(title string) {
 func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) int64 {
 	p.setFull(full)
 	p.setProgress(0)
+	p.mu.Lock()
 	p.hasTag = false
 	p.tag = nil
 	p.subtitles = nil
@@ -162,6 +168,7 @@ func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) int64 
 		p.albumPhoto.Destroy()
 		p.albumPhoto = nil
 	}
+	p.mu.Unlock()
 
 	err := p.loadLyrics(currentSong.Path())
 	if err != nil {
@@ -172,8 +179,8 @@ func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) int64 
 	if langLyricFromConfig == "" {
 		langLyricFromConfig = "en"
 	}
+	p.mu.Lock()
 	if p.hasTag && p.subtitles != nil {
-		// First we check if the lyric language preferred is presented
 		for _, v := range p.subtitles {
 			if strings.Contains(langLyricFromConfig, v.LangExt) {
 				p.subtitle = v
@@ -181,7 +188,6 @@ func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) int64 
 			}
 		}
 
-		// Secondly we check if english lyric is available
 		if p.subtitle == nil {
 			for _, v := range p.subtitles {
 				if v.LangExt == "en" {
@@ -191,11 +197,11 @@ func (p *PlayingBar) newProgress(currentSong *player.AudioFile, full int) int64 
 			}
 		}
 
-		// Finally we display the first lyric
 		if p.subtitle == nil {
 			p.subtitle = p.subtitles[0]
 		}
 	}
+	p.mu.Unlock()
 	p.setSongTitle(currentSong.Name())
 
 	return atomic.AddInt64(&p.currentGen, 1)
@@ -209,14 +215,18 @@ func (p *PlayingBar) setDefault() {
 		"%s ┣%s┫ %s", "00:00", strings.Repeat("━", width/2), "00:00",
 	)
 	p.text.SetText(text)
+	p.mu.Lock()
 	if p.albumPhoto != nil {
 		p.albumPhoto.Clear()
 	}
+	p.mu.Unlock()
 }
 
 // Skips the current playing song
 func (p *PlayingBar) stop() {
+	p.mu.Lock()
 	p.skip = true
+	p.mu.Unlock()
 	atomic.AddInt64(&p.currentGen, 1)
 }
 
@@ -228,21 +238,20 @@ func (p *PlayingBar) switchLyrics() {
 		errorPopup(err)
 		return
 	}
-	// no subtitle just ignore
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	if len(p.subtitles) == 0 {
 		defaultTimedPopup(" Warning ", "No embed lyric found")
 		p.subtitle = nil
 		return
 	}
 
-	// only 1 subtitle, prompt to the user and select this one
 	if len(p.subtitles) == 1 {
 		p.subtitle = p.subtitles[0]
 		defaultTimedPopup(" Warning ", p.subtitle.LangExt+" lyric is the only lyric available")
 		return
 	}
 
-	// more than 1 subtitle, cycle through them and select next
 	var langIndex int
 	for i, v := range p.subtitles {
 		if p.subtitle.LangExt == v.LangExt {
@@ -262,9 +271,13 @@ func (p *PlayingBar) switchLyrics() {
 
 func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 
-	if p.subtitle != nil {
-		p.subtitle.Offset -= int32(lyricDelay)
-		err = embedLyric(gomu.player.GetCurrentSong().Path(), p.subtitle, false)
+	p.mu.Lock()
+	subtitle := p.subtitle
+	p.mu.Unlock()
+
+	if subtitle != nil {
+		subtitle.Offset -= int32(lyricDelay)
+		err = embedLyric(gomu.player.GetCurrentSong().Path(), subtitle, false)
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
@@ -272,18 +285,29 @@ func (p *PlayingBar) delayLyric(lyricDelay int) (err error) {
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
+		p.mu.Lock()
 		for _, v := range p.subtitles {
 			if strings.Contains(v.LangExt, p.subtitle.LangExt) {
 				p.subtitle = v
 				break
 			}
 		}
+		p.mu.Unlock()
 	}
 	return nil
 }
 
 func (p *PlayingBar) loadLyrics(currentSongPath string) error {
+	p.mu.Lock()
 	p.subtitles = nil
+	p.hasTag = false
+	p.tag = nil
+	if p.albumPhoto != nil {
+		p.albumPhoto.Clear()
+		p.albumPhoto.Destroy()
+		p.albumPhoto = nil
+	}
+	p.mu.Unlock()
 
 	var tag *id3v2.Tag
 	var err error
@@ -296,14 +320,18 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 	if tag == nil {
 		return nil
 	}
+	p.mu.Lock()
 	p.hasTag = true
 	p.tag = tag
+	p.mu.Unlock()
 
+	p.mu.Lock()
 	if p.albumPhoto != nil {
 		p.albumPhoto.Clear()
 		p.albumPhoto.Destroy()
 		p.albumPhoto = nil
 	}
+	p.mu.Unlock()
 
 	syltFrames := tag.GetFrames(tag.CommonID("Synchronised lyrics/text"))
 	usltFrames := tag.GetFrames(tag.CommonID("Unsynchronised lyrics/text transcription"))
@@ -326,7 +354,9 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 				}
 				lyric.SyncedCaptions = sylf.SynchronizedTexts
 				lyric.LangExt = sylf.ContentDescriptor
+				p.mu.Lock()
 				p.subtitles = append(p.subtitles, &lyric)
+				p.mu.Unlock()
 			}
 		}
 	}
@@ -338,13 +368,14 @@ func (p *PlayingBar) loadLyrics(currentSongPath string) error {
 			return errors.New("picture frame error")
 		}
 
-		// Do something with picture frame.
 		imgTmp, err := imaging.Decode(bytes.NewReader(pic.Picture))
 		if err != nil {
 			return tracerr.Wrap(err)
 		}
 
+		p.mu.Lock()
 		p.albumPhotoSource = imgTmp
+		p.mu.Unlock()
 		p.setColRowPixel(0)
 	}
 
@@ -390,10 +421,11 @@ func getConsoleSize() (int, int, int, int) {
 // updatePhoto finish two tasks: 1. resize photo based on room left for photo
 // 2. register photo in the correct position
 func (p *PlayingBar) updatePhoto() {
-	// Put the whole block in goroutine, in order not to block the whole apps
-	// also to avoid data race by adding QueueUpdateDraw
 	go gomu.app.QueueUpdateDraw(func() {
-		if p.albumPhotoSource == nil {
+		p.mu.Lock()
+		albumPhotoSource := p.albumPhotoSource
+		if albumPhotoSource == nil {
+			p.mu.Unlock()
 			return
 		}
 
@@ -402,6 +434,8 @@ func (p *PlayingBar) updatePhoto() {
 			p.albumPhoto.Destroy()
 			p.albumPhoto = nil
 		}
+		p.mu.Unlock()
+
 		x, y, width, height := gomu.queue.GetInnerRect()
 
 		cols, rows, windowWidth, windowHeight := getConsoleSize()
@@ -410,16 +444,19 @@ func (p *PlayingBar) updatePhoto() {
 		rowPixel := windowHeight / rows
 		imageWidth := width * colPixel / 3
 
-		// resize the photo according to space left for x and y axis
-		dstImage := imaging.Resize(p.albumPhotoSource, imageWidth, 0, imaging.Lanczos)
+		dstImage := imaging.Resize(albumPhotoSource, imageWidth, 0, imaging.Lanczos)
 		var err error
 		positionX := x*colPixel + width*colPixel - dstImage.Rect.Dx()
 		positionY := y*rowPixel + height*rowPixel - dstImage.Rect.Dy()
-		// register new image
+
+		p.mu.Lock()
 		p.albumPhoto, err = ugo.NewImage(dstImage, positionX, positionY)
 		if err != nil {
+			p.mu.Unlock()
 			errorPopup(err)
+			return
 		}
 		p.albumPhoto.Show()
+		p.mu.Unlock()
 	})
 }

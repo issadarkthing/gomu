@@ -93,10 +93,10 @@ func defineInternals() {
 	queue, _ := gomu.anko.NewModule("Queue")
 	queue.Define("get_focused", func() *player.AudioFile {
 		index := gomu.queue.GetCurrentItem()
-		if index < 0 || index > len(gomu.queue.items)-1 {
+		if index < 0 || index >= gomu.queue.LenItems() {
 			return nil
 		}
-		item := gomu.queue.items[index]
+		item := gomu.queue.GetItem(index)
 		return item
 	})
 
@@ -409,14 +409,14 @@ func start(application *tview.Application, args Args) {
 		gomu.app.QueueUpdateDraw(func() {
 			gomu.playingBar.subtitles = nil
 			gomu.playingBar.subtitle = nil
-			if gomu.queue.isLoop {
+			if gomu.queue.GetIsLoop() {
 				_, err = gomu.queue.enqueue(currAudio.(*player.AudioFile))
 				if err != nil {
 					logError(err)
 				}
 			}
 
-			if len(gomu.queue.items) > 0 {
+			if gomu.queue.LenItems() > 0 {
 				err := gomu.queue.playQueue()
 				if err != nil {
 					logError(err)
@@ -436,7 +436,7 @@ func start(application *tview.Application, args Args) {
 
 	gomu.playingBar.setDefault()
 
-	gomu.queue.isLoop = gomu.anko.GetBool("General.queue_loop")
+	gomu.queue.SetIsLoop(gomu.anko.GetBool("General.queue_loop"))
 
 	loadQueue := gomu.anko.GetBool("General.load_prev_queue")
 
@@ -447,7 +447,7 @@ func start(application *tview.Application, args Args) {
 		}
 	}
 
-	if len(gomu.queue.items) > 0 {
+	if gomu.queue.LenItems() > 0 {
 		if err := gomu.queue.playQueue(); err != nil {
 			logError(err)
 		}
@@ -537,7 +537,7 @@ func start(application *tview.Application, args Args) {
 
 	init := false
 	gomu.app.SetAfterDrawFunc(func(_ tcell.Screen) {
-		if !init && len(gomu.queue.items) == 0 {
+		if !init && gomu.queue.LenItems() == 0 {
 			gomu.playingBar.setDefault()
 			init = true
 		}

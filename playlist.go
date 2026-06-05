@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -35,10 +36,9 @@ type Playlist struct {
 	*tview.TreeView
 	prevNode     *tview.TreeNode
 	defaultTitle string
-	// number of downloads
-	download int
-	done     chan struct{}
-	yankFile *player.AudioFile
+	download     int32
+	done         chan struct{}
+	yankFile     *player.AudioFile
 }
 
 func (p *Playlist) help() []string {
@@ -104,7 +104,7 @@ func newPlaylist(args Args) *Playlist {
 	playlist := &Playlist{
 		TreeView:     tree,
 		defaultTitle: "─ Playlist ──┤ 0 downloads ├",
-		done:         make(chan struct{}),
+		done:         make(chan struct{}, 64),
 	}
 
 	rootAudioFile := new(player.AudioFile)
@@ -458,13 +458,13 @@ func (p *Playlist) rename(newName string) error {
 // of the playlist panel when downloading.
 func (p *Playlist) updateTitle() {
 
-	if p.download == 0 {
+	dl := atomic.LoadInt32(&p.download)
+	if dl == 0 {
 		p.SetTitle(p.defaultTitle)
 		return
 	}
 
-	// only one call can be made in one time
-	if p.download > 1 {
+	if dl > 1 {
 		return
 	}
 
@@ -472,23 +472,22 @@ func (p *Playlist) updateTitle() {
 
 Download:
 	for {
-
 		select {
 		case <-p.done:
-			p.download--
-			if p.download == 0 {
+			if atomic.AddInt32(&p.download, -1) == 0 {
 				p.SetTitle(p.defaultTitle)
 				break Download
 			}
 		case <-time.After(time.Millisecond * 100):
-
+			count := atomic.LoadInt32(&p.download)
 			r, g, b := gomu.colors.accent.RGB()
 			hexColor := padHex(r, g, b)
 
 			title := fmt.Sprintf("─ Playlist ──┤ %d downloads [green]%s[#%s] ├",
-				p.download, s.Next(), hexColor)
-			p.SetTitle(title)
-			gomu.app.Draw()
+				count, s.Next(), hexColor)
+			gomu.app.QueueUpdateDraw(func() {
+				p.SetTitle(title)
+			})
 		}
 	}
 
@@ -540,7 +539,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	gomu.playlist.download++
+	atomic.AddInt32(&gomu.playlist.download, 1)
 	go gomu.playlist.updateTitle()
 
 	// blocking
@@ -618,7 +617,7 @@ func ytdl(url string, selPlaylist *tview.TreeNode) error {
 
 	downloadFinishedMessage := fmt.Sprintf("Finished downloading\n%s\n%v lyrics embeded", getName(audioPath), lyricWritten)
 	defaultTimedPopup(" Ytdl ", downloadFinishedMessage)
-	gomu.app.Draw()
+	gomu.app.QueueUpdateDraw(func() {})
 
 	return nil
 }

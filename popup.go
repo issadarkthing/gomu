@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode/utf8"
 
@@ -20,11 +21,8 @@ import (
 	"github.com/issadarkthing/gomu/player"
 )
 
-// this is used to make the popup unique
-// this mitigates the issue of closing all popups when timeout ends
-
 var (
-	popupCounter = 0
+	popupCounter = int32(0)
 )
 
 // Stack Simple stack data structure
@@ -206,7 +204,7 @@ func timedPopup(
 	box.SetTitle(title).SetBorder(true).SetBackgroundColor(gomu.colors.popup)
 	popupID := fmt.Sprintf("%s %d", "timeout-popup", popupCounter)
 
-	popupCounter++
+	atomic.AddInt32(&popupCounter, 1)
 	gomu.pages.AddPage(popupID, topRight(box, width, height), true, true)
 	// gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 
@@ -783,7 +781,7 @@ func ytSearchPopup() {
 			mutex.Unlock()
 
 			input.Autocomplete()
-			gomu.app.Draw()
+			gomu.app.QueueUpdateDraw(func() {})
 		}()
 
 		return nil
@@ -847,7 +845,7 @@ func ytSearchPopup() {
 					gomu.app.SetFocus(gomu.prevPanel.(tview.Primitive))
 				})
 
-				gomu.app.Draw()
+				gomu.app.QueueUpdateDraw(func() {})
 			}()
 
 		case tcell.KeyEscape:
@@ -893,7 +891,7 @@ func lyricPopup(lang string, audioFile *player.AudioFile, wg *sync.WaitGroup) er
 			lyricContent, err := lyricFetcher.LyricFetch(results[selectedIndex])
 			if err != nil {
 				errorPopup(err)
-				gomu.app.Draw()
+				gomu.app.QueueUpdateDraw(func() {})
 				return
 			}
 
@@ -901,23 +899,23 @@ func lyricPopup(lang string, audioFile *player.AudioFile, wg *sync.WaitGroup) er
 			err = lyric.NewFromLRC(lyricContent)
 			if err != nil {
 				errorPopup(err)
-				gomu.app.Draw()
+				gomu.app.QueueUpdateDraw(func() {})
 				return
 			}
 			lyric.LangExt = lang
 			err = embedLyric(audioFile.Path(), &lyric, false)
 			if err != nil {
 				errorPopup(err)
-				gomu.app.Draw()
+				gomu.app.QueueUpdateDraw(func() {})
 				return
 			}
 			infoPopup(lang + " lyric added successfully")
-			gomu.app.Draw()
+			gomu.app.QueueUpdateDraw(func() {})
 
 		}()
 	})
 
-	gomu.app.Draw()
+	gomu.app.QueueUpdateDraw(func() {})
 
 	return nil
 }

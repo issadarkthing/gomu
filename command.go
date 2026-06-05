@@ -93,7 +93,7 @@ func (c Command) defineCommands() {
 		currNode := gomu.playlist.GetCurrentNode()
 		if audioFile.IsAudioFile() {
 			gomu.queue.pushFront(audioFile)
-			if len(gomu.queue.items) == 1 && !gomu.player.IsRunning() {
+			if gomu.queue.LenItems() == 1 && !gomu.player.IsRunning() {
 				err := gomu.queue.playQueue()
 				if err != nil {
 					errorPopup(err)
@@ -125,7 +125,7 @@ func (c Command) defineCommands() {
 
 		if !bulkAdd {
 			gomu.playlist.addAllToQueue(currNode)
-			if len(gomu.queue.items) > 0 && !gomu.player.IsRunning() {
+			if gomu.queue.LenItems() > 0 && !gomu.player.IsRunning() {
 				err := gomu.queue.playQueue()
 				if err != nil {
 					errorPopup(err)
@@ -140,7 +140,7 @@ func (c Command) defineCommands() {
 
 				if label == "yes" {
 					gomu.playlist.addAllToQueue(currNode)
-					if len(gomu.queue.items) > 0 && !gomu.player.IsRunning() {
+					if gomu.queue.LenItems() > 0 && !gomu.player.IsRunning() {
 						err := gomu.queue.playQueue()
 						if err != nil {
 							errorPopup(err)
@@ -231,7 +231,7 @@ func (c Command) defineCommands() {
 	})
 
 	c.define("toggle_loop", func() {
-		gomu.queue.isLoop = !gomu.queue.isLoop
+		gomu.queue.SetIsLoop(!gomu.queue.GetIsLoop())
 		gomu.queue.updateTitle()
 	})
 
@@ -242,16 +242,17 @@ func (c Command) defineCommands() {
 	c.define("queue_search", func() {
 
 		queue := gomu.queue
+		items := queue.Items()
 
-		audios := make([]string, 0, len(queue.items))
-		for _, file := range queue.items {
+		audios := make([]string, 0, len(items))
+		for _, file := range items {
 			audios = append(audios, file.Name())
 		}
 
 		searchPopup("Songs", audios, func(selected string) {
 
 			index := 0
-			for i, v := range queue.items {
+			for i, v := range queue.Items() {
 				if v.Name() == selected {
 					index = i
 				}

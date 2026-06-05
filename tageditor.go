@@ -139,7 +139,7 @@ func tagPopup(node *player.AudioFile) (err error) {
 					}
 					defaultTimedPopup(" Success ", "Tag update successfully")
 				})
-				gomu.app.Draw()
+				gomu.app.QueueUpdateDraw(func() {})
 			}()
 		}()
 	}).
@@ -304,7 +304,7 @@ func tagPopup(node *player.AudioFile) (err error) {
 			_, popupLyricMap, newOptions, err := audioFile.LoadTagMap()
 			if err != nil {
 				errorPopup(err)
-				gomu.app.Draw()
+				gomu.app.QueueUpdateDraw(func() {})
 				return
 			}
 

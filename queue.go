@@ -13,6 +13,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -28,6 +29,42 @@ type Queue struct {
 	savedQueuePath string
 	items          []*player.AudioFile
 	isLoop         bool
+	mu             sync.Mutex
+}
+
+func (q *Queue) LenItems() int {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	return len(q.items)
+}
+
+func (q *Queue) GetIsLoop() bool {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	return q.isLoop
+}
+
+func (q *Queue) SetIsLoop(v bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.isLoop = v
+}
+
+func (q *Queue) GetItem(index int) *player.AudioFile {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if index < 0 || index >= len(q.items) {
+		return nil
+	}
+	return q.items[index]
+}
+
+func (q *Queue) Items() []*player.AudioFile {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	cp := make([]*player.AudioFile, len(q.items))
+	copy(cp, q.items)
+	return cp
 }
 
 // Highlight the next item in the queue
@@ -46,47 +83,7 @@ func (q *Queue) prev() {
 	q.SetCurrentItem(currIndex - 1)
 }
 
-// Usually used with GetCurrentItem which can return -1 if
-// no item highlighted
-func (q *Queue) deleteItem(index int) (*player.AudioFile, error) {
-
-	if index > len(q.items)-1 {
-		return nil, tracerr.New("Index out of range")
-	}
-
-	// deleted audio file
-	var dAudio *player.AudioFile
-
-	if index != -1 {
-		q.RemoveItem(index)
-
-		var nItems []*player.AudioFile
-
-		for i, v := range q.items {
-
-			if i == index {
-				dAudio = v
-				continue
-			}
-
-			nItems = append(nItems, v)
-		}
-
-		q.items = nItems
-		// here we move to next item if not at the end
-		if index < len(q.items) {
-			q.next()
-		}
-		q.updateTitle()
-
-	}
-
-	return dAudio, nil
-}
-
-// Update queue title which shows number of items and total length
-func (q *Queue) updateTitle() string {
-
+func (q *Queue) updateTitleLocked() string {
 	var totalLength time.Duration
 
 	for _, v := range q.items {
@@ -129,8 +126,58 @@ func (q *Queue) updateTitle() string {
 	return title
 }
 
+// Usually used with GetCurrentItem which can return -1 if
+// no item highlighted
+func (q *Queue) deleteItem(index int) (*player.AudioFile, error) {
+	q.mu.Lock()
+
+	if index > len(q.items)-1 {
+		q.mu.Unlock()
+		return nil, tracerr.New("Index out of range")
+	}
+
+	var dAudio *player.AudioFile
+
+	if index != -1 {
+		q.RemoveItem(index)
+
+		var nItems []*player.AudioFile
+
+		for i, v := range q.items {
+
+			if i == index {
+				dAudio = v
+				continue
+			}
+
+			nItems = append(nItems, v)
+		}
+
+		q.items = nItems
+		q.updateTitleLocked()
+		q.mu.Unlock()
+
+		// here we move to next item if not at the end
+		if index < q.GetItemCount() {
+			q.next()
+		}
+	} else {
+		q.mu.Unlock()
+	}
+
+	return dAudio, nil
+}
+
+// Update queue title which shows number of items and total length
+func (q *Queue) updateTitle() string {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	return q.updateTitleLocked()
+}
+
 // Add item to the front of the queue
 func (q *Queue) pushFront(audioFile *player.AudioFile) {
+	q.mu.Lock()
 
 	q.items = append([]*player.AudioFile{audioFile}, q.items...)
 
@@ -141,26 +188,36 @@ func (q *Queue) pushFront(audioFile *player.AudioFile) {
 	)
 
 	q.InsertItem(0, queueItemView, audioFile.Path(), 0, nil)
-	q.updateTitle()
+	q.updateTitleLocked()
+	q.mu.Unlock()
 }
 
 // gets the first item and remove it from the queue
-// app.Draw() must be called after calling this function
 func (q *Queue) dequeue() (*player.AudioFile, error) {
 
 	if q.GetItemCount() == 0 {
 		return nil, tracerr.New("Empty list")
 	}
 
-	first := q.items[0]
-	q.deleteItem(0)
+	first := q.removeFirst()
 	q.updateTitle()
 
 	return first, nil
 }
 
+func (q *Queue) removeFirst() *player.AudioFile {
+	q.mu.Lock()
+	first := q.items[0]
+	q.items = q.items[1:]
+	q.mu.Unlock()
+	q.RemoveItem(0)
+	return first
+}
+
 // Add item to the list and returns the length of the queue
 func (q *Queue) enqueue(audioFile *player.AudioFile) (int, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
 
 	if !audioFile.IsAudioFile() {
 		return q.GetItemCount(), nil
@@ -177,7 +234,7 @@ func (q *Queue) enqueue(audioFile *player.AudioFile) (int, error) {
 		"[ %s ] %s", fmtDuration(songLength), getName(audioFile.Name()),
 	)
 	q.AddItem(queueItemView, audioFile.Path(), 0, nil)
-	q.updateTitle()
+	q.updateTitleLocked()
 
 	return q.GetItemCount(), nil
 }
@@ -213,14 +270,16 @@ func (q *Queue) saveQueue() error {
 				currentSongInQueue = true
 			}
 		}
-		if !currentSongInQueue && len(q.items) != 0 {
+		q.mu.Lock()
+		notEmpty := len(q.items) != 0
+		q.mu.Unlock()
+		if !currentSongInQueue && notEmpty {
 			hashed := sha1Hex(getName(currentSongPath))
 			content.WriteString(hashed + "\n")
 		}
 	}
 
 	for _, songPath := range songPaths {
-		// hashed song name is easier to search through
 		hashed := sha1Hex(getName(songPath))
 		content.WriteString(hashed + "\n")
 	}
@@ -238,11 +297,11 @@ func (q *Queue) saveQueue() error {
 
 // Clears current queue
 func (q *Queue) clearQueue() {
-
+	q.mu.Lock()
 	q.items = []*player.AudioFile{}
+	q.mu.Unlock()
 	q.Clear()
 	q.updateTitle()
-
 }
 
 // Loads previously saved list
@@ -329,7 +388,7 @@ func (q *Queue) help() []string {
 
 // Shuffles the queue
 func (q *Queue) shuffle() {
-
+	q.mu.Lock()
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(q.items), func(i, j int) {
 		q.items[i], q.items[j] = q.items[j], q.items[i]
@@ -346,9 +405,7 @@ func (q *Queue) shuffle() {
 		queueText := fmt.Sprintf("[ %s ] %s", fmtDuration(audioLen), v.Name())
 		q.AddItem(queueText, v.Path(), 0, nil)
 	}
-
-	// q.updateTitle()
-
+	q.mu.Unlock()
 }
 
 // Initiliaze new queue with default values
@@ -424,7 +481,8 @@ func sha1Hex(input string) string {
 
 // Modify the title of songs in queue
 func (q *Queue) renameItem(oldAudio *player.AudioFile, newAudio *player.AudioFile) error {
-	for i, v := range q.items {
+	items := q.Items()
+	for i, v := range items {
 		if v.Name() != oldAudio.Name() {
 			continue
 		}
@@ -457,14 +515,17 @@ func (q *Queue) playQueue() error {
 }
 
 func (q *Queue) insertItem(index int, audioFile *player.AudioFile) error {
+	q.mu.Lock()
 
 	if index > len(q.items)-1 {
+		q.mu.Unlock()
 		return tracerr.New("Index out of range")
 	}
 
 	if index != -1 {
 		songLength, err := getTagLength(audioFile.Path())
 		if err != nil {
+			q.mu.Unlock()
 			return tracerr.Wrap(err)
 		}
 		queueItemView := fmt.Sprintf(
@@ -485,8 +546,8 @@ func (q *Queue) insertItem(index int, audioFile *player.AudioFile) error {
 		}
 
 		q.items = nItems
-		q.updateTitle()
-
+		q.updateTitleLocked()
+		q.mu.Unlock()
 	}
 
 	return nil
@@ -495,11 +556,12 @@ func (q *Queue) insertItem(index int, audioFile *player.AudioFile) error {
 // update the path information in queue
 func (q *Queue) updateQueuePath() {
 
-	var songs []string
-	if len(q.items) < 1 {
+	items := q.Items()
+	if len(items) < 1 {
 		return
 	}
-	for _, v := range q.items {
+	var songs []string
+	for _, v := range items {
 		song := sha1Hex(getName(v.Name()))
 		songs = append(songs, song)
 	}
@@ -535,14 +597,16 @@ func (q *Queue) updateCurrentSongName(oldAudio *player.AudioFile, newAudio *play
 
 	// we insert it in the first of queue, then play it
 	gomu.queue.pushFront(newAudio)
+	q.mu.Lock()
 	tmpLoop := q.isLoop
 	q.isLoop = false
+	q.mu.Unlock()
 	gomu.player.Skip()
 	gomu.player.Seek(position)
 	if paused {
 		gomu.player.TogglePause()
 	}
-	q.isLoop = tmpLoop
+	q.SetIsLoop(tmpLoop)
 	q.updateTitle()
 
 	return nil
@@ -570,14 +634,16 @@ func (q *Queue) updateCurrentSongPath(oldAudio *player.AudioFile, newAudio *play
 		return tracerr.Wrap(err)
 	}
 	gomu.queue.pushFront(currentSongAudioFile)
+	q.mu.Lock()
 	tmpLoop := q.isLoop
 	q.isLoop = false
+	q.mu.Unlock()
 	gomu.player.Skip()
 	gomu.player.Seek(position)
 	if paused {
 		gomu.player.TogglePause()
 	}
-	q.isLoop = tmpLoop
+	q.SetIsLoop(tmpLoop)
 
 	q.updateTitle()
 	return nil
@@ -608,13 +674,15 @@ func (q *Queue) updateCurrentSongDelete(oldAudio *player.AudioFile) {
 		return
 	}
 
+	q.mu.Lock()
 	tmpLoop := q.isLoop
 	q.isLoop = false
+	q.mu.Unlock()
 	gomu.player.Skip()
 	if paused {
 		gomu.player.TogglePause()
 	}
-	q.isLoop = tmpLoop
+	q.SetIsLoop(tmpLoop)
 	q.updateTitle()
 
 }
